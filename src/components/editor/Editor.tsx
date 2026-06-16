@@ -297,21 +297,13 @@ export default function Editor({ content = "", onChange }: Props) {
           🔗
         </Btn>
         <Divider />
-        <Tooltip text={"독자가 이 위치에 도달하면 화면이 어두워집니다\n배경/글자색은 블록 안에서 직접 변경 가능"}>
-          <Btn title="어두워짐 시작" onClick={() =>
+        <Tooltip text={"어두운 배경 구간 삽입\n안에서 직접 글 작성, 배경/글자색 블록에서 변경"}>
+          <Btn title="어두운 구간" onClick={() =>
             editor.chain().focus().insertContent({
               type: "wnEffect",
-              attrs: { effectType: "darken-start" },
+              content: [{ type: "paragraph" }],
             }).run()
           }>🌑</Btn>
-        </Tooltip>
-        <Tooltip text={"이 위치에 도달하면\n화면이 원래대로 밝아집니다"}>
-          <Btn title="어두워짐 끝 (복구)" onClick={() =>
-            editor.chain().focus().insertContent({
-              type: "wnEffect",
-              attrs: { effectType: "darken-end" },
-            }).run()
-          }>🌅</Btn>
         </Tooltip>
         <Divider />
         <Btn

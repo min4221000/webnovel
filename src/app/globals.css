@@ -122,31 +122,27 @@ mark.wn-hl-active {
   background: rgba(0, 0, 0, 0.05);
   font-weight: 600;
 }
-/* ===== 동적 효과 블록 ===== */
-/* 에디터 내 시각적 배지 */
-.wn-effect-node {
+/* ===== 어두운 구간 블록 ===== */
+/* 에디터 전용 툴바 */
+.wn-darken-toolbar {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
-  margin: 8px 0;
-  border-radius: 6px;
+  padding: 5px 10px;
   font-size: 13px;
+  border-bottom: 1px dashed rgba(255,255,255,0.2);
   user-select: none;
-  border: 1px dashed;
-  cursor: grab;
 }
-.wn-effect-node--darken     { background: #212529; border-color: #6c757d; color: #dee2e6; }
-.wn-effect-node--darken-end { background: #fff3e0; border-color: #fb8c00; color: #7d4e00; }
 
-/* 리더에서 darken 마커는 숨김 (JS가 스크롤로 오버레이 제어) */
-[data-wn-effect="darken-start"],
-[data-wn-effect="darken-end"] {
-  display: block;
-  height: 0;
-  overflow: hidden;
-  margin: 0;
-  padding: 0;
+/* 에디터 전용 컨텐츠 패딩 */
+.wn-darken-editor { border-radius: 8px; overflow: hidden; margin: 8px 0; }
+.wn-darken-content { padding: 10px 14px; min-height: 48px; }
+
+/* 리더 전용: 저장된 HTML의 .wn-darken-block */
+.wn-darken-block {
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 12px 0;
 }
 
 .wn-content div[data-youtube-video] {

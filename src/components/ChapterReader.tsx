@@ -87,62 +87,6 @@ export default function ChapterReader({ html }: { html: string }) {
     [clearMarks, setActive],
   );
 
-  // 동적 효과: darken-start/end 스크롤 기반 배경+글자색 전환
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const startEls = Array.from(container.querySelectorAll<HTMLElement>('[data-wn-effect="darken-start"]'));
-    const endEls   = Array.from(container.querySelectorAll<HTMLElement>('[data-wn-effect="darken-end"]'));
-    if (startEls.length === 0 && endEls.length === 0) return;
-
-    container.style.transition = "background-color 700ms ease, color 700ms ease";
-
-    let wasDark = false;
-    let rafId = 0;
-
-    const onScroll = () => {
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(() => {
-        const mid = window.innerHeight * 0.6;
-
-        let dark = false;
-        let activeIdx = -1;
-        const pairs = Math.max(startEls.length, endEls.length);
-        for (let i = 0; i < pairs; i++) {
-          const s = startEls[i];
-          const e = endEls[i];
-          const pastStart = s ? s.getBoundingClientRect().bottom < mid : false;
-          const pastEnd   = e ? e.getBoundingClientRect().bottom < mid : false;
-          if (pastStart && !pastEnd) { dark = true; activeIdx = i; break; }
-        }
-
-        if (dark === wasDark) return;
-        wasDark = dark;
-
-        if (dark && startEls[activeIdx]) {
-          const bgColor   = startEls[activeIdx].dataset.wnColor     ?? "#0d0d0d";
-          const textColor = startEls[activeIdx].dataset.wnTextColor ?? "#f0f0f0";
-          container.style.backgroundColor = bgColor;
-          container.style.color           = textColor;
-        } else {
-          container.style.backgroundColor = "";
-          container.style.color           = "";
-        }
-      });
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(rafId);
-      container.style.backgroundColor = "";
-      container.style.color           = "";
-      container.style.transition      = "";
-    };
-  }, [html]);
 
   // Ctrl/Cmd+F 가로채기
   useEffect(() => {

@@ -1,137 +1,127 @@
 import { Node, mergeAttributes } from "@tiptap/core";
-import { NodeSelection, TextSelection } from "@tiptap/pm/state";
 
 export const WnEffect = Node.create({
   name: "wnEffect",
   group: "block",
-  atom: true,
-  selectable: true,
+  content: "block+",   // 내부에 블록 컨텐츠 포함 (blockquote와 동일 구조)
+  defining: true,
   draggable: true,
 
   addAttributes() {
     return {
-      effectType: { default: "darken-start" },
-      color:      { default: "#0d0d0d" },  // 배경색
-      textColor:  { default: "#f0f0f0" },  // 글자색
+      color:     { default: "#0d0d0d" },
+      textColor: { default: "#f0f0f0" },
     };
   },
 
   parseHTML() {
     return [{
-      tag: "div[data-wn-effect]",
+      tag: "div[data-wn-effect='darken']",
       getAttrs: (el) => {
         const e = el as HTMLElement;
         return {
-          effectType: e.getAttribute("data-wn-effect")      ?? "darken-start",
-          color:      e.getAttribute("data-wn-color")       ?? "#0d0d0d",
-          textColor:  e.getAttribute("data-wn-text-color")  ?? "#f0f0f0",
+          color:     e.getAttribute("data-wn-color")      ?? "#0d0d0d",
+          textColor: e.getAttribute("data-wn-text-color") ?? "#f0f0f0",
         };
       },
     }];
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ["div", mergeAttributes({
-      "data-wn-effect":     HTMLAttributes.effectType,
-      "data-wn-color":      HTMLAttributes.color,
-      "data-wn-text-color": HTMLAttributes.textColor,
-      class: "wn-effect-block",
-    })];
-  },
-
-  // Enter 눌렀을 때 블록이 사라지는 버그 수정
-  addKeyboardShortcuts() {
-    return {
-      Enter: () => {
-        const { state } = this.editor;
-        if (!(state.selection instanceof NodeSelection)) return false;
-        if (state.selection.node.type.name !== this.name) return false;
-        const sel = state.selection;
-        return this.editor.chain().command(({ tr, dispatch }) => {
-          if (dispatch) {
-            tr.insert(sel.to, state.schema.nodes.paragraph.create());
-            tr.setSelection(TextSelection.create(tr.doc, sel.to + 1));
-            dispatch(tr);
-          }
-          return true;
-        }).run();
-      },
-    };
+    const { color, textColor } = HTMLAttributes;
+    return [
+      "div",
+      mergeAttributes({
+        "data-wn-effect":     "darken",
+        "data-wn-color":      color,
+        "data-wn-text-color": textColor,
+        class: "wn-darken-block",
+        style: `background-color:${color};color:${textColor}`,
+      }),
+      0, // 컨텐츠 hole
+    ];
   },
 
   addNodeView() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return ({ node, getPos, editor }: any) => {
-      const t = node.attrs.effectType as string;
-      const isDarkStart = t === "darken-start";
+      // 현재 attrs를 mutable ref로 유지 (이벤트 핸들러 클로저용)
+      const cur = { ...node.attrs };
 
+      /* ── 외부 컨테이너 ── */
       const dom = document.createElement("div");
-      dom.contentEditable = "false";
-      dom.draggable = true;
-      dom.className = `wn-effect-node wn-effect-node--${isDarkStart ? "darken" : "darken-end"}`;
-      dom.style.cssText = "display:flex;align-items:center;gap:6px;cursor:grab;";
+      dom.className = "wn-effect-node wn-effect-node--darken wn-darken-editor";
+      dom.style.backgroundColor = cur.color;
+      dom.style.color           = cur.textColor;
 
-      // 드래그 핸들 아이콘
+      /* ── 툴바 (편집 불가) ── */
+      const toolbar = document.createElement("div");
+      toolbar.contentEditable = "false";
+      toolbar.draggable = true;
+      toolbar.className = "wn-darken-toolbar";
+
       const grip = document.createElement("span");
       grip.textContent = "⠿";
-      grip.style.cssText = "opacity:0.4;font-size:14px;user-select:none;cursor:grab;flex-shrink:0;";
-      dom.appendChild(grip);
+      grip.style.cssText = "opacity:.4;cursor:grab;font-size:14px;margin-right:4px;";
 
-      // 라벨
-      const label = document.createElement("span");
-      label.textContent = isDarkStart ? "🌑 어두워짐 시작" : "🌅 어두워짐 끝 (복구)";
-      label.style.flex = "1";
-      dom.appendChild(label);
+      const lbl = document.createElement("span");
+      lbl.textContent = "🌑 어두운 구간";
+      lbl.style.flex = "1";
 
-      let bgPicker: HTMLInputElement | null = null;
-      let textPicker: HTMLInputElement | null = null;
+      const makeTag = (t: string) => {
+        const s = document.createElement("span");
+        s.textContent = t;
+        s.style.cssText = "font-size:11px;opacity:.65;";
+        return s;
+      };
 
-      if (isDarkStart) {
-        const makeTag = (text: string) => {
-          const s = document.createElement("span");
-          s.textContent = text;
-          s.style.cssText = "font-size:11px;opacity:0.65;flex-shrink:0;";
-          return s;
-        };
+      const makePicker = (value: string, title: string, key: "color" | "textColor") => {
+        const inp = document.createElement("input");
+        inp.type = "color";
+        inp.value = value;
+        inp.title = title;
+        inp.style.cssText =
+          "width:22px;height:22px;border:2px solid rgba(255,255,255,.3);cursor:pointer;border-radius:4px;padding:1px;flex-shrink:0;background:none;";
+        inp.addEventListener("mousedown", (e) => e.stopPropagation());
+        inp.addEventListener("input", (e) => {
+          if (typeof getPos !== "function") return;
+          const val = (e.target as HTMLInputElement).value;
+          cur[key] = val;
+          // DOM 즉시 반영
+          if (key === "color")     { dom.style.backgroundColor = val; }
+          if (key === "textColor") { dom.style.color           = val; }
+          editor.chain().command(({ tr, dispatch }: any) => {
+            if (dispatch) tr.setNodeMarkup(getPos(), undefined, { ...cur });
+            return true;
+          }).run();
+        });
+        return inp;
+      };
 
-        const makePicker = (value: string, title: string, attrKey: string) => {
-          const inp = document.createElement("input");
-          inp.type = "color";
-          inp.value = value;
-          inp.title = title;
-          inp.style.cssText =
-            "width:22px;height:22px;border:2px solid rgba(255,255,255,0.3);cursor:pointer;border-radius:4px;padding:1px;flex-shrink:0;background:none;";
-          inp.addEventListener("mousedown", (e) => e.stopPropagation());
-          inp.addEventListener("input", (e) => {
-            if (typeof getPos !== "function") return;
-            const val = (e.target as HTMLInputElement).value;
-            editor.chain().command(({ tr, dispatch }: any) => {
-              if (dispatch) tr.setNodeMarkup(getPos(), undefined, { ...node.attrs, [attrKey]: val });
-              return true;
-            }).run();
-          });
-          return inp;
-        };
+      const bgPick   = makePicker(cur.color,     "배경색", "color");
+      const txtPick  = makePicker(cur.textColor, "글자색", "textColor");
 
-        bgPicker   = makePicker(node.attrs.color    ?? "#0d0d0d", "배경색", "color");
-        textPicker = makePicker(node.attrs.textColor ?? "#f0f0f0", "글자색", "textColor");
+      toolbar.append(grip, lbl, makeTag("배경"), bgPick, makeTag("글자"), txtPick);
 
-        dom.appendChild(makeTag("배경"));
-        dom.appendChild(bgPicker);
-        dom.appendChild(makeTag("글자"));
-        dom.appendChild(textPicker);
-      }
+      /* ── 컨텐츠 영역 ── */
+      const contentDOM = document.createElement("div");
+      contentDOM.className = "wn-darken-content";
 
-      // 속성 변경 시 피커 값만 업데이트 (전체 재렌더 방지)
+      dom.append(toolbar, contentDOM);
+
+      // 속성 변경 시 DOM만 업데이트 (전체 재마운트 방지)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const update = (updatedNode: any): boolean => {
-        if (updatedNode.type.name !== node.type.name) return false;
-        if (bgPicker)   bgPicker.value   = updatedNode.attrs.color    ?? "#0d0d0d";
-        if (textPicker) textPicker.value = updatedNode.attrs.textColor ?? "#f0f0f0";
+      const update = (updated: any): boolean => {
+        if (updated.type.name !== node.type.name) return false;
+        Object.assign(cur, updated.attrs);
+        dom.style.backgroundColor = cur.color;
+        dom.style.color           = cur.textColor;
+        bgPick.value  = cur.color;
+        txtPick.value = cur.textColor;
         return true;
       };
 
-      return { dom, update };
+      return { dom, contentDOM, update };
     };
   },
 });
