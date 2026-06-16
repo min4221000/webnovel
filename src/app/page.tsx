@@ -18,7 +18,7 @@ export default async function Home() {
       tags: true,
       isAdult: true,
       author: { select: { id: true, username: true } },
-      _count: { select: { chapters: true } },
+      _count: { select: { chapters: { where: { deletedAt: null } } } },
     },
   });
 

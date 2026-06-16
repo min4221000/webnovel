@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
             id: true,
             title: true,
             coverImage: true,
-            _count: { select: { chapters: true } },
+            _count: { select: { chapters: { where: { deletedAt: null } } } },
           },
         },
       },
@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
         coverImage: true,
         description: true,
         author: { select: { id: true, username: true } },
-        _count: { select: { chapters: true } },
+        _count: { select: { chapters: { where: { deletedAt: null } } } },
       },
     });
     const results = novels.map((n) => ({
@@ -122,7 +122,7 @@ export async function GET(req: NextRequest) {
         coverImage: true,
         description: true,
         author: { select: { id: true, username: true } },
-        _count: { select: { chapters: true } },
+        _count: { select: { chapters: { where: { deletedAt: null } } } },
       },
     }),
     prisma.chapter.findMany({
@@ -143,7 +143,7 @@ export async function GET(req: NextRequest) {
             title: true,
             coverImage: true,
             author: { select: { id: true, username: true } },
-            _count: { select: { chapters: true } },
+            _count: { select: { chapters: { where: { deletedAt: null } } } },
           },
         },
       },
