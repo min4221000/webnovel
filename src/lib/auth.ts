@@ -16,7 +16,25 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   session: { strategy: "jwt" },
+  pages: { signIn: "/login" },
   callbacks: {
+    // 디코섭 멤버만 로그인 허용 (REQUIRE_GUILD_MEMBER=1 + DISCORD_GUILD_ID 설정 시)
+    async signIn({ account }) {
+      const guildId = process.env.DISCORD_GUILD_ID;
+      const gate = process.env.REQUIRE_GUILD_MEMBER === "1";
+      if (!gate || !guildId) return true; // 게이트 비활성화 → 누구나
+      if (!account?.access_token) return false;
+      try {
+        const r = await fetch(
+          `https://discord.com/api/v10/users/@me/guilds/${guildId}/member`,
+          { headers: { Authorization: `Bearer ${account.access_token}` } },
+        );
+        if (r.ok) return true; // 멤버 확인됨
+        return "/not-member"; // 비멤버 → 안내 페이지로
+      } catch {
+        return false;
+      }
+    },
     async jwt({ token, account, profile }) {
       if (account && profile) {
         const p = profile as {
