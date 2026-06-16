@@ -297,15 +297,13 @@ export default function Editor({ content = "", onChange }: Props) {
           🔗
         </Btn>
         <Divider />
-        <Tooltip text={"독자가 이 위치에 도달하면\n화면이 어두워집니다"}>
-          <Btn title="어두워짐 시작" onClick={() => {
-            const color = window.prompt("어두워질 색 (기본: #0d0d0d)", "#0d0d0d");
-            if (color === null) return;
+        <Tooltip text={"독자가 이 위치에 도달하면 화면이 어두워집니다\n배경/글자색은 블록 안에서 직접 변경 가능"}>
+          <Btn title="어두워짐 시작" onClick={() =>
             editor.chain().focus().insertContent({
               type: "wnEffect",
-              attrs: { effectType: "darken-start", color: color || "#0d0d0d" },
-            }).run();
-          }}>🌑</Btn>
+              attrs: { effectType: "darken-start" },
+            }).run()
+          }>🌑</Btn>
         </Tooltip>
         <Tooltip text={"이 위치에 도달하면\n화면이 원래대로 밝아집니다"}>
           <Btn title="어두워짐 끝 (복구)" onClick={() =>

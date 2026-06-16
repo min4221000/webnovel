@@ -21,7 +21,7 @@ export function sanitizeContent(dirty: string): string {
       img: ["src", "alt", "title", "width", "height", "style", "class"],
       span: ["style", "class"],
       p: ["style", "class"],
-      div: ["style", "class", "data-youtube-video", "data-wn-effect", "data-wn-color", "data-wn-duration", "data-wn-text"],
+      div: ["style", "class", "data-youtube-video", "data-wn-effect", "data-wn-color", "data-wn-text-color"],
       h1: ["style"], h2: ["style"], h3: ["style"], h4: ["style"],
       mark: ["style", "class", "data-color"],
       td: ["colspan", "rowspan", "style"],

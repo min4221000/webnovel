@@ -87,7 +87,7 @@ export default function ChapterReader({ html }: { html: string }) {
     [clearMarks, setActive],
   );
 
-  // 동적 효과: darken-start/end 마커 기반 어두워짐
+  // 동적 효과: darken-start/end 스크롤 기반 배경+글자색 전환
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -96,44 +96,51 @@ export default function ChapterReader({ html }: { html: string }) {
     const endEls   = Array.from(container.querySelectorAll<HTMLElement>('[data-wn-effect="darken-end"]'));
     if (startEls.length === 0 && endEls.length === 0) return;
 
-    // 영구 오버레이 생성
-    const ov = document.createElement("div");
-    ov.style.cssText =
-      "position:fixed;inset:0;opacity:0;transition:opacity 600ms ease;z-index:9998;pointer-events:none;background:#0d0d0d";
-    document.body.appendChild(ov);
+    container.style.transition = "background-color 700ms ease, color 700ms ease";
 
+    let wasDark = false;
     let rafId = 0;
+
     const onScroll = () => {
       cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
-        const mid = window.innerHeight * 0.6; // 화면 60% 지점 기준
+        const mid = window.innerHeight * 0.6;
 
         let dark = false;
-        // 각 start/end 쌍 확인 (순서대로 페어링)
+        let activeIdx = -1;
         const pairs = Math.max(startEls.length, endEls.length);
         for (let i = 0; i < pairs; i++) {
           const s = startEls[i];
           const e = endEls[i];
           const pastStart = s ? s.getBoundingClientRect().bottom < mid : false;
           const pastEnd   = e ? e.getBoundingClientRect().bottom < mid : false;
-          if (pastStart && !pastEnd) { dark = true; break; }
+          if (pastStart && !pastEnd) { dark = true; activeIdx = i; break; }
         }
 
-        // 색상은 첫 번째 start 마커 기준
-        if (startEls[0]) {
-          ov.style.background = startEls[0].dataset.wnColor ?? "#0d0d0d";
+        if (dark === wasDark) return;
+        wasDark = dark;
+
+        if (dark && startEls[activeIdx]) {
+          const bgColor   = startEls[activeIdx].dataset.wnColor     ?? "#0d0d0d";
+          const textColor = startEls[activeIdx].dataset.wnTextColor ?? "#f0f0f0";
+          container.style.backgroundColor = bgColor;
+          container.style.color           = textColor;
+        } else {
+          container.style.backgroundColor = "";
+          container.style.color           = "";
         }
-        ov.style.opacity = dark ? "0.92" : "0";
       });
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll(); // 초기 실행
+    onScroll();
 
     return () => {
       window.removeEventListener("scroll", onScroll);
       cancelAnimationFrame(rafId);
-      ov.remove();
+      container.style.backgroundColor = "";
+      container.style.color           = "";
+      container.style.transition      = "";
     };
   }, [html]);
 

@@ -125,14 +125,16 @@ mark.wn-hl-active {
 /* ===== 동적 효과 블록 ===== */
 /* 에디터 내 시각적 배지 */
 .wn-effect-node {
-  display: block;
-  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
   margin: 8px 0;
   border-radius: 6px;
   font-size: 13px;
-  cursor: default;
   user-select: none;
   border: 1px dashed;
+  cursor: grab;
 }
 .wn-effect-node--darken     { background: #212529; border-color: #6c757d; color: #dee2e6; }
 .wn-effect-node--darken-end { background: #fff3e0; border-color: #fb8c00; color: #7d4e00; }

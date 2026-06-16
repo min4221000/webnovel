@@ -1,4 +1,5 @@
 import { Node, mergeAttributes } from "@tiptap/core";
+import { NodeSelection, TextSelection } from "@tiptap/pm/state";
 
 export const WnEffect = Node.create({
   name: "wnEffect",
@@ -10,7 +11,8 @@ export const WnEffect = Node.create({
   addAttributes() {
     return {
       effectType: { default: "darken-start" },
-      color:      { default: "#0d0d0d" },
+      color:      { default: "#0d0d0d" },  // 배경색
+      textColor:  { default: "#f0f0f0" },  // 글자색
     };
   },
 
@@ -20,8 +22,9 @@ export const WnEffect = Node.create({
       getAttrs: (el) => {
         const e = el as HTMLElement;
         return {
-          effectType: e.getAttribute("data-wn-effect") ?? "darken-start",
-          color:      e.getAttribute("data-wn-color") ?? "#0d0d0d",
+          effectType: e.getAttribute("data-wn-effect")      ?? "darken-start",
+          color:      e.getAttribute("data-wn-color")       ?? "#0d0d0d",
+          textColor:  e.getAttribute("data-wn-text-color")  ?? "#f0f0f0",
         };
       },
     }];
@@ -29,20 +32,106 @@ export const WnEffect = Node.create({
 
   renderHTML({ HTMLAttributes }) {
     return ["div", mergeAttributes({
-      "data-wn-effect": HTMLAttributes.effectType,
-      "data-wn-color":  HTMLAttributes.color,
+      "data-wn-effect":     HTMLAttributes.effectType,
+      "data-wn-color":      HTMLAttributes.color,
+      "data-wn-text-color": HTMLAttributes.textColor,
       class: "wn-effect-block",
     })];
   },
 
+  // Enter 눌렀을 때 블록이 사라지는 버그 수정
+  addKeyboardShortcuts() {
+    return {
+      Enter: () => {
+        const { state } = this.editor;
+        if (!(state.selection instanceof NodeSelection)) return false;
+        if (state.selection.node.type.name !== this.name) return false;
+        const sel = state.selection;
+        return this.editor.chain().command(({ tr, dispatch }) => {
+          if (dispatch) {
+            tr.insert(sel.to, state.schema.nodes.paragraph.create());
+            tr.setSelection(TextSelection.create(tr.doc, sel.to + 1));
+            dispatch(tr);
+          }
+          return true;
+        }).run();
+      },
+    };
+  },
+
   addNodeView() {
-    return ({ node }) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return ({ node, getPos, editor }: any) => {
+      const t = node.attrs.effectType as string;
+      const isDarkStart = t === "darken-start";
+
       const dom = document.createElement("div");
       dom.contentEditable = "false";
-      const t = node.attrs.effectType as string;
-      dom.textContent = t === "darken-start" ? "🌑 어두워짐 시작" : "🌅 어두워짐 끝 (복구)";
-      dom.className = `wn-effect-node wn-effect-node--${t === "darken-start" ? "darken" : "darken-end"}`;
-      return { dom };
+      dom.draggable = true;
+      dom.className = `wn-effect-node wn-effect-node--${isDarkStart ? "darken" : "darken-end"}`;
+      dom.style.cssText = "display:flex;align-items:center;gap:6px;cursor:grab;";
+
+      // 드래그 핸들 아이콘
+      const grip = document.createElement("span");
+      grip.textContent = "⠿";
+      grip.style.cssText = "opacity:0.4;font-size:14px;user-select:none;cursor:grab;flex-shrink:0;";
+      dom.appendChild(grip);
+
+      // 라벨
+      const label = document.createElement("span");
+      label.textContent = isDarkStart ? "🌑 어두워짐 시작" : "🌅 어두워짐 끝 (복구)";
+      label.style.flex = "1";
+      dom.appendChild(label);
+
+      let bgPicker: HTMLInputElement | null = null;
+      let textPicker: HTMLInputElement | null = null;
+
+      if (isDarkStart) {
+        const makeTag = (text: string) => {
+          const s = document.createElement("span");
+          s.textContent = text;
+          s.style.cssText = "font-size:11px;opacity:0.65;flex-shrink:0;";
+          return s;
+        };
+
+        const makePicker = (value: string, title: string, attrKey: string) => {
+          const inp = document.createElement("input");
+          inp.type = "color";
+          inp.value = value;
+          inp.title = title;
+          inp.style.cssText =
+            "width:22px;height:22px;border:2px solid rgba(255,255,255,0.3);cursor:pointer;border-radius:4px;padding:1px;flex-shrink:0;background:none;";
+          inp.addEventListener("mousedown", (e) => e.stopPropagation());
+          inp.addEventListener("input", (e) => {
+            if (typeof getPos !== "function") return;
+            const val = (e.target as HTMLInputElement).value;
+            editor.chain().command(({ tr, dispatch }: any) => {
+              if (dispatch) tr.setNodeMarkup(getPos(), undefined, { ...node.attrs, [attrKey]: val });
+              return true;
+            }).run();
+          });
+          return inp;
+        };
+
+        bgPicker   = makePicker(node.attrs.color    ?? "#0d0d0d", "배경색", "color");
+        textPicker = makePicker(node.attrs.textColor ?? "#f0f0f0", "글자색", "textColor");
+
+        dom.appendChild(makeTag("배경"));
+        dom.appendChild(bgPicker);
+        dom.appendChild(makeTag("글자"));
+        dom.appendChild(textPicker);
+      }
+
+      // 속성 변경 시 피커 값만 업데이트 (전체 재렌더 방지)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const update = (updatedNode: any): boolean => {
+        if (updatedNode.type.name !== node.type.name) return false;
+        if (bgPicker)   bgPicker.value   = updatedNode.attrs.color    ?? "#0d0d0d";
+        if (textPicker) textPicker.value = updatedNode.attrs.textColor ?? "#f0f0f0";
+        return true;
+      };
+
+      return { dom, update };
     };
   },
 });
