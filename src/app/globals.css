@@ -7,10 +7,7 @@
   --foreground: #1a1a1a;
 }
 
-html.dark {
-  --background: #0f0f10;
-  --foreground: #ededed;
-}
+/* 화이트모드 고정 — 다크모드 없음 */
 
 html,
 body {
@@ -21,6 +18,7 @@ body {
 body {
   color: var(--foreground);
   background: var(--background);
+  transition: background-color 700ms ease, color 700ms ease;
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "맑은 고딕",
     "Apple SD Gothic Neo", "Noto Sans KR", Roboto, sans-serif;
@@ -122,27 +120,29 @@ mark.wn-hl-active {
   background: rgba(0, 0, 0, 0.05);
   font-weight: 600;
 }
-/* ===== 어두운 구간 블록 ===== */
-/* 에디터 전용 툴바 */
-.wn-darken-toolbar {
+/* ===== 효과 마커 블록 ===== */
+.wn-effect-node {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 10px;
+  padding: 5px 12px;
+  margin: 6px 0;
+  border-radius: 6px;
   font-size: 13px;
-  border-bottom: 1px dashed rgba(255,255,255,0.2);
   user-select: none;
+  border: 1px dashed;
+  cursor: grab;
 }
+.wn-effect-node--darken     { background: #1a1a2e; border-color: #4a4a6a; color: #c0c0e0; }
+.wn-effect-node--darken-end { background: #fff3e0; border-color: #fb8c00; color: #7d4e00; }
 
-/* 에디터 전용 컨텐츠 패딩 */
-.wn-darken-editor { border-radius: 8px; overflow: hidden; margin: 8px 0; }
-.wn-darken-content { padding: 10px 14px; min-height: 48px; }
-
-/* 리더 전용: 저장된 HTML의 .wn-darken-block */
-.wn-darken-block {
-  border-radius: 8px;
-  padding: 16px 20px;
-  margin: 12px 0;
+/* 리더에서 마커는 높이 0 (보이지 않음) */
+[data-wn-effect] {
+  display: block;
+  height: 0;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 .wn-content div[data-youtube-video] {

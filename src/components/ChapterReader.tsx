@@ -88,6 +88,65 @@ export default function ChapterReader({ html }: { html: string }) {
   );
 
 
+  // 화면 전체 어두워짐 효과 (darken-start/end 마커)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const startEls = Array.from(container.querySelectorAll<HTMLElement>('[data-wn-effect="darken-start"]'));
+    const endEls   = Array.from(container.querySelectorAll<HTMLElement>('[data-wn-effect="darken-end"]'));
+    if (!startEls.length) return;
+
+    let wasDark = false;
+    let rafId = 0;
+    const root = document.documentElement;
+
+    const onScroll = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const mid = window.innerHeight * 0.55;
+
+        let dark = false;
+        let bgColor = "#0d0d0d";
+        let textColor = "#f0f0f0";
+
+        for (let i = 0; i < startEls.length; i++) {
+          const s = startEls[i];
+          const e = endEls[i];
+          const pastStart = s.getBoundingClientRect().bottom < mid;
+          const pastEnd   = e ? e.getBoundingClientRect().bottom < mid : false;
+          if (pastStart && !pastEnd) {
+            dark = true;
+            bgColor   = s.dataset.wnColor     ?? "#0d0d0d";
+            textColor = s.dataset.wnTextColor  ?? "#f0f0f0";
+            break;
+          }
+        }
+
+        if (dark === wasDark) return;
+        wasDark = dark;
+
+        if (dark) {
+          root.style.setProperty("--background", bgColor);
+          root.style.setProperty("--foreground", textColor);
+        } else {
+          root.style.removeProperty("--background");
+          root.style.removeProperty("--foreground");
+        }
+      });
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(rafId);
+      root.style.removeProperty("--background");
+      root.style.removeProperty("--foreground");
+    };
+  }, [html]);
+
   // Ctrl/Cmd+F 가로채기
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
