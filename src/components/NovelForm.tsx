@@ -124,6 +124,10 @@ export default function NovelForm({ novelId, initial }: Props) {
 
       <div className="space-y-1">
         <label className="text-sm font-medium">커버 이미지</label>
+        <p className="text-xs text-gray-400">
+          권장 크기: <strong>300 × 400px</strong> (세로형 3:4 비율) · 최대 <strong>2MB</strong> · JPG/PNG/WebP
+          <br />업로드 시 자동으로 1920px 이하 / WebP 변환됩니다.
+        </p>
         <div className="flex items-center gap-3">
           <input type="file" accept="image/*" onChange={onCover} className="text-sm" />
           {coverImage && (
