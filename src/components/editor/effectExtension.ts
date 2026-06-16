@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Node, mergeAttributes } from "@tiptap/core";
 
 export const WnEffect = Node.create({
