@@ -156,7 +156,7 @@ export default function ChapterReader({ html }: { html: string }) {
       {/* 본문 */}
       <div
         ref={containerRef}
-        className="wn-content text-[17px] leading-8"
+        className="wn-content"
         dangerouslySetInnerHTML={{ __html: html }}
       />
     </div>

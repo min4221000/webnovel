@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getViewerAdult } from "@/lib/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,6 +48,10 @@ export async function GET(req: NextRequest) {
   const type = sp.get("type") || "unified";
   if (!q) return NextResponse.json({ type, results: [] });
 
+  // 성인 열람 OFF면 18+ 작품 제외
+  const adult = await getViewerAdult();
+  const adultFilter = adult ? {} : { isAdult: false };
+
   // ----- 글쓴이 검색 -----
   if (type === "author") {
     const authors = await prisma.user.findMany({
@@ -57,7 +62,7 @@ export async function GET(req: NextRequest) {
         username: true,
         avatarUrl: true,
         novels: {
-          where: { deletedAt: null },
+          where: { deletedAt: null, ...adultFilter },
           orderBy: { updatedAt: "desc" },
           take: 20,
           select: {
@@ -75,7 +80,7 @@ export async function GET(req: NextRequest) {
   // ----- 제목 검색 -----
   if (type === "title") {
     const novels = await prisma.novel.findMany({
-      where: { deletedAt: null, title: { contains: q, mode: "insensitive" } },
+      where: { deletedAt: null, ...adultFilter, title: { contains: q, mode: "insensitive" } },
       orderBy: { updatedAt: "desc" },
       take: 40,
       select: {
@@ -103,6 +108,7 @@ export async function GET(req: NextRequest) {
     prisma.novel.findMany({
       where: {
         deletedAt: null,
+        ...adultFilter,
         OR: [
           { title: { contains: q, mode: "insensitive" } },
           { description: { contains: q, mode: "insensitive" } },
@@ -123,7 +129,7 @@ export async function GET(req: NextRequest) {
       where: {
         deletedAt: null,
         content: { contains: q, mode: "insensitive" },
-        novel: { deletedAt: null },
+        novel: { deletedAt: null, ...adultFilter },
       },
       take: 40,
       orderBy: { createdAt: "desc" },

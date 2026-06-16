@@ -14,6 +14,20 @@ export async function getCurrentUser() {
 }
 
 /**
+ * 현재 열람자가 성인(18+) 콘텐츠를 볼 수 있는지.
+ * JWT는 토글 직후 값이 갱신 안 될 수 있어 DB에서 최신값을 읽는다.
+ */
+export async function getViewerAdult(): Promise<boolean> {
+  const user = await getCurrentUser();
+  if (!user) return false;
+  const db = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { adult: true },
+  });
+  return !!db?.adult;
+}
+
+/**
  * 로그인 필수 가드. 미로그인 시 throw.
  * JWT 전략이라 토큰의 banned는 로그인 시점 값 → DB에서 재확인해 차단을 즉시 반영.
  */

@@ -21,6 +21,7 @@ export default async function EditNovelPage({
       description: true,
       tags: true,
       coverImage: true,
+      isAdult: true,
       authorId: true,
     },
   });
@@ -35,6 +36,7 @@ export default async function EditNovelPage({
         description: novel.description ?? "",
         tags: novel.tags.join(", "),
         coverImage: novel.coverImage,
+        isAdult: novel.isAdult,
       }}
     />
   );

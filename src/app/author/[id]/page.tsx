@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getViewerAdult } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,7 @@ export default async function AuthorPage({
 }: {
   params: { id: string };
 }) {
+  const adult = await getViewerAdult();
   const author = await prisma.user.findUnique({
     where: { id: params.id },
     select: {
@@ -16,12 +18,13 @@ export default async function AuthorPage({
       username: true,
       avatarUrl: true,
       novels: {
-        where: { deletedAt: null },
+        where: { deletedAt: null, ...(adult ? {} : { isAdult: false }) },
         orderBy: { updatedAt: "desc" },
         select: {
           id: true,
           title: true,
           coverImage: true,
+          isAdult: true,
           _count: { select: { chapters: true } },
         },
       },
@@ -57,7 +60,10 @@ export default async function AuthorPage({
                   <div className="w-14 h-[72px] rounded bg-black/5 dark:bg-white/10 shrink-0" />
                 )}
                 <div className="min-w-0">
-                  <h2 className="font-semibold truncate">{n.title}</h2>
+                  <h2 className="font-semibold truncate">
+                    {n.isAdult && <span className="text-red-500 mr-1">[18+]</span>}
+                    {n.title}
+                  </h2>
                   <p className="text-xs text-gray-500">{n._count.chapters}화</p>
                 </div>
               </Link>

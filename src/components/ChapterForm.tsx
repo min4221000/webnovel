@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
 import Editor from "@/components/editor/Editor";
-import { MAX_CHARS } from "@/lib/constants";
+import { MAX_CHARS, MAX_IMAGES_PER_CHAPTER } from "@/lib/constants";
 
 type Props = {
   novelId: string;
@@ -32,20 +32,16 @@ export default function ChapterForm({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [draftInfo, setDraftInfo] = useState<{ title: string; content: string } | null>(null);
 
-  // 드래프트 복구 (마운트 1회)
+  // 드래프트 존재 확인 (마운트 1회) — 자동 덮어쓰기 대신 배너로 안내
   useEffect(() => {
     try {
       const raw = localStorage.getItem(draftKey);
       if (raw) {
         const d = JSON.parse(raw) as { title?: string; content?: string };
         if ((d.content && d.content.length > 10) || d.title) {
-          if (confirm("임시저장된 글이 있습니다. 불러올까요?")) {
-            setTitle(d.title ?? "");
-            setContent(d.content ?? "");
-          } else {
-            localStorage.removeItem(draftKey);
-          }
+          setDraftInfo({ title: d.title ?? "", content: d.content ?? "" });
         }
       }
     } catch {
@@ -54,6 +50,18 @@ export default function ChapterForm({
     setReady(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const loadDraft = () => {
+    if (!draftInfo) return;
+    setTitle(draftInfo.title);
+    setContent(draftInfo.content);
+    setDraftInfo(null);
+  };
+
+  const discardDraft = () => {
+    localStorage.removeItem(draftKey);
+    setDraftInfo(null);
+  };
 
   // 30초마다 자동 임시저장
   useEffect(() => {
@@ -113,6 +121,22 @@ export default function ChapterForm({
         {savedAt && <span className="text-xs text-gray-400">임시저장됨 {savedAt}</span>}
       </div>
 
+      {/* 임시저장 불러오기 배너 (이 브라우저에만 저장됨 — 나만 보임) */}
+      {draftInfo && (
+        <div className="flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-3 py-2 text-sm">
+          <span className="flex-1">
+            💾 임시저장된 글이 있습니다.{" "}
+            {draftInfo.title && <strong>“{draftInfo.title}”</strong>}
+          </span>
+          <button onClick={loadDraft} className="px-2 py-1 rounded bg-indigo-600 text-white text-xs">
+            불러오기
+          </button>
+          <button onClick={discardDraft} className="px-2 py-1 rounded border text-xs text-gray-500">
+            버리기
+          </button>
+        </div>
+      )}
+
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -143,7 +167,7 @@ export default function ChapterForm({
           임시저장
         </button>
         <span className="ml-auto self-center text-xs text-gray-400">
-          최대 {MAX_CHARS.toLocaleString()}자 · 이미지 3장
+          최대 {MAX_CHARS.toLocaleString()}자 · 이미지 {MAX_IMAGES_PER_CHAPTER}장 · 임시저장은 이 브라우저에만(나만 보임)
         </span>
       </div>
     </div>

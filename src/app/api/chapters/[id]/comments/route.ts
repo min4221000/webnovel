@@ -40,8 +40,8 @@ export async function POST(
     return authErrorResponse(e);
   }
 
-  if (!(await rateLimit(`comment:${user.id}`, 1, 10))) {
-    return new NextResponse("댓글은 10초에 한 번만 작성할 수 있습니다.", { status: 429 });
+  if (!(await rateLimit(`comment:${user.id}`, 5, 10))) {
+    return new NextResponse("댓글이 너무 잦습니다. 잠시 후 다시 시도하세요.", { status: 429 });
   }
 
   const chapter = await prisma.chapter.findFirst({

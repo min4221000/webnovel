@@ -6,6 +6,7 @@ declare module "next-auth" {
       id: string;
       role: "USER" | "ADMIN";
       banned: boolean;
+      adult: boolean;
     } & DefaultSession["user"];
   }
 }
@@ -15,5 +16,6 @@ declare module "next-auth/jwt" {
     uid?: string;
     role?: "USER" | "ADMIN";
     banned?: boolean;
+    adult?: boolean;
   }
 }

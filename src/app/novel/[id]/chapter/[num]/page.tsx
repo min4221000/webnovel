@@ -5,7 +5,7 @@ import Comments from "@/components/Comments";
 import ReportButton from "@/components/ReportButton";
 import ChapterReader from "@/components/ChapterReader";
 import DeleteButton from "@/components/DeleteButton";
-import { getCurrentUser } from "@/lib/session";
+import { getCurrentUser, getViewerAdult } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -20,11 +20,30 @@ export default async function ChapterPage({
   const user = await getCurrentUser();
   const novel = await prisma.novel.findFirst({
     where: { id: params.id, deletedAt: null },
-    select: { id: true, title: true, authorId: true },
+    select: { id: true, title: true, authorId: true, isAdult: true },
   });
   if (!novel) notFound();
 
   const isOwner = !!user && (user.id === novel.authorId || user.role === "ADMIN");
+
+  // 18+ 작품은 성인 열람 ON 인 본인/관리자만
+  if (novel.isAdult && !isOwner) {
+    const adult = await getViewerAdult();
+    if (!adult) {
+      return (
+        <div className="max-w-xl mx-auto text-center py-16 space-y-4">
+          <p className="text-5xl">🔞</p>
+          <h1 className="text-xl font-bold">성인(18+) 작품입니다</h1>
+          <p className="text-sm text-gray-500">
+            이 작품을 보려면 만 19세 이상 성인 열람 설정이 필요합니다.
+          </p>
+          <Link href="/adult" className="inline-block px-4 py-2 rounded-md bg-red-600 text-white text-sm">
+            18+ 설정하러 가기
+          </Link>
+        </div>
+      );
+    }
+  }
 
   const chapter = await prisma.chapter.findFirst({
     where: { novelId: params.id, chapterNum, deletedAt: null },

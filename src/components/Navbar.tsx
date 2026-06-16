@@ -20,6 +20,9 @@ export default function Navbar() {
         <Link href="/rules" className="text-sm text-gray-500 hover:underline">
           이용규정
         </Link>
+        <Link href="/adult" className="text-sm text-gray-500 hover:underline">
+          🔞
+        </Link>
 
         <div className="ml-auto flex items-center gap-3">
           {status === "loading" ? null : user ? (

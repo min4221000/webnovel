@@ -21,8 +21,8 @@ export async function POST(
     return authErrorResponse(e);
   }
 
-  if (!(await rateLimit(`chapter:${user.id}`, 1, 60))) {
-    return new NextResponse("회차 작성은 1분에 한 번만 가능합니다.", { status: 429 });
+  if (!(await rateLimit(`chapter:${user.id}`, 30, 60))) {
+    return new NextResponse("회차 작성이 너무 잦습니다. 잠시 후 다시 시도하세요.", { status: 429 });
   }
 
   const novel = await prisma.novel.findUnique({

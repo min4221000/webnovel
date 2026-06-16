@@ -51,6 +51,7 @@ export const authOptions: NextAuthOptions = {
         token.uid = user.id;
         token.role = user.role;
         token.banned = user.banned;
+        token.adult = user.adult;
       }
       return token;
     },
@@ -59,6 +60,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = (token.uid as string) ?? "";
         session.user.role = (token.role as "USER" | "ADMIN") ?? "USER";
         session.user.banned = (token.banned as boolean) ?? false;
+        session.user.adult = (token.adult as boolean) ?? false;
       }
       return session;
     },

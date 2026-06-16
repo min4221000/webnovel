@@ -12,6 +12,7 @@ type Props = {
     description: string;
     tags: string;
     coverImage: string | null;
+    isAdult?: boolean;
   };
 };
 
@@ -24,6 +25,7 @@ export default function NovelForm({ novelId, initial }: Props) {
   const [description, setDescription] = useState(initial?.description ?? "");
   const [tags, setTags] = useState(initial?.tags ?? "");
   const [coverImage, setCoverImage] = useState<string | null>(initial?.coverImage ?? null);
+  const [isAdult, setIsAdult] = useState<boolean>(initial?.isAdult ?? false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -66,6 +68,7 @@ export default function NovelForm({ novelId, initial }: Props) {
           title,
           description,
           coverImage,
+          isAdult,
           tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
         }),
       });
@@ -134,6 +137,19 @@ export default function NovelForm({ novelId, initial }: Props) {
           )}
         </div>
       </div>
+
+      <label className="flex items-center gap-2 text-sm cursor-pointer">
+        <input
+          type="checkbox"
+          checked={isAdult}
+          onChange={(e) => setIsAdult(e.target.checked)}
+          className="w-4 h-4"
+        />
+        <span>
+          <strong className="text-red-500">성인(18+) 작품</strong> — 18+ 열람을 켠
+          이용자에게만 노출됩니다.
+        </span>
+      </label>
 
       {err && <p className="text-sm text-red-500">{err}</p>}
 

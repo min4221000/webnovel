@@ -51,13 +51,18 @@ mark.wn-hl-active {
   color: #1a1a1a;
 }
 
-/* ===== 에디터/본문 렌더 공통 스타일 (Tailwind preflight 보정) ===== */
+/* ===== 에디터/본문 렌더 공통 스타일 (Tailwind preflight 보정) =====
+   글쓰기/읽기 상태가 동일한 폰트크기·줄높이·들여쓰기를 공유해
+   자동 줄바꿈 위치가 비슷하게 유지되도록 한 곳에서 통제 */
 .wn-content {
-  line-height: 1.8;
+  font-size: 17px;
+  line-height: 1.9;
   word-break: break-word;
+  padding-left: 0.9rem;
+  padding-right: 0.9rem;
 }
 .wn-content p {
-  margin: 0.4em 0;
+  margin: 0.5em 0;
 }
 .wn-content h1 {
   font-size: 1.7em;

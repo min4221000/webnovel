@@ -20,6 +20,7 @@ model User {
   role      Role      @default(USER)
   banned    Boolean   @default(false)
   banReason String?
+  adult     Boolean   @default(false) // 만 19세+ 자가인증(성인 작품 열람 동의)
   createdAt DateTime  @default(now())
   novels    Novel[]
   comments  Comment[]
@@ -35,6 +36,7 @@ model Novel {
   authorId     String
   author       User                     @relation(fields: [authorId], references: [id])
   tags         String[]
+  isAdult      Boolean                  @default(false) // 18+ 성인 작품
   deletedAt    DateTime?
   createdAt    DateTime                 @default(now())
   updatedAt    DateTime                 @updatedAt

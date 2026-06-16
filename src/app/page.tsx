@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { getViewerAdult } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
+  const adult = await getViewerAdult();
   const novels = await prisma.novel.findMany({
-    where: { deletedAt: null },
+    where: { deletedAt: null, ...(adult ? {} : { isAdult: false }) },
     orderBy: { updatedAt: "desc" },
     take: 30,
     select: {
@@ -14,6 +16,7 @@ export default async function Home() {
       description: true,
       coverImage: true,
       tags: true,
+      isAdult: true,
       author: { select: { id: true, username: true } },
       _count: { select: { chapters: true } },
     },
@@ -26,6 +29,10 @@ export default async function Home() {
         잡담·홍보·분쟁성 글은 제재 대상입니다.{" "}
         <Link href="/rules" className="underline font-medium">
           이용규정 보기
+        </Link>{" "}
+        ·{" "}
+        <Link href="/adult" className="underline font-medium">
+          {adult ? "🔞 18+ 열람 ON" : "🔞 18+ 설정"}
         </Link>
       </div>
 
@@ -58,7 +65,10 @@ export default async function Home() {
                     <div className="w-16 h-20 rounded bg-black/5 dark:bg-white/10 shrink-0" />
                   )}
                   <div className="min-w-0">
-                    <h2 className="font-semibold truncate">{n.title}</h2>
+                    <h2 className="font-semibold truncate">
+                      {n.isAdult && <span className="text-red-500 mr-1">[18+]</span>}
+                      {n.title}
+                    </h2>
                     <p className="text-xs text-gray-500 truncate">
                       {n.author.username} · {n._count.chapters}화
                     </p>
