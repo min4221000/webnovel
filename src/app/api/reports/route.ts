@@ -52,5 +52,55 @@ export async function POST(req: NextRequest) {
     data: { reporterId: user.id, targetType, targetId, reason },
   });
 
+  // 신고 누적 자동 처리
+  const count = await prisma.report.count({
+    where: { targetType, targetId, status: "pending" },
+  });
+
+  if (count >= 3) {
+    // 3건 이상 → 글/댓글 숨김 (soft delete)
+    if (targetType === "chapter") {
+      await prisma.chapter.update({
+        where: { id: targetId },
+        data: { deletedAt: new Date() },
+      });
+    } else {
+      await prisma.comment.update({
+        where: { id: targetId },
+        data: { deletedAt: new Date() },
+      });
+    }
+  }
+
+  if (count >= 5) {
+    // 5건 이상 → 작성자 임시 차단
+    let authorId: string | null = null;
+    if (targetType === "chapter") {
+      const ch = await prisma.chapter.findUnique({
+        where: { id: targetId },
+        select: { novel: { select: { authorId: true } } },
+      });
+      authorId = ch?.novel.authorId ?? null;
+    } else {
+      const cm = await prisma.comment.findUnique({
+        where: { id: targetId },
+        select: { authorId: true },
+      });
+      authorId = cm?.authorId ?? null;
+    }
+    if (authorId) {
+      const u = await prisma.user.findUnique({
+        where: { id: authorId },
+        select: { role: true },
+      });
+      if (u && u.role !== "ADMIN") {
+        await prisma.user.update({
+          where: { id: authorId },
+          data: { banned: true, banReason: `신고 ${count}건 누적 자동 차단` },
+        });
+      }
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }

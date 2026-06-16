@@ -373,8 +373,8 @@ export default function Editor({ content = "", onChange }: Props) {
         </div>
       )}
 
-      {/* 본문 (좌우 패딩은 .wn-content 가 담당 → 읽기 화면과 줄바꿈 일치) */}
-      <div className="py-2">
+      {/* 본문 — 고정 높이 + 내부 스크롤 */}
+      <div className="py-2 max-h-[60vh] overflow-y-auto">
         <EditorContent editor={editor} />
       </div>
 

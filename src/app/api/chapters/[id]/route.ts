@@ -28,11 +28,21 @@ export async function PATCH(
   }
 
   const ch = await loadChapterOwner(params.id);
-  if (!ch || ch.deletedAt) return authErrorResponse(new Error("NOT_FOUND"));
+  if (!ch) return authErrorResponse(new Error("NOT_FOUND"));
+
+  const body = await req.json().catch(() => null);
+
+  // 재게시 (ADMIN)
+  if (body?.restore === true) {
+    if (user.role !== "ADMIN") return authErrorResponse(new Error("FORBIDDEN"));
+    await prisma.chapter.update({ where: { id: params.id }, data: { deletedAt: null } });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (ch.deletedAt) return authErrorResponse(new Error("NOT_FOUND"));
   if (ch.novel.authorId !== user.id && user.role !== "ADMIN")
     return authErrorResponse(new Error("FORBIDDEN"));
 
-  const body = await req.json().catch(() => null);
   const title = (body?.title ?? "").toString().trim();
   const content = sanitizeContent((body?.content ?? "").toString());
   const charCount = countText(content);

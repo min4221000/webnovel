@@ -1,8 +1,8 @@
 // 공유 상수 (서버/클라 공용 — node 전용 import 금지)
 
 export const MAX_CHARS = 100_000;
-export const MAX_IMAGES_PER_CHAPTER = 2;
-export const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB 원본 한도
+export const MAX_IMAGES_PER_CHAPTER = 1;
+export const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2MB (QHD급)
 export const DAILY_UPLOAD_LIMIT = 30;
 
 export const ALLOWED_IMAGE_MIME = [

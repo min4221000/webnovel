@@ -6,6 +6,20 @@ import { authErrorResponse } from "@/lib/apiError";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// 댓글 재게시 (ADMIN)
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { id: string } },
+) {
+  let user;
+  try { user = await requireUser(); } catch (e) { return authErrorResponse(e); }
+  if (user.role !== "ADMIN") return authErrorResponse(new Error("FORBIDDEN"));
+  const body = await req.json().catch(() => null);
+  if (body?.restore !== true) return new NextResponse("잘못된 요청", { status: 400 });
+  await prisma.comment.update({ where: { id: params.id }, data: { deletedAt: null } });
+  return NextResponse.json({ ok: true });
+}
+
 // 댓글 소프트 삭제 (본인 또는 ADMIN)
 export async function DELETE(
   _req: NextRequest,

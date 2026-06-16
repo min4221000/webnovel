@@ -71,6 +71,16 @@ export async function GET(req: NextRequest) {
   const chapterMap = new Map(chapters.map((c) => [c.id, c]));
   const commentMap = new Map(comments.map((c) => [c.id, c]));
 
+  // 각 대상의 신고 건수
+  const allTargetIds = reports.map((r) => `${r.targetType}:${r.targetId}`);
+  const uniqueTargets = Array.from(new Set(allTargetIds));
+  const countMap = new Map<string, number>();
+  for (const key of uniqueTargets) {
+    const [tt, tid] = key.split(":");
+    const c = await prisma.report.count({ where: { targetType: tt, targetId: tid, status: "pending" } });
+    countMap.set(key, c);
+  }
+
   const enriched = reports.map((r) => {
     if (r.targetType === "chapter") {
       const c = chapterMap.get(r.targetId);
@@ -102,5 +112,10 @@ export async function GET(req: NextRequest) {
     };
   });
 
-  return NextResponse.json({ reports: enriched });
+  const withCounts = enriched.map((r) => ({
+    ...r,
+    reportCount: countMap.get(`${r.targetType}:${r.targetId}`) ?? 0,
+  }));
+
+  return NextResponse.json({ reports: withCounts });
 }

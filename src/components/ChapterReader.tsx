@@ -150,8 +150,10 @@ export default function ChapterReader({ html }: { html: string }) {
           const sem = SEMANTIC_TAGS[el.tagName];
           if (value === "__semantic__" && sem) {
             (el.style as any)[sem.prop] = sem.reset;
+          } else if (prop === "backgroundColor") {
+            (el.style as any)[prop] = "transparent";
           } else {
-            (el.style as any)[prop] = "";
+            (el.style as any)[prop] = "inherit";
           }
         }
       }));

@@ -18,17 +18,37 @@ type Report = {
     deleted: boolean;
     offender: { id: string; username: string } | null;
   };
+  reportCount?: number;
 };
 
 type StatusFilter = "pending" | "resolved" | "rejected";
+type Tab = "reports" | "users";
+
+type UserInfo = {
+  id: string;
+  username: string;
+  nickname: string | null;
+  discordId: string;
+  banned: boolean;
+  banReason: string | null;
+  role: string;
+  createdAt: string;
+  _count: { novels: number; comments: number };
+};
 
 export default function AdminDashboard() {
+  const [tab, setTab] = useState<Tab>("reports");
   const [status, setStatus] = useState<StatusFilter>("pending");
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  // 유저 탭
+  const [users, setUsers] = useState<UserInfo[]>([]);
+  const [userSearch, setUserSearch] = useState("");
+  const [userLoading, setUserLoading] = useState(false);
+
+  const loadReports = useCallback(async () => {
     setLoading(true);
     const res = await fetch(`/api/admin/reports?status=${status}`);
     if (res.ok) {
@@ -39,8 +59,22 @@ export default function AdminDashboard() {
   }, [status]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (tab === "reports") loadReports();
+  }, [loadReports, tab]);
+
+  const loadUsers = async (q?: string) => {
+    setUserLoading(true);
+    const res = await fetch(`/api/admin/users?q=${encodeURIComponent(q || "")}`);
+    if (res.ok) {
+      const d = await res.json();
+      setUsers(d.users);
+    }
+    setUserLoading(false);
+  };
+
+  useEffect(() => {
+    if (tab === "users") loadUsers();
+  }, [tab]);
 
   const setReportStatus = async (id: string, s: StatusFilter) => {
     setBusy(id);
@@ -50,11 +84,11 @@ export default function AdminDashboard() {
       body: JSON.stringify({ status: s }),
     });
     setBusy(null);
-    load();
+    loadReports();
   };
 
   const deleteTarget = async (r: Report) => {
-    if (!confirm("이 콘텐츠를 삭제할까요? (소프트 삭제)")) return;
+    if (!confirm("이 콘텐츠를 삭제(숨김)할까요?")) return;
     setBusy(r.id);
     const url =
       r.targetType === "chapter"
@@ -62,38 +96,56 @@ export default function AdminDashboard() {
         : `/api/comments/${r.targetId}`;
     const res = await fetch(url, { method: "DELETE" });
     if (res.ok) {
-      await fetch(`/api/admin/reports/${r.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "resolved" }),
-      });
-      load();
+      await setReportStatus(r.id, "resolved");
     } else {
       alert(await res.text());
       setBusy(null);
     }
   };
 
-  const banUser = async (r: Report) => {
-    if (!r.target.offender) return;
-    const reason = window.prompt(
-      `${r.target.offender.username} 님을 차단합니다. 사유:`,
-      r.reason,
-    );
-    if (reason === null) return;
+  const restoreTarget = async (r: Report) => {
+    if (!confirm("이 콘텐츠를 재게시할까요?")) return;
     setBusy(r.id);
-    const res = await fetch(`/api/admin/users/${r.target.offender.id}/ban`, {
-      method: "POST",
+    const url =
+      r.targetType === "chapter"
+        ? `/api/chapters/${r.targetId}`
+        : `/api/comments/${r.targetId}`;
+    const res = await fetch(url, {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ banned: true, banReason: reason }),
+      body: JSON.stringify({ restore: true }),
     });
     setBusy(null);
+    if (res.ok) loadReports();
+    else alert(await res.text());
+  };
+
+  const banUser = async (userId: string, username: string, reason?: string) => {
+    const r = reason ?? window.prompt(`${username} 차단 사유:`, "");
+    if (r === null) return;
+    const res = await fetch(`/api/admin/users/${userId}/ban`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ banned: true, banReason: r }),
+    });
     if (res.ok) {
-      alert("차단되었습니다.");
-      load();
-    } else {
-      alert(await res.text());
-    }
+      alert("차단됨");
+      if (tab === "users") loadUsers(userSearch);
+      else loadReports();
+    } else alert(await res.text());
+  };
+
+  const unbanUser = async (userId: string) => {
+    const res = await fetch(`/api/admin/users/${userId}/ban`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ banned: false }),
+    });
+    if (res.ok) {
+      alert("차단 해제됨");
+      if (tab === "users") loadUsers(userSearch);
+      else loadReports();
+    } else alert(await res.text());
   };
 
   const FILTERS: { key: StatusFilter; label: string }[] = [
@@ -104,96 +156,204 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">관리자 — 신고 처리</h1>
+      <h1 className="text-2xl font-bold">관리자</h1>
 
-      <div className="flex gap-1 border-b border-black/10 dark:border-white/10">
-        {FILTERS.map((f) => (
-          <button
-            key={f.key}
-            onClick={() => setStatus(f.key)}
-            className={`px-3 py-2 text-sm -mb-px border-b-2 ${
-              status === f.key
-                ? "border-indigo-600 font-semibold"
-                : "border-transparent text-gray-500"
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
+      {/* 메인 탭 */}
+      <div className="flex gap-2 border-b border-black/10">
+        <button
+          onClick={() => setTab("reports")}
+          className={`px-4 py-2 text-sm -mb-px border-b-2 ${tab === "reports" ? "border-indigo-600 font-semibold" : "border-transparent text-gray-500"}`}
+        >
+          신고 관리
+        </button>
+        <button
+          onClick={() => setTab("users")}
+          className={`px-4 py-2 text-sm -mb-px border-b-2 ${tab === "users" ? "border-indigo-600 font-semibold" : "border-transparent text-gray-500"}`}
+        >
+          유저 관리
+        </button>
       </div>
 
-      {loading ? (
-        <p className="text-sm text-gray-400">불러오는 중…</p>
-      ) : reports.length === 0 ? (
-        <p className="text-sm text-gray-400">해당 상태의 신고가 없습니다.</p>
-      ) : (
-        <ul className="space-y-3">
-          {reports.map((r) => (
-            <li key={r.id} className="border rounded-lg p-3 space-y-2">
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <span className="px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10">
-                  {r.targetType === "chapter" ? "글" : "댓글"}
-                </span>
-                <span>신고자 {r.reporter.username}</span>
-                <span>·</span>
-                <span>{new Date(r.createdAt).toLocaleString()}</span>
-                {r.target.deleted && <span className="text-red-500">(이미 삭제됨)</span>}
-              </div>
+      {/* ─── 신고 탭 ─── */}
+      {tab === "reports" && (
+        <>
+          <div className="flex gap-1 border-b border-black/10">
+            {FILTERS.map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setStatus(f.key)}
+                className={`px-3 py-2 text-sm -mb-px border-b-2 ${
+                  status === f.key ? "border-indigo-600 font-semibold" : "border-transparent text-gray-500"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
 
-              <div className="text-sm">
-                <p className="text-gray-700 dark:text-gray-200">
-                  대상:{" "}
-                  {r.target.link ? (
-                    <Link href={r.target.link} className="underline" target="_blank">
-                      {r.target.preview}
-                    </Link>
-                  ) : (
-                    r.target.preview
+          {loading ? (
+            <p className="text-sm text-gray-400">불러오는 중…</p>
+          ) : reports.length === 0 ? (
+            <p className="text-sm text-gray-400">해당 상태의 신고가 없습니다.</p>
+          ) : (
+            <ul className="space-y-3">
+              {reports.map((r) => (
+                <li key={r.id} className="border rounded-lg p-3 space-y-2">
+                  <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
+                    <span className="px-1.5 py-0.5 rounded bg-black/5">
+                      {r.targetType === "chapter" ? "글" : "댓글"}
+                    </span>
+                    <span>신고자: <strong>{r.reporter.username}</strong></span>
+                    <span>·</span>
+                    <span>{new Date(r.createdAt).toLocaleString()}</span>
+                    {r.target.deleted && <span className="text-red-500">(숨김/삭제됨)</span>}
+                    {r.reportCount && r.reportCount >= 3 && (
+                      <span className="text-orange-600 font-semibold">⚠ 신고 {r.reportCount}건</span>
+                    )}
+                  </div>
+
+                  <div className="text-sm">
+                    <p>
+                      대상:{" "}
+                      {r.target.link ? (
+                        <Link href={r.target.link} className="underline" target="_blank">
+                          {r.target.preview}
+                        </Link>
+                      ) : (
+                        r.target.preview
+                      )}
+                    </p>
+                    <p className="text-red-600 mt-1">사유: {r.reason}</p>
+                    {r.target.offender && (
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        작성자: {r.target.offender.username}
+                      </p>
+                    )}
+                  </div>
+
+                  {r.status === "pending" && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <button
+                        disabled={busy === r.id || r.target.deleted}
+                        onClick={() => deleteTarget(r)}
+                        className="text-sm px-3 py-1 rounded-md bg-red-600 text-white disabled:opacity-40"
+                      >
+                        숨김 처리
+                      </button>
+                      {r.target.deleted && (
+                        <button
+                          disabled={busy === r.id}
+                          onClick={() => restoreTarget(r)}
+                          className="text-sm px-3 py-1 rounded-md bg-green-600 text-white disabled:opacity-40"
+                        >
+                          재게시
+                        </button>
+                      )}
+                      {r.target.offender && (
+                        <button
+                          disabled={busy === r.id}
+                          onClick={() => banUser(r.target.offender!.id, r.target.offender!.username, r.reason)}
+                          className="text-sm px-3 py-1 rounded-md bg-orange-600 text-white disabled:opacity-40"
+                        >
+                          작성자 차단
+                        </button>
+                      )}
+                      <button
+                        disabled={busy === r.id}
+                        onClick={() => setReportStatus(r.id, "resolved")}
+                        className="text-sm px-3 py-1 rounded-md border"
+                      >
+                        처리 완료
+                      </button>
+                      <button
+                        disabled={busy === r.id}
+                        onClick={() => setReportStatus(r.id, "rejected")}
+                        className="text-sm px-3 py-1 rounded-md border text-gray-500"
+                      >
+                        반려
+                      </button>
+                    </div>
                   )}
-                </p>
-                <p className="text-red-600 dark:text-red-400 mt-1">사유: {r.reason}</p>
-                {r.target.offender && (
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    작성자: {r.target.offender.username}
-                  </p>
-                )}
-              </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
 
-              {r.status === "pending" && (
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <button
-                    disabled={busy === r.id || r.target.deleted}
-                    onClick={() => deleteTarget(r)}
-                    className="text-sm px-3 py-1 rounded-md bg-red-600 text-white disabled:opacity-40"
-                  >
-                    콘텐츠 삭제
-                  </button>
-                  <button
-                    disabled={busy === r.id || !r.target.offender}
-                    onClick={() => banUser(r)}
-                    className="text-sm px-3 py-1 rounded-md bg-orange-600 text-white disabled:opacity-40"
-                  >
-                    작성자 차단
-                  </button>
-                  <button
-                    disabled={busy === r.id}
-                    onClick={() => setReportStatus(r.id, "resolved")}
-                    className="text-sm px-3 py-1 rounded-md border"
-                  >
-                    처리 완료
-                  </button>
-                  <button
-                    disabled={busy === r.id}
-                    onClick={() => setReportStatus(r.id, "rejected")}
-                    className="text-sm px-3 py-1 rounded-md border text-gray-500"
-                  >
-                    반려
-                  </button>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
+      {/* ─── 유저 탭 ─── */}
+      {tab === "users" && (
+        <>
+          <div className="flex gap-2 items-center">
+            <input
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && loadUsers(userSearch)}
+              placeholder="유저명 검색"
+              className="flex-1 border rounded px-3 py-2 text-sm"
+            />
+            <button
+              onClick={() => loadUsers(userSearch)}
+              className="px-3 py-2 text-sm bg-indigo-600 text-white rounded"
+            >
+              검색
+            </button>
+          </div>
+
+          {userLoading ? (
+            <p className="text-sm text-gray-400">불러오는 중…</p>
+          ) : users.length === 0 ? (
+            <p className="text-sm text-gray-400">유저가 없습니다.</p>
+          ) : (
+            <ul className="space-y-2">
+              {users.map((u) => (
+                <li key={u.id} className="border rounded-lg p-3 flex items-start gap-3">
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">{u.nickname ?? u.username}</span>
+                      {u.nickname && (
+                        <span className="text-xs text-gray-400">({u.username})</span>
+                      )}
+                      {u.role === "ADMIN" && (
+                        <span className="text-xs bg-red-100 text-red-600 px-1.5 rounded">관리자</span>
+                      )}
+                      {u.banned && (
+                        <span className="text-xs bg-orange-100 text-orange-700 px-1.5 rounded">차단됨</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      가입: {new Date(u.createdAt).toLocaleDateString()} · 소설 {u._count.novels}편 · 댓글 {u._count.comments}개
+                    </p>
+                    {u.banned && u.banReason && (
+                      <p className="text-xs text-red-500">차단 사유: {u.banReason}</p>
+                    )}
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    {u.role !== "ADMIN" && (
+                      <>
+                        {u.banned ? (
+                          <button
+                            onClick={() => unbanUser(u.id)}
+                            className="text-xs px-2 py-1 rounded bg-green-600 text-white"
+                          >
+                            차단 해제
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => banUser(u.id, u.nickname ?? u.username)}
+                            className="text-xs px-2 py-1 rounded bg-orange-600 text-white"
+                          >
+                            차단
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </div>
   );
