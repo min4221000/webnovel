@@ -97,7 +97,35 @@ export default function ChapterReader({ html }: { html: string }) {
     const endEls   = Array.from(container.querySelectorAll<HTMLElement>('[data-wn-effect="darken-end"]'));
     if (!startEls.length) return;
 
+    // start~end 사이의 색 지정된 요소 수집 (hideStyles="true" 인 쌍만)
+    type StyledInfo = { el: HTMLElement; origColor: string };
+    const styledMap: StyledInfo[][] = [];
+    for (let i = 0; i < startEls.length; i++) {
+      const s = startEls[i];
+      const e = endEls[i];
+      const hide = s.dataset.wnHideStyles !== "false";
+      const list: StyledInfo[] = [];
+      if (hide && e) {
+        let node: Element | null = s.nextElementSibling;
+        while (node && node !== e) {
+          const styled = node.querySelectorAll<HTMLElement>("[style]");
+          styled.forEach((el) => {
+            if (el.style.color) list.push({ el, origColor: el.style.color });
+          });
+          if ((node as HTMLElement).style?.color) {
+            list.push({ el: node as HTMLElement, origColor: (node as HTMLElement).style.color });
+          }
+          node = node.nextElementSibling;
+        }
+      }
+      styledMap.push(list);
+    }
+
+    // 초기 상태: 숨김
+    styledMap.forEach((list) => list.forEach(({ el }) => { el.style.color = ""; }));
+
     let wasDark = false;
+    let activeIdx = -1;
     let rafId = 0;
     const root = document.documentElement;
 
@@ -107,6 +135,7 @@ export default function ChapterReader({ html }: { html: string }) {
         const mid = window.innerHeight * 0.55;
 
         let dark = false;
+        let newIdx = -1;
         let bgColor = "#0d0d0d";
         let textColor = "#f0f0f0";
 
@@ -117,21 +146,33 @@ export default function ChapterReader({ html }: { html: string }) {
           const pastEnd   = e ? e.getBoundingClientRect().bottom < mid : false;
           if (pastStart && !pastEnd) {
             dark = true;
+            newIdx    = i;
             bgColor   = s.dataset.wnColor     ?? "#0d0d0d";
             textColor = s.dataset.wnTextColor  ?? "#f0f0f0";
             break;
           }
         }
 
-        if (dark === wasDark) return;
+        if (dark === wasDark && newIdx === activeIdx) return;
+
+        // 이전 구간 색 숨김
+        if (activeIdx >= 0 && activeIdx !== newIdx) {
+          styledMap[activeIdx]?.forEach(({ el }) => { el.style.color = ""; });
+        }
+
         wasDark = dark;
+        activeIdx = newIdx;
 
         if (dark) {
           root.style.setProperty("--background", bgColor);
           root.style.setProperty("--foreground", textColor);
+          // 커스텀 색 복원
+          styledMap[newIdx]?.forEach(({ el, origColor }) => { el.style.color = origColor; });
         } else {
           root.style.removeProperty("--background");
           root.style.removeProperty("--foreground");
+          // 모든 커스텀 색 숨김
+          styledMap.forEach((list) => list.forEach(({ el }) => { el.style.color = ""; }));
         }
       });
     };
@@ -144,6 +185,7 @@ export default function ChapterReader({ html }: { html: string }) {
       cancelAnimationFrame(rafId);
       root.style.removeProperty("--background");
       root.style.removeProperty("--foreground");
+      styledMap.forEach((list) => list.forEach(({ el, origColor }) => { el.style.color = origColor; }));
     };
   }, [html]);
 
