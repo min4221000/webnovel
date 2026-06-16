@@ -57,12 +57,31 @@ export async function POST(
       { status: 400 },
     );
 
-  const last = await prisma.chapter.findFirst({
-    where: { novelId: params.id },
-    orderBy: { chapterNum: "desc" },
-    select: { chapterNum: true },
-  });
-  const chapterNum = (last?.chapterNum ?? 0) + 1;
+  // 회차 번호: 직접 지정 or 자동
+  const requestedNum = body?.chapterNum ? Number(body.chapterNum) : null;
+  let chapterNum: number;
+
+  if (requestedNum && Number.isInteger(requestedNum) && requestedNum > 0) {
+    const dup = await prisma.chapter.findFirst({
+      where: { novelId: params.id, chapterNum: requestedNum },
+      select: { id: true, deletedAt: true },
+    });
+    if (dup && !dup.deletedAt) {
+      return new NextResponse(`${requestedNum}화는 이미 존재합니다. 다른 번호를 입력하세요.`, { status: 409 });
+    }
+    if (dup && dup.deletedAt) {
+      // 삭제된 회차 번호 재사용: 기존 삭제 레코드 제거
+      await prisma.chapter.delete({ where: { id: dup.id } });
+    }
+    chapterNum = requestedNum;
+  } else {
+    const last = await prisma.chapter.findFirst({
+      where: { novelId: params.id },
+      orderBy: { chapterNum: "desc" },
+      select: { chapterNum: true },
+    });
+    chapterNum = (last?.chapterNum ?? 0) + 1;
+  }
 
   const chapter = await prisma.chapter.create({
     data: {

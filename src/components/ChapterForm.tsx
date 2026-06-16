@@ -29,6 +29,7 @@ export default function ChapterForm({
   const [ready, setReady] = useState(false);
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
+  const [customNum, setCustomNum] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -97,7 +98,7 @@ export default function ChapterForm({
       const res = await fetch(url, {
         method: editing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, content }),
+        body: JSON.stringify({ title, content, ...(customNum ? { chapterNum: Number(customNum) } : {}) }),
       });
       if (!res.ok) throw new Error(await res.text());
       localStorage.removeItem(draftKey);
@@ -134,6 +135,20 @@ export default function ChapterForm({
           <button onClick={discardDraft} className="px-2 py-1 rounded border text-xs text-gray-500">
             버리기
           </button>
+        </div>
+      )}
+
+      {!editing && (
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            min={1}
+            value={customNum}
+            onChange={(e) => setCustomNum(e.target.value.replace(/\D/g, ""))}
+            className="w-24 border rounded-md px-3 py-2 bg-transparent text-sm"
+            placeholder="회차 (자동)"
+          />
+          <span className="text-xs text-gray-400">비워두면 자동 번호 부여</span>
         </div>
       )}
 
