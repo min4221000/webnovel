@@ -163,10 +163,8 @@ export default function Editor({ content = "", onChange }: Props) {
     }
   };
 
-  const onPickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file || !editor) return;
+  const uploadFile = useCallback(async (file: File) => {
+    if (!editor) return;
     if (imgCount >= MAX_IMAGES_PER_CHAPTER) {
       alert(`이미지는 회차당 최대 ${MAX_IMAGES_PER_CHAPTER}장까지 가능합니다.`);
       return;
@@ -180,6 +178,21 @@ export default function Editor({ content = "", onChange }: Props) {
     } finally {
       setUploading(false);
     }
+  }, [editor, imgCount]);
+
+  const onDropImage = useCallback((e: React.DragEvent) => {
+    const file = e.dataTransfer.files[0];
+    if (!file?.type.startsWith("image/")) return;
+    e.preventDefault();
+    e.stopPropagation();
+    uploadFile(file);
+  }, [uploadFile]);
+
+  const onPickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    uploadFile(file);
   };
 
   if (!editor) {
@@ -373,8 +386,12 @@ export default function Editor({ content = "", onChange }: Props) {
         </div>
       )}
 
-      {/* 본문 — 고정 높이 + 내부 스크롤 */}
-      <div className="py-2 max-h-[60vh] overflow-y-auto">
+      {/* 본문 — 고정 높이 + 내부 스크롤 + 드래그드롭 */}
+      <div
+        className="py-2 max-h-[60vh] overflow-y-auto"
+        onDrop={onDropImage}
+        onDragOver={(e) => { if (e.dataTransfer.types.includes("Files")) e.preventDefault(); }}
+      >
         <EditorContent editor={editor} />
       </div>
 

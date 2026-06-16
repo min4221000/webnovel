@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { randomUUID } from "crypto";
 import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/ratelimit";
+import { r2 } from "@/lib/r2";
 import {
   ALLOWED_IMAGE_MIME,
   DAILY_UPLOAD_LIMIT,
@@ -12,15 +13,6 @@ import {
 } from "@/lib/constants";
 
 export const runtime = "nodejs";
-
-const r2 = new S3Client({
-  region: "auto",
-  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
-  },
-});
 
 // 매직바이트 검사 (확장자/MIME 위조 방어)
 const MAGIC: { mime: string; check: (b: Buffer) => boolean }[] = [

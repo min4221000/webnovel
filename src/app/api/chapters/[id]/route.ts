@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/session";
 import { authErrorResponse } from "@/lib/apiError";
 import { sanitizeContent, countText, countImages } from "@/lib/sanitize";
 import { MAX_CHARS, MAX_IMAGES_PER_CHAPTER } from "@/lib/constants";
+import { deleteR2Keys, removedKeys, extractR2Keys } from "@/lib/r2";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,7 +12,7 @@ export const dynamic = "force-dynamic";
 async function loadChapterOwner(id: string) {
   return prisma.chapter.findUnique({
     where: { id },
-    select: { id: true, deletedAt: true, novel: { select: { authorId: true } } },
+    select: { id: true, deletedAt: true, content: true, novel: { select: { authorId: true } } },
   });
 }
 
@@ -56,10 +57,19 @@ export async function PATCH(
   if (imageCount > MAX_IMAGES_PER_CHAPTER)
     return new NextResponse(`이미지는 회차당 최대 ${MAX_IMAGES_PER_CHAPTER}장입니다.`, { status: 400 });
 
+  const oldContent = ch.content ?? "";
   await prisma.chapter.update({
     where: { id: params.id },
     data: { title, content, charCount, imageCount },
   });
+
+  // 교체된 이미지 R2에서 삭제
+  const gone = removedKeys(oldContent, content);
+  if (gone.length) {
+    await deleteR2Keys(gone).catch(() => {});
+    await prisma.upload.deleteMany({ where: { url: { in: gone.map((k) => `${process.env.R2_PUBLIC_URL}/${k}`) } } });
+  }
+
   return NextResponse.json({ ok: true });
 }
 
@@ -80,9 +90,17 @@ export async function DELETE(
   if (ch.novel.authorId !== user.id && user.role !== "ADMIN")
     return authErrorResponse(new Error("FORBIDDEN"));
 
+  const keys = extractR2Keys(ch.content ?? "");
   await prisma.chapter.update({
     where: { id: params.id },
     data: { deletedAt: new Date() },
   });
+
+  // 소프트 삭제 시 이미지도 R2에서 삭제 (복구해도 이미지는 재업로드 필요)
+  if (keys.length) {
+    await deleteR2Keys(keys).catch(() => {});
+    await prisma.upload.deleteMany({ where: { url: { in: keys.map((k) => `${process.env.R2_PUBLIC_URL}/${k}`) } } });
+  }
+
   return NextResponse.json({ ok: true });
 }
