@@ -5,6 +5,7 @@ import { authErrorResponse } from "@/lib/apiError";
 import { sanitizeContent, countText, countImages } from "@/lib/sanitize";
 import { rateLimit } from "@/lib/ratelimit";
 import { MAX_CHARS, MAX_IMAGES_PER_CHAPTER } from "@/lib/constants";
+import { notifyNewChapter } from "@/lib/discordNotify";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,7 +28,13 @@ export async function POST(
 
   const novel = await prisma.novel.findUnique({
     where: { id: params.id },
-    select: { authorId: true, deletedAt: true },
+    select: {
+      authorId: true,
+      deletedAt: true,
+      title: true,
+      isAdult: true,
+      author: { select: { username: true } },
+    },
   });
   if (!novel || novel.deletedAt)
     return authErrorResponse(new Error("NOT_FOUND"));
@@ -98,6 +105,16 @@ export async function POST(
   await prisma.novel.update({
     where: { id: params.id },
     data: { updatedAt: new Date() },
+  });
+
+  // 디스코드 새 회차 알림 (웹훅 설정 시)
+  await notifyNewChapter({
+    novelTitle: novel.title,
+    novelId: params.id,
+    chapterNum: chapter.chapterNum,
+    chapterTitle: title,
+    authorName: novel.author.username,
+    isAdult: novel.isAdult,
   });
 
   return NextResponse.json({ chapterNum: chapter.chapterNum });
