@@ -33,7 +33,7 @@ export async function POST(
       deletedAt: true,
       title: true,
       isAdult: true,
-      author: { select: { username: true } },
+      author: { select: { username: true, webhookUrl: true } },
     },
   });
   if (!novel || novel.deletedAt)
@@ -109,6 +109,7 @@ export async function POST(
 
   // 디스코드 새 회차 알림 (웹훅 설정 시)
   await notifyNewChapter({
+    webhookUrl: novel.author.webhookUrl,
     novelTitle: novel.title,
     novelId: params.id,
     chapterNum: chapter.chapterNum,

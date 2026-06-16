@@ -3,6 +3,7 @@
  * DISCORD_WEBHOOK_URL 미설정 시 조용히 무시.
  */
 export async function notifyNewChapter(opts: {
+  webhookUrl: string | null | undefined;
   novelTitle: string;
   novelId: string;
   chapterNum: number;
@@ -10,8 +11,9 @@ export async function notifyNewChapter(opts: {
   authorName: string;
   isAdult: boolean;
 }): Promise<void> {
-  const url = process.env.DISCORD_WEBHOOK_URL;
-  if (!url) return;
+  // 작가 개인 웹후크 우선, 없으면 사이트 전역 웹후크(있다면)
+  const url = opts.webhookUrl || process.env.DISCORD_WEBHOOK_URL;
+  if (!url || !/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(url)) return;
 
   const base = (process.env.NEXTAUTH_URL || "").replace(/\/$/, "");
   const link = base ? `${base}/novel/${opts.novelId}` : undefined;

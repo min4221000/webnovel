@@ -9,8 +9,10 @@ export default function ProfilePage() {
   const router = useRouter();
   const [nickname, setNickname] = useState("");
   const [origin, setOrigin] = useState<string | null>(null);
+  const [webhookUrl, setWebhookUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
+  const [err, setErr] = useState("");
 
   useEffect(() => {
     if (status === "unauthenticated") { router.push("/"); return; }
@@ -18,24 +20,27 @@ export default function ProfilePage() {
     fetch("/api/me").then(r => r.json()).then((d) => {
       setOrigin(d.nickname ?? null);
       setNickname(d.nickname ?? "");
+      setWebhookUrl(d.webhookUrl ?? "");
     });
   }, [status, router]);
 
   const save = async () => {
     setSaving(true);
     setMsg("");
+    setErr("");
     const res = await fetch("/api/me", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nickname }),
+      body: JSON.stringify({ nickname, webhookUrl }),
     });
     setSaving(false);
     if (res.ok) {
       const d = await res.json();
       setOrigin(d.nickname);
-      setMsg("저장됨. 다음 로그인 시 적용됩니다.");
+      setWebhookUrl(d.webhookUrl ?? "");
+      setMsg("저장됨. 닉네임은 다음 로그인 시 적용됩니다.");
     } else {
-      setMsg("저장 실패");
+      setErr(await res.text().catch(() => "저장 실패"));
     }
   };
 
@@ -71,6 +76,32 @@ export default function ProfilePage() {
         )}
       </div>
 
+      <div className="space-y-2 border-t border-black/10 dark:border-white/15 pt-5">
+        <label className="text-sm font-medium block">새 회차 알림 웹후크 (선택)</label>
+        <p className="text-xs text-gray-400 leading-relaxed">
+          내 작품에 새 회차를 올리면 지정한 Discord 채널로 자동 알림이 갑니다.
+          <br />
+          채널 설정 → 연동 → 웹후크 → 새 웹후크 → URL 복사 후 붙여넣기.
+          <br />
+          <span className="text-amber-500">⚠ 웹후크 URL은 비밀입니다. 노출 시 누구나 그 채널에 글을 쓸 수 있습니다.</span>
+        </p>
+        <input
+          value={webhookUrl}
+          onChange={e => setWebhookUrl(e.target.value)}
+          placeholder="https://discord.com/api/webhooks/..."
+          className="w-full border border-black/20 dark:border-white/20 rounded-md px-3 py-2 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+        {webhookUrl && (
+          <button
+            type="button"
+            onClick={() => setWebhookUrl("")}
+            className="text-xs text-gray-400 hover:underline"
+          >
+            웹후크 제거 (알림 끄기)
+          </button>
+        )}
+      </div>
+
       <button
         onClick={save}
         disabled={saving}
@@ -80,6 +111,7 @@ export default function ProfilePage() {
       </button>
 
       {msg && <p className="text-sm text-green-600 dark:text-green-400">{msg}</p>}
+      {err && <p className="text-sm text-red-500">{err}</p>}
     </div>
   );
 }
