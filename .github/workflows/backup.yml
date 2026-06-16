@@ -1,0 +1,29 @@
+name: Daily DB Backup
+
+on:
+  schedule:
+    - cron: "0 2 * * *"   # 매일 새벽 2시 UTC (한국 오전 11시)
+  workflow_dispatch:        # 수동 실행 버튼
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install pg_dump
+        run: sudo apt-get install -y postgresql-client
+
+      - name: Dump database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          pg_dump "$DATABASE_URL" \
+            --no-password \
+            --format=custom \
+            --file=backup_$(date +%Y%m%d_%H%M%S).dump
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: "*.dump"
+          retention-days: 90   # 90일 보관 후 자동 삭제
