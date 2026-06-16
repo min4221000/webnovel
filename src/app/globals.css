@@ -7,11 +7,9 @@
   --foreground: #1a1a1a;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f0f10;
-    --foreground: #ededed;
-  }
+html.dark {
+  --background: #0f0f10;
+  --foreground: #ededed;
 }
 
 html,
@@ -124,6 +122,45 @@ mark.wn-hl-active {
   background: rgba(0, 0, 0, 0.05);
   font-weight: 600;
 }
+/* ===== 동적 효과 블록 ===== */
+/* 에디터 내 시각적 배지 */
+.wn-effect-node {
+  display: block;
+  padding: 6px 14px;
+  margin: 8px 0;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: default;
+  user-select: none;
+  border: 1px dashed;
+}
+.wn-effect-node--vibrate    { background: #fff3cd; border-color: #ffc107; color: #6d4c00; }
+.wn-effect-node--darken     { background: #212529; border-color: #6c757d; color: #dee2e6; }
+.wn-effect-node--typewriter { background: #d1e7dd; border-color: #198754; color: #0a3622; }
+.wn-effect-node--parallax   { background: linear-gradient(135deg,#667eea,#764ba2); border-color: #764ba2; color: #fff; }
+
+/* 리더에서 효과 블록 */
+[data-wn-effect="vibrate"],
+[data-wn-effect="darken"] {
+  display: none; /* 투명 마커 */
+}
+[data-wn-effect="typewriter"] {
+  display: block;
+  min-height: 1.5em;
+  font-size: 17px;
+  line-height: 1.9;
+}
+[data-wn-effect="parallax"] {
+  display: block;
+  height: 100px;
+  margin: 1.2em 0;
+  border-radius: 10px;
+  background: linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+  background-size: 100% 300%;
+  background-position-y: 50%;
+  transition: none;
+}
+
 .wn-content div[data-youtube-video] {
   margin: 0.8em 0;
 }

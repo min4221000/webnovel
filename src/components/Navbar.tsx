@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useSession, signIn, signOut } from "next-auth/react";
+import { useTheme } from "@/components/ThemeProvider";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
   const user = session?.user;
+  const { theme, toggle } = useTheme();
 
   return (
     <header className="border-b border-black/10 dark:border-white/10 sticky top-0 z-40 bg-[var(--background)]/90 backdrop-blur">
@@ -24,7 +26,14 @@ export default function Navbar() {
           🔞
         </Link>
 
-        <div className="ml-auto flex items-center gap-3">
+        <button
+          onClick={toggle}
+          title={theme === "dark" ? "라이트 모드" : "다크 모드"}
+          className="text-lg ml-auto"
+        >
+          {theme === "dark" ? "☀️" : "🌙"}
+        </button>
+        <div className="flex items-center gap-3">
           {status === "loading" ? null : user ? (
             <>
               <Link

@@ -17,6 +17,7 @@ import TableHeader from "@tiptap/extension-table-header";
 import TableCell from "@tiptap/extension-table-cell";
 
 import { FontSize, ResizableImage } from "./extensions";
+import { WnEffect } from "./effectExtension";
 import { compressAndUpload } from "@/lib/uploadImage";
 import {
   FONT_FAMILIES,
@@ -30,6 +31,40 @@ type Props = {
   content?: string;
   onChange?: (html: string) => void;
 };
+
+// 2.5초 hover 후 툴팁 표시
+function Tooltip({ text, children }: { text: string; children: React.ReactNode }) {
+  const [show, setShow] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  return (
+    <span
+      className="relative"
+      onMouseEnter={() => { timer.current = setTimeout(() => setShow(true), 2500); }}
+      onMouseLeave={() => { if (timer.current) clearTimeout(timer.current); setShow(false); }}
+    >
+      {children}
+      {show && (
+        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 rounded bg-gray-900 text-white text-xs p-2 shadow-lg z-50 pointer-events-none whitespace-pre-wrap leading-relaxed">
+          {text}
+        </span>
+      )}
+    </span>
+  );
+}
+
+const SPECIAL_CHARS: { open: string; close?: string; title: string }[] = [
+  { open: "…", title: "말줄임표" },
+  { open: "—", title: "긴줄표" },
+  { open: "–", title: "짧은줄표" },
+  { open: "·", title: "가운뎃점" },
+  { open: "「", close: "」", title: "홑낫표" },
+  { open: "『", close: "』", title: "겹낫표" },
+  { open: "《", close: "》", title: "이중꺾쇠" },
+  { open: "〈", close: "〉", title: "꺾쇠" },
+  { open: "※", title: "참고표" },
+  { open: "♥", title: "하트" },
+  { open: "★", title: "별" },
+];
 
 function Btn({
   onClick,
@@ -67,6 +102,7 @@ export default function Editor({ content = "", onChange }: Props) {
   const [textLen, setTextLen] = useState(0);
   const [imgCount, setImgCount] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [hlColor, setHlColor] = useState("#ffe58a");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const sync = useCallback(
@@ -101,6 +137,7 @@ export default function Editor({ content = "", onChange }: Props) {
       TableRow,
       TableHeader,
       TableCell,
+      WnEffect,
     ],
     content,
     editorProps: {
@@ -109,6 +146,22 @@ export default function Editor({ content = "", onChange }: Props) {
     onUpdate: ({ editor }) => sync(editor),
     onCreate: ({ editor }) => sync(editor),
   });
+
+  const insertSpecialChar = (open: string, close?: string) => {
+    if (!editor) return;
+    if (!close) {
+      editor.chain().focus().insertContent(open).run();
+      return;
+    }
+    const { from, to, empty } = editor.state.selection;
+    if (!empty) {
+      const selected = editor.state.doc.textBetween(from, to, "\n");
+      editor.chain().focus().deleteSelection().insertContent(open + selected + close).run();
+    } else {
+      editor.chain().focus().insertContent(open + close).run();
+      editor.commands.setTextSelection(editor.state.selection.from - close.length);
+    }
+  };
 
   const onPickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -205,11 +258,15 @@ export default function Editor({ content = "", onChange }: Props) {
         </label>
         {/* 배경색(형광) */}
         <label title="형광펜" className="px-1 flex items-center cursor-pointer text-sm">
-          <span className="px-0.5 rounded" style={{ background: "#ffe58a" }}>밑</span>
+          <span className="px-0.5 rounded" style={{ background: hlColor }}>밑</span>
           <input
             type="color"
+            value={hlColor}
             className="w-0 h-0 opacity-0"
-            onChange={(e) => editor.chain().focus().toggleHighlight({ color: e.target.value }).run()}
+            onChange={(e) => {
+              setHlColor(e.target.value);
+              editor.chain().focus().setHighlight({ color: e.target.value }).run();
+            }}
           />
         </label>
 
@@ -266,6 +323,59 @@ export default function Editor({ content = "", onChange }: Props) {
         <Divider />
         <Btn title="실행취소" disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()}>↶</Btn>
         <Btn title="다시실행" disabled={!editor.can().redo()} onClick={() => editor.chain().focus().redo().run()}>↷</Btn>
+      </div>
+
+      {/* 문학 특수문자 */}
+      <div className="flex flex-wrap items-center gap-0.5 px-1.5 py-1 border-b border-black/10 dark:border-white/15 bg-black/[0.02] dark:bg-white/[0.02]">
+        <span className="text-xs text-gray-400 mr-1 shrink-0">부호</span>
+        {SPECIAL_CHARS.map(({ open, close, title }) => (
+          <button
+            key={open}
+            type="button"
+            title={title}
+            onClick={() => insertSpecialChar(open, close)}
+            className="px-1.5 py-0.5 text-sm rounded hover:bg-black/10 dark:hover:bg-white/10 font-mono leading-none"
+          >
+            {open}{close ?? ""}
+          </button>
+        ))}
+      </div>
+
+      {/* 동적 효과 삽입 */}
+      <div className="flex flex-wrap items-center gap-0.5 px-1.5 py-1 border-b border-black/10 dark:border-white/15 bg-violet-50/60 dark:bg-violet-950/20">
+        <span className="text-xs text-gray-400 mr-1 shrink-0">효과</span>
+        <Tooltip text={"독자가 이 위치에 도달하면\n📳 1회 진동 발생 (모바일만)"}>
+          <Btn title="진동" onClick={() =>
+            editor.chain().focus().insertContent({ type: "wnEffect", attrs: { effectType: "vibrate" } }).run()
+          }>⚡</Btn>
+        </Tooltip>
+        <Tooltip text={"화면이 지정한 색으로 어두워졌다가\n서서히 원래 화면으로 복구됩니다"}>
+          <Btn title="화면 어두워짐" onClick={() => {
+            const color = window.prompt("어두워질 색 (예: #1a0808)", "#1a0808");
+            if (color === null) return;
+            const duration = window.prompt("지속시간 ms (예: 2000)", "2000");
+            if (duration === null) return;
+            editor.chain().focus().insertContent({
+              type: "wnEffect",
+              attrs: { effectType: "darken", color: color || "#1a0808", duration: duration || "2000" },
+            }).run();
+          }}>🌑</Btn>
+        </Tooltip>
+        <Tooltip text={"독자가 이 위치에 오면\n텍스트가 한 글자씩 타이핑됩니다"}>
+          <Btn title="타이핑 효과" onClick={() => {
+            const text = window.prompt("타이핑될 텍스트 입력");
+            if (!text) return;
+            editor.chain().focus().insertContent({
+              type: "wnEffect",
+              attrs: { effectType: "typewriter", text },
+            }).run();
+          }}>⌨️</Btn>
+        </Tooltip>
+        <Tooltip text={"스크롤 시 배경이 천천히 움직이는\n패럴랙스 구분선 삽입"}>
+          <Btn title="패럴랙스" onClick={() =>
+            editor.chain().focus().insertContent({ type: "wnEffect", attrs: { effectType: "parallax" } }).run()
+          }>🌊</Btn>
+        </Tooltip>
       </div>
 
       {/* 이미지 선택 시 정렬/크기 컨트롤 */}

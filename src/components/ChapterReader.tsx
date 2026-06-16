@@ -87,6 +87,81 @@ export default function ChapterReader({ html }: { html: string }) {
     [clearMarks, setActive],
   );
 
+  // 동적 효과 (IntersectionObserver)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const els = Array.from(container.querySelectorAll<HTMLElement>("[data-wn-effect]"));
+    if (els.length === 0) return;
+
+    const triggered = new Set<Element>();
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting || triggered.has(entry.target)) continue;
+          triggered.add(entry.target);
+          const el = entry.target as HTMLElement;
+          const type = el.dataset.wnEffect;
+
+          if (type === "vibrate") {
+            navigator.vibrate?.([80, 40, 180]);
+
+          } else if (type === "darken") {
+            const color = el.dataset.wnColor ?? "#000000";
+            const dur = Math.max(500, parseInt(el.dataset.wnDuration ?? "2000", 10));
+            const ov = document.createElement("div");
+            ov.style.cssText = `position:fixed;inset:0;background:${color};opacity:0;transition:opacity ${dur * 0.3}ms ease;z-index:9998;pointer-events:none`;
+            document.body.appendChild(ov);
+            requestAnimationFrame(() => {
+              ov.style.opacity = "0.9";
+              setTimeout(() => {
+                ov.style.transition = `opacity ${dur * 0.7}ms ease`;
+                ov.style.opacity = "0";
+                setTimeout(() => ov.remove(), dur * 0.7 + 100);
+              }, dur * 0.3);
+            });
+
+          } else if (type === "typewriter") {
+            const text = el.dataset.wnText ?? "";
+            el.textContent = "";
+            let i = 0;
+            const iv = setInterval(() => {
+              if (i >= text.length) { clearInterval(iv); return; }
+              el.textContent += text[i++];
+            }, 50);
+          }
+        }
+      },
+      { threshold: 0.4 },
+    );
+
+    els.forEach((el) => observer.observe(el));
+
+    // 패럴랙스 스크롤 처리
+    const parallaxEls = els.filter((el) => el.dataset.wnEffect === "parallax");
+    let rafId = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        for (const el of parallaxEls) {
+          const rect = el.getBoundingClientRect();
+          const offset = ((rect.top + rect.height / 2) - window.innerHeight / 2) * 0.35;
+          el.style.backgroundPositionY = `calc(50% + ${offset}px)`;
+        }
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(rafId);
+    };
+  }, [html]);
+
   // Ctrl/Cmd+F 가로채기
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

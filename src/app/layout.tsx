@@ -14,7 +14,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
+      <head>
+        {/* no-flash: dark class 초기 적용 (hydration 전) */}
+        <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem('theme');if(t==='dark'||(t===null&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch(e){}` }} />
+      </head>
       <body className="antialiased min-h-screen flex flex-col">
         <Providers>
           <Navbar />
