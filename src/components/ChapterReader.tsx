@@ -97,8 +97,20 @@ export default function ChapterReader({ html }: { html: string }) {
     const endEls   = Array.from(container.querySelectorAll<HTMLElement>('[data-wn-effect="darken-end"]'));
     if (!startEls.length) return;
 
-    // start~end 사이의 색 지정된 요소 수집 (hideStyles="true" 인 쌍만)
-    type StyledInfo = { el: HTMLElement; origColor: string };
+    // start~end 사이 스타일 수집 (hideStyles="true" 인 쌍만)
+    type SavedStyle = { prop: string; value: string };
+    type StyledInfo = { el: HTMLElement; saved: SavedStyle[] };
+    const STYLE_PROPS = ["color", "backgroundColor", "fontWeight", "fontStyle", "textDecoration"] as const;
+    const SEMANTIC_TAGS: Record<string, { prop: string; reset: string }> = {
+      STRONG: { prop: "fontWeight", reset: "inherit" },
+      B:      { prop: "fontWeight", reset: "inherit" },
+      EM:     { prop: "fontStyle",  reset: "inherit" },
+      I:      { prop: "fontStyle",  reset: "inherit" },
+      U:      { prop: "textDecoration", reset: "inherit" },
+      S:      { prop: "textDecoration", reset: "inherit" },
+      MARK:   { prop: "backgroundColor", reset: "transparent" },
+    };
+
     const styledMap: StyledInfo[][] = [];
     for (let i = 0; i < startEls.length; i++) {
       const s = startEls[i];
@@ -108,12 +120,21 @@ export default function ChapterReader({ html }: { html: string }) {
       if (hide && e) {
         let node: Element | null = s.nextElementSibling;
         while (node && node !== e) {
-          const styled = node.querySelectorAll<HTMLElement>("[style]");
-          styled.forEach((el) => {
-            if (el.style.color) list.push({ el, origColor: el.style.color });
-          });
-          if ((node as HTMLElement).style?.color) {
-            list.push({ el: node as HTMLElement, origColor: (node as HTMLElement).style.color });
+          // 모든 자식 + 자기 자신 순회
+          const allEls = [node as HTMLElement, ...Array.from(node.querySelectorAll<HTMLElement>("*"))];
+          for (const el of allEls) {
+            const saved: SavedStyle[] = [];
+            // inline style 속성 저장
+            for (const prop of STYLE_PROPS) {
+              const v = el.style[prop as any];
+              if (v) saved.push({ prop, value: v });
+            }
+            // semantic 태그 (bold/italic/underline/mark)
+            const sem = SEMANTIC_TAGS[el.tagName];
+            if (sem && !saved.some((s) => s.prop === sem.prop)) {
+              saved.push({ prop: sem.prop, value: "__semantic__" });
+            }
+            if (saved.length > 0) list.push({ el, saved });
           }
           node = node.nextElementSibling;
         }
@@ -121,8 +142,33 @@ export default function ChapterReader({ html }: { html: string }) {
       styledMap.push(list);
     }
 
+    // 스타일 숨기기/복원 헬퍼
+    const hideAll = () => {
+      styledMap.forEach((list) => list.forEach(({ el, saved }) => {
+        for (const { prop, value } of saved) {
+          const sem = SEMANTIC_TAGS[el.tagName];
+          if (value === "__semantic__" && sem) {
+            (el.style as any)[sem.prop] = sem.reset;
+          } else {
+            (el.style as any)[prop] = "";
+          }
+        }
+      }));
+    };
+    const showAll = (idx: number) => {
+      styledMap[idx]?.forEach(({ el, saved }) => {
+        for (const { prop, value } of saved) {
+          if (value === "__semantic__") {
+            (el.style as any)[prop] = "";  // semantic 태그 기본 스타일 복원
+          } else {
+            (el.style as any)[prop] = value;
+          }
+        }
+      });
+    };
+
     // 초기 상태: 숨김
-    styledMap.forEach((list) => list.forEach(({ el }) => { el.style.color = ""; }));
+    hideAll();
 
     let wasDark = false;
     let activeIdx = -1;
@@ -155,24 +201,18 @@ export default function ChapterReader({ html }: { html: string }) {
 
         if (dark === wasDark && newIdx === activeIdx) return;
 
-        // 이전 구간 색 숨김
-        if (activeIdx >= 0 && activeIdx !== newIdx) {
-          styledMap[activeIdx]?.forEach(({ el }) => { el.style.color = ""; });
-        }
-
         wasDark = dark;
         activeIdx = newIdx;
 
         if (dark) {
           root.style.setProperty("--background", bgColor);
           root.style.setProperty("--foreground", textColor);
-          // 커스텀 색 복원
-          styledMap[newIdx]?.forEach(({ el, origColor }) => { el.style.color = origColor; });
+          hideAll();
+          showAll(newIdx);
         } else {
           root.style.removeProperty("--background");
           root.style.removeProperty("--foreground");
-          // 모든 커스텀 색 숨김
-          styledMap.forEach((list) => list.forEach(({ el }) => { el.style.color = ""; }));
+          hideAll();
         }
       });
     };
@@ -185,7 +225,7 @@ export default function ChapterReader({ html }: { html: string }) {
       cancelAnimationFrame(rafId);
       root.style.removeProperty("--background");
       root.style.removeProperty("--foreground");
-      styledMap.forEach((list) => list.forEach(({ el, origColor }) => { el.style.color = origColor; }));
+      styledMap.forEach((_, i) => showAll(i));
     };
   }, [html]);
 
