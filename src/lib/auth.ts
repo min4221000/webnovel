@@ -2,23 +2,22 @@ import type { NextAuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
 import { prisma } from "@/lib/prisma";
 
-/**
- * NextAuth 설정.
- * - 전략: JWT (Account/Session 테이블 불필요, User 스키마만으로 운영)
- * - 로그인 시 Discord profile.id(snowflake)로 User upsert
- * - ADMIN_DISCORD_ID 와 일치하면 ADMIN role 부여
- */
 export const authOptions: NextAuthOptions = {
   providers: [
     DiscordProvider({
       clientId: process.env.DISCORD_CLIENT_ID ?? "",
       clientSecret: process.env.DISCORD_CLIENT_SECRET ?? "",
+      authorization: {
+        params: {
+          // guilds.members.read: 특정 서버 닉네임/프로필 가져오기 (DISCORD_GUILD_ID 설정 시 활성화)
+          scope: "identify email guilds.members.read",
+        },
+      },
     }),
   ],
   session: { strategy: "jwt" },
   callbacks: {
     async jwt({ token, account, profile }) {
-      // 최초 로그인 시에만 account+profile 존재 → User 동기화
       if (account && profile) {
         const p = profile as {
           id: string;
@@ -26,23 +25,42 @@ export const authOptions: NextAuthOptions = {
           global_name?: string;
         };
         const discordId = p.id;
-        const username =
+        const discordName =
           p.global_name || p.username || (token.name as string) || "user";
         const avatarUrl = (token.picture as string | undefined) ?? null;
         const isAdmin =
           !!process.env.ADMIN_DISCORD_ID &&
           process.env.ADMIN_DISCORD_ID === discordId;
 
+        // 서버 닉네임 가져오기 (DISCORD_GUILD_ID 설정 시)
+        let serverNick: string | null = null;
+        const guildId = process.env.DISCORD_GUILD_ID;
+        if (guildId && account.access_token) {
+          try {
+            const r = await fetch(
+              `https://discord.com/api/v10/users/@me/guilds/${guildId}/member`,
+              { headers: { Authorization: `Bearer ${account.access_token}` } },
+            );
+            if (r.ok) {
+              const m = await r.json();
+              serverNick = (m.nick as string | null) || null;
+            }
+          } catch { /* ignore */ }
+        }
+
+        const autoName = serverNick || discordName;
+
         const user = await prisma.user.upsert({
           where: { discordId },
           update: {
-            username,
+            username: autoName,
             avatarUrl,
             ...(isAdmin ? { role: "ADMIN" as const } : {}),
+            // nickname은 사용자가 직접 설정한 값 — 덮어쓰지 않음
           },
           create: {
             discordId,
-            username,
+            username: autoName,
             avatarUrl,
             role: isAdmin ? "ADMIN" : "USER",
           },
@@ -52,6 +70,8 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role;
         token.banned = user.banned;
         token.adult = user.adult;
+        // 세션 name = 커스텀 닉 > 자동 이름
+        token.name = user.nickname ?? autoName;
       }
       return token;
     },

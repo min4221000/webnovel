@@ -87,78 +87,53 @@ export default function ChapterReader({ html }: { html: string }) {
     [clearMarks, setActive],
   );
 
-  // 동적 효과 (IntersectionObserver)
+  // 동적 효과: darken-start/end 마커 기반 어두워짐
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const els = Array.from(container.querySelectorAll<HTMLElement>("[data-wn-effect]"));
-    if (els.length === 0) return;
+    const startEls = Array.from(container.querySelectorAll<HTMLElement>('[data-wn-effect="darken-start"]'));
+    const endEls   = Array.from(container.querySelectorAll<HTMLElement>('[data-wn-effect="darken-end"]'));
+    if (startEls.length === 0 && endEls.length === 0) return;
 
-    const triggered = new Set<Element>();
+    // 영구 오버레이 생성
+    const ov = document.createElement("div");
+    ov.style.cssText =
+      "position:fixed;inset:0;opacity:0;transition:opacity 600ms ease;z-index:9998;pointer-events:none;background:#0d0d0d";
+    document.body.appendChild(ov);
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting || triggered.has(entry.target)) continue;
-          triggered.add(entry.target);
-          const el = entry.target as HTMLElement;
-          const type = el.dataset.wnEffect;
-
-          if (type === "vibrate") {
-            navigator.vibrate?.([80, 40, 180]);
-
-          } else if (type === "darken") {
-            const color = el.dataset.wnColor ?? "#000000";
-            const dur = Math.max(500, parseInt(el.dataset.wnDuration ?? "2000", 10));
-            const ov = document.createElement("div");
-            ov.style.cssText = `position:fixed;inset:0;background:${color};opacity:0;transition:opacity ${dur * 0.3}ms ease;z-index:9998;pointer-events:none`;
-            document.body.appendChild(ov);
-            requestAnimationFrame(() => {
-              ov.style.opacity = "0.9";
-              setTimeout(() => {
-                ov.style.transition = `opacity ${dur * 0.7}ms ease`;
-                ov.style.opacity = "0";
-                setTimeout(() => ov.remove(), dur * 0.7 + 100);
-              }, dur * 0.3);
-            });
-
-          } else if (type === "typewriter") {
-            const text = el.dataset.wnText ?? "";
-            el.textContent = "";
-            let i = 0;
-            const iv = setInterval(() => {
-              if (i >= text.length) { clearInterval(iv); return; }
-              el.textContent += text[i++];
-            }, 50);
-          }
-        }
-      },
-      { threshold: 0.4 },
-    );
-
-    els.forEach((el) => observer.observe(el));
-
-    // 패럴랙스 스크롤 처리
-    const parallaxEls = els.filter((el) => el.dataset.wnEffect === "parallax");
     let rafId = 0;
     const onScroll = () => {
       cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
-        for (const el of parallaxEls) {
-          const rect = el.getBoundingClientRect();
-          const offset = ((rect.top + rect.height / 2) - window.innerHeight / 2) * 0.35;
-          el.style.backgroundPositionY = `calc(50% + ${offset}px)`;
+        const mid = window.innerHeight * 0.6; // 화면 60% 지점 기준
+
+        let dark = false;
+        // 각 start/end 쌍 확인 (순서대로 페어링)
+        const pairs = Math.max(startEls.length, endEls.length);
+        for (let i = 0; i < pairs; i++) {
+          const s = startEls[i];
+          const e = endEls[i];
+          const pastStart = s ? s.getBoundingClientRect().bottom < mid : false;
+          const pastEnd   = e ? e.getBoundingClientRect().bottom < mid : false;
+          if (pastStart && !pastEnd) { dark = true; break; }
         }
+
+        // 색상은 첫 번째 start 마커 기준
+        if (startEls[0]) {
+          ov.style.background = startEls[0].dataset.wnColor ?? "#0d0d0d";
+        }
+        ov.style.opacity = dark ? "0.92" : "0";
       });
     };
+
     window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
+    onScroll(); // 초기 실행
 
     return () => {
-      observer.disconnect();
       window.removeEventListener("scroll", onScroll);
       cancelAnimationFrame(rafId);
+      ov.remove();
     };
   }, [html]);
 

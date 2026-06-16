@@ -200,7 +200,7 @@ export default function Editor({ content = "", onChange }: Props) {
         {/* 폰트 */}
         <select
           title="글꼴"
-          className="text-sm bg-transparent rounded px-1"
+          className="text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded px-1"
           onChange={(e) =>
             e.target.value
               ? editor.chain().focus().setFontFamily(e.target.value).run()
@@ -209,7 +209,7 @@ export default function Editor({ content = "", onChange }: Props) {
           defaultValue=""
         >
           {FONT_FAMILIES.map((f) => (
-            <option key={f.label} value={f.value}>
+            <option key={f.label} value={f.value} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
               {f.label}
             </option>
           ))}
@@ -217,7 +217,7 @@ export default function Editor({ content = "", onChange }: Props) {
         {/* 크기 */}
         <select
           title="글자 크기"
-          className="text-sm bg-transparent rounded px-1"
+          className="text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded px-1"
           onChange={(e) =>
             e.target.value
               ? editor.chain().focus().setFontSize(`${e.target.value}px`).run()
@@ -225,9 +225,9 @@ export default function Editor({ content = "", onChange }: Props) {
           }
           defaultValue=""
         >
-          <option value="">크기</option>
+          <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">크기</option>
           {FONT_SIZES.map((s) => (
-            <option key={s} value={s}>
+            <option key={s} value={s} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
               {s}
             </option>
           ))}
@@ -296,12 +296,26 @@ export default function Editor({ content = "", onChange }: Props) {
         >
           🔗
         </Btn>
-        <Btn
-          title="표 삽입"
-          onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
-        >
-          ▦
-        </Btn>
+        <Divider />
+        <Tooltip text={"독자가 이 위치에 도달하면\n화면이 어두워집니다"}>
+          <Btn title="어두워짐 시작" onClick={() => {
+            const color = window.prompt("어두워질 색 (기본: #0d0d0d)", "#0d0d0d");
+            if (color === null) return;
+            editor.chain().focus().insertContent({
+              type: "wnEffect",
+              attrs: { effectType: "darken-start", color: color || "#0d0d0d" },
+            }).run();
+          }}>🌑</Btn>
+        </Tooltip>
+        <Tooltip text={"이 위치에 도달하면\n화면이 원래대로 밝아집니다"}>
+          <Btn title="어두워짐 끝 (복구)" onClick={() =>
+            editor.chain().focus().insertContent({
+              type: "wnEffect",
+              attrs: { effectType: "darken-end" },
+            }).run()
+          }>🌅</Btn>
+        </Tooltip>
+        <Divider />
         <Btn
           title="유튜브"
           onClick={() => {
@@ -339,43 +353,6 @@ export default function Editor({ content = "", onChange }: Props) {
             {open}{close ?? ""}
           </button>
         ))}
-      </div>
-
-      {/* 동적 효과 삽입 */}
-      <div className="flex flex-wrap items-center gap-0.5 px-1.5 py-1 border-b border-black/10 dark:border-white/15 bg-violet-50/60 dark:bg-violet-950/20">
-        <span className="text-xs text-gray-400 mr-1 shrink-0">효과</span>
-        <Tooltip text={"독자가 이 위치에 도달하면\n📳 1회 진동 발생 (모바일만)"}>
-          <Btn title="진동" onClick={() =>
-            editor.chain().focus().insertContent({ type: "wnEffect", attrs: { effectType: "vibrate" } }).run()
-          }>⚡</Btn>
-        </Tooltip>
-        <Tooltip text={"화면이 지정한 색으로 어두워졌다가\n서서히 원래 화면으로 복구됩니다"}>
-          <Btn title="화면 어두워짐" onClick={() => {
-            const color = window.prompt("어두워질 색 (예: #1a0808)", "#1a0808");
-            if (color === null) return;
-            const duration = window.prompt("지속시간 ms (예: 2000)", "2000");
-            if (duration === null) return;
-            editor.chain().focus().insertContent({
-              type: "wnEffect",
-              attrs: { effectType: "darken", color: color || "#1a0808", duration: duration || "2000" },
-            }).run();
-          }}>🌑</Btn>
-        </Tooltip>
-        <Tooltip text={"독자가 이 위치에 오면\n텍스트가 한 글자씩 타이핑됩니다"}>
-          <Btn title="타이핑 효과" onClick={() => {
-            const text = window.prompt("타이핑될 텍스트 입력");
-            if (!text) return;
-            editor.chain().focus().insertContent({
-              type: "wnEffect",
-              attrs: { effectType: "typewriter", text },
-            }).run();
-          }}>⌨️</Btn>
-        </Tooltip>
-        <Tooltip text={"스크롤 시 배경이 천천히 움직이는\n패럴랙스 구분선 삽입"}>
-          <Btn title="패럴랙스" onClick={() =>
-            editor.chain().focus().insertContent({ type: "wnEffect", attrs: { effectType: "parallax" } }).run()
-          }>🌊</Btn>
-        </Tooltip>
       </div>
 
       {/* 이미지 선택 시 정렬/크기 컨트롤 */}

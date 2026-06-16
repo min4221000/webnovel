@@ -50,7 +50,7 @@ export default function Navbar() {
                   관리자
                 </Link>
               )}
-              <span className="text-sm flex items-center gap-1.5">
+              <a href="/profile" className="text-sm flex items-center gap-1.5 hover:underline">
                 {user.image && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -60,7 +60,7 @@ export default function Navbar() {
                   />
                 )}
                 {user.name}
-              </span>
+              </a>
               <button
                 onClick={() => signOut()}
                 className="text-sm text-gray-500 hover:underline"

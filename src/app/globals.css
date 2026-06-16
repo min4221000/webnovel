@@ -134,31 +134,17 @@ mark.wn-hl-active {
   user-select: none;
   border: 1px dashed;
 }
-.wn-effect-node--vibrate    { background: #fff3cd; border-color: #ffc107; color: #6d4c00; }
 .wn-effect-node--darken     { background: #212529; border-color: #6c757d; color: #dee2e6; }
-.wn-effect-node--typewriter { background: #d1e7dd; border-color: #198754; color: #0a3622; }
-.wn-effect-node--parallax   { background: linear-gradient(135deg,#667eea,#764ba2); border-color: #764ba2; color: #fff; }
+.wn-effect-node--darken-end { background: #fff3e0; border-color: #fb8c00; color: #7d4e00; }
 
-/* 리더에서 효과 블록 */
-[data-wn-effect="vibrate"],
-[data-wn-effect="darken"] {
-  display: none; /* 투명 마커 */
-}
-[data-wn-effect="typewriter"] {
+/* 리더에서 darken 마커는 숨김 (JS가 스크롤로 오버레이 제어) */
+[data-wn-effect="darken-start"],
+[data-wn-effect="darken-end"] {
   display: block;
-  min-height: 1.5em;
-  font-size: 17px;
-  line-height: 1.9;
-}
-[data-wn-effect="parallax"] {
-  display: block;
-  height: 100px;
-  margin: 1.2em 0;
-  border-radius: 10px;
-  background: linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-  background-size: 100% 300%;
-  background-position-y: 50%;
-  transition: none;
+  height: 0;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 .wn-content div[data-youtube-video] {

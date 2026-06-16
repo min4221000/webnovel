@@ -20,7 +20,8 @@ model User {
   role      Role      @default(USER)
   banned    Boolean   @default(false)
   banReason String?
-  adult     Boolean   @default(false) // 만 19세+ 자가인증(성인 작품 열람 동의)
+  adult     Boolean   @default(false)
+  nickname  String?   // 사용자 직접 설정 닉네임 (없으면 Discord 이름 사용)
   createdAt DateTime  @default(now())
   novels    Novel[]
   comments  Comment[]
