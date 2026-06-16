@@ -105,6 +105,21 @@ mark.wn-hl-active {
   height: auto;
   border-radius: 4px;
 }
+/* 깨진 이미지 플레이스홀더 (JS onerror로 추가되는 div) */
+.wn-img-broken {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 80px;
+  background: #f3f4f6;
+  border: 1px dashed #d1d5db;
+  border-radius: 4px;
+  color: #9ca3af;
+  font-size: 14px;
+  margin: 0.4em 0;
+}
 .wn-content table {
   border-collapse: collapse;
   margin: 0.6em 0;

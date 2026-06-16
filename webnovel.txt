@@ -1,0 +1,17 @@
+https://pub-62db2ad714ce416b8d77d026b630cb49.r2.dev
+
+Token value
+cfut_qya0RtsqmsrpZULC8k8RdXwLNNcUlaqpGgWwZMxy6edf22f0
+
+Access Key ID
+65571b5549e1be3ee7d887873599286b
+
+Secret Access Key
+9c9c7cbe1f037cbd0137415fefe6a055a817fd295d407b3e555818cf546c720d
+
+
+accountID
+10480d2f8d14a6fb0d7210cd5cf2c76b
+
+pub dev url
+https://pub-62db2ad714ce416b8d77d026b630cb49.r2.dev

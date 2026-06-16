@@ -4,7 +4,7 @@ import { Extension } from "@tiptap/core";
 import Image from "@tiptap/extension-image";
 import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useState } from "react";
 
 // ===== 글자 크기 =====
 declare module "@tiptap/core" {
@@ -55,6 +55,7 @@ function ImageResizeView({ node, updateAttributes, selected }: NodeViewProps) {
   const imgRef = useRef<HTMLImageElement>(null);
   const startX = useRef(0);
   const startW = useRef(0);
+  const [broken, setBroken] = useState(false);
 
   const onResizeStart = useCallback(
     (e: React.MouseEvent) => {
@@ -97,13 +98,20 @@ function ImageResizeView({ node, updateAttributes, selected }: NodeViewProps) {
           lineHeight: 0,
         }}
       >
-        <img
-          ref={imgRef}
-          src={attrs.src}
-          alt={attrs.alt || ""}
-          draggable={false}
-          style={{ width: "100%", height: "auto", display: "block" }}
-        />
+        {broken ? (
+          <div className="wn-img-broken" style={{ minHeight: 80 }}>
+            🖼 이미지를 불러올 수 없습니다
+          </div>
+        ) : (
+          <img
+            ref={imgRef}
+            src={attrs.src}
+            alt={attrs.alt || ""}
+            draggable={false}
+            style={{ width: "100%", height: "auto", display: "block" }}
+            onError={() => setBroken(true)}
+          />
+        )}
         {selected && (
           <>
             {/* 선택 테두리 */}

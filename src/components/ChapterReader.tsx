@@ -20,12 +20,29 @@ export default function ChapterReader({ html }: { html: string }) {
   const [total, setTotal] = useState(0);
   const [current, setCurrent] = useState(0); // 1-based
 
+  const attachImageFallbacks = useCallback((root: HTMLElement) => {
+    root.querySelectorAll<HTMLImageElement>("img").forEach((img) => {
+      const showBroken = () => {
+        if (img.dataset.wnBroken) return;
+        img.dataset.wnBroken = "1";
+        img.style.display = "none";
+        const el = document.createElement("div");
+        el.className = "wn-img-broken";
+        el.textContent = "🖼 이미지를 불러올 수 없습니다";
+        img.parentNode?.insertBefore(el, img.nextSibling);
+      };
+      img.addEventListener("error", showBroken, { once: true });
+      if (img.complete && img.naturalWidth === 0) showBroken();
+    });
+  }, []);
+
   const clearMarks = useCallback(() => {
     const root = containerRef.current;
     if (!root) return;
     root.innerHTML = html; // 원본 복원 → 기존 mark 제거
     marksRef.current = [];
-  }, [html]);
+    attachImageFallbacks(root);
+  }, [html, attachImageFallbacks]);
 
   const setActive = useCallback((idx: number) => {
     const marks = marksRef.current;
@@ -88,6 +105,11 @@ export default function ChapterReader({ html }: { html: string }) {
     [clearMarks, setActive],
   );
 
+
+  // 초기 렌더 후 깨진 이미지 처리
+  useEffect(() => {
+    if (containerRef.current) attachImageFallbacks(containerRef.current);
+  }, [html, attachImageFallbacks]);
 
   // 화면 전체 어두워짐 효과 (darken-start/end 마커)
   useEffect(() => {
