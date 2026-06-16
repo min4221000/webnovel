@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id        String    @id @default(cuid())
+  discordId String    @unique
+  username  String
+  avatarUrl String?
+  role      Role      @default(USER)
+  banned    Boolean   @default(false)
+  banReason String?
+  createdAt DateTime  @default(now())
+  novels    Novel[]
+  comments  Comment[]
+  reports   Report[]
+  uploads   Upload[]
+}
+
+model Novel {
+  id           String                   @id @default(cuid())
+  title        String
+  description  String?
+  coverImage   String?
+  authorId     String
+  author       User                     @relation(fields: [authorId], references: [id])
+  tags         String[]
+  deletedAt    DateTime?
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+  chapters     Chapter[]
+  searchVector Unsupported("tsvector")?
+
+  @@index([title])
+  @@index([authorId])
+}
+
+model Chapter {
+  id           String                   @id @default(cuid())
+  novelId      String
+  novel        Novel                    @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  chapterNum   Int
+  title        String
+  content      String                   @db.Text
+  charCount    Int
+  imageCount   Int                      @default(0)
+  deletedAt    DateTime?
+  createdAt    DateTime                 @default(now())
+  comments     Comment[]
+  searchVector Unsupported("tsvector")?
+
+  @@index([novelId, chapterNum])
+}
+
+model Comment {
+  id        String    @id @default(cuid())
+  chapterId String
+  chapter   Chapter   @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User      @relation(fields: [authorId], references: [id])
+  content   String
+  parentId  String?
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([chapterId])
+}
+
+model Report {
+  id         String   @id @default(cuid())
+  targetType String // "chapter" | "comment"
+  targetId   String
+  reporterId String
+  reporter   User     @relation(fields: [reporterId], references: [id])
+  reason     String
+  status     String   @default("pending") // pending | resolved | rejected
+  createdAt  DateTime @default(now())
+
+  @@index([status])
+}
+
+// 일일 업로드 한도 추적 (유저당 30장/일)
+model Upload {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  url       String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}

@@ -1,0 +1,85 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/session";
+import { authErrorResponse } from "@/lib/apiError";
+import { sanitizeContent, countText, countImages } from "@/lib/sanitize";
+import { rateLimit } from "@/lib/ratelimit";
+import { MAX_CHARS, MAX_IMAGES_PER_CHAPTER } from "@/lib/constants";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+// 회차 작성
+export async function POST(
+  req: NextRequest,
+  { params }: { params: { id: string } },
+) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch (e) {
+    return authErrorResponse(e);
+  }
+
+  if (!(await rateLimit(`chapter:${user.id}`, 1, 60))) {
+    return new NextResponse("회차 작성은 1분에 한 번만 가능합니다.", { status: 429 });
+  }
+
+  const novel = await prisma.novel.findUnique({
+    where: { id: params.id },
+    select: { authorId: true, deletedAt: true },
+  });
+  if (!novel || novel.deletedAt)
+    return authErrorResponse(new Error("NOT_FOUND"));
+  if (novel.authorId !== user.id && user.role !== "ADMIN")
+    return authErrorResponse(new Error("FORBIDDEN"));
+
+  const body = await req.json().catch(() => null);
+  const title = (body?.title ?? "").toString().trim();
+  const rawContent = (body?.content ?? "").toString();
+  if (!title) return new NextResponse("회차 제목을 입력하세요.", { status: 400 });
+
+  // 서버측 새니타이즈 + 검증 (클라이언트 우회 방어)
+  const content = sanitizeContent(rawContent);
+  const charCount = countText(content);
+  const imageCount = countImages(content);
+
+  if (charCount === 0)
+    return new NextResponse("본문이 비어 있습니다.", { status: 400 });
+  if (charCount > MAX_CHARS)
+    return new NextResponse(
+      `본문은 ${MAX_CHARS.toLocaleString()}자를 초과할 수 없습니다. (현재 ${charCount.toLocaleString()}자)`,
+      { status: 400 },
+    );
+  if (imageCount > MAX_IMAGES_PER_CHAPTER)
+    return new NextResponse(
+      `이미지는 회차당 최대 ${MAX_IMAGES_PER_CHAPTER}장입니다.`,
+      { status: 400 },
+    );
+
+  const last = await prisma.chapter.findFirst({
+    where: { novelId: params.id },
+    orderBy: { chapterNum: "desc" },
+    select: { chapterNum: true },
+  });
+  const chapterNum = (last?.chapterNum ?? 0) + 1;
+
+  const chapter = await prisma.chapter.create({
+    data: {
+      novelId: params.id,
+      chapterNum,
+      title,
+      content,
+      charCount,
+      imageCount,
+    },
+    select: { chapterNum: true },
+  });
+
+  await prisma.novel.update({
+    where: { id: params.id },
+    data: { updatedAt: new Date() },
+  });
+
+  return NextResponse.json({ chapterNum: chapter.chapterNum });
+}

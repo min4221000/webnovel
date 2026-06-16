@@ -1,0 +1,42 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
+/** 서버 컴포넌트/route handler 에서 현재 세션 조회 */
+export function getSession() {
+  return getServerSession(authOptions);
+}
+
+/** 로그인 유저(없으면 null) */
+export async function getCurrentUser() {
+  const session = await getSession();
+  return session?.user ?? null;
+}
+
+/**
+ * 로그인 필수 가드. 미로그인 시 throw.
+ * JWT 전략이라 토큰의 banned는 로그인 시점 값 → DB에서 재확인해 차단을 즉시 반영.
+ */
+export async function requireUser() {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("UNAUTHORIZED");
+  const db = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { banned: true, role: true },
+  });
+  if (!db || db.banned) throw new Error("BANNED");
+  // DB의 최신 role 반영
+  return { ...user, role: db.role };
+}
+
+/** 관리자 전용 가드 */
+export async function requireAdmin() {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("UNAUTHORIZED");
+  const db = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { role: true },
+  });
+  if (!db || db.role !== "ADMIN") throw new Error("FORBIDDEN");
+  return { ...user, role: db.role };
+}

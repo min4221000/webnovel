@@ -26,7 +26,13 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env
 .env*.local
+# .env.example 은 추적 유지 (시크릿 없음)
+!.env.example
+
+# 유저 업로드 이미지 (개발용 로컬 저장 — 커밋 금지)
+/public/uploads
 
 # vercel
 .vercel
