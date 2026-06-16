@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { randomUUID } from "crypto";
-import path from "path";
 import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/ratelimit";
@@ -13,6 +12,15 @@ import {
 } from "@/lib/constants";
 
 export const runtime = "nodejs";
+
+const r2 = new S3Client({
+  region: "auto",
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+  },
+});
 
 // 매직바이트 검사 (확장자/MIME 위조 방어)
 const MAGIC: { mime: string; check: (b: Buffer) => boolean }[] = [
@@ -63,7 +71,7 @@ export async function POST(req: NextRequest) {
     return new NextResponse("파일이 없습니다.", { status: 400 });
   }
   if (file.size > MAX_IMAGE_BYTES) {
-    return new NextResponse("이미지가 5MB를 초과합니다.", { status: 413 });
+    return new NextResponse("이미지가 2MB를 초과합니다.", { status: 413 });
   }
   if (!(ALLOWED_IMAGE_MIME as readonly string[]).includes(file.type)) {
     return new NextResponse("허용되지 않은 이미지 형식입니다.", { status: 415 });
@@ -76,12 +84,18 @@ export async function POST(req: NextRequest) {
   }
 
   const ext = MIME_TO_EXT[file.type];
-  const name = `${randomUUID()}.${ext}`;
-  const dir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(dir, { recursive: true });
-  await writeFile(path.join(dir, name), buf);
+  const key = `uploads/${randomUUID()}.${ext}`;
 
-  const url = `/uploads/${name}`;
+  await r2.send(
+    new PutObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME!,
+      Key: key,
+      Body: buf,
+      ContentType: file.type,
+    }),
+  );
+
+  const url = `${process.env.R2_PUBLIC_URL}/${key}`;
   await prisma.upload.create({ data: { userId: user.id, url } });
 
   return NextResponse.json({ url });

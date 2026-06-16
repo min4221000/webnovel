@@ -6,7 +6,7 @@ import { MAX_IMAGE_BYTES } from "./constants";
  */
 export async function compressAndUpload(file: File): Promise<string> {
   if (file.size > MAX_IMAGE_BYTES) {
-    throw new Error("이미지가 5MB를 초과합니다.");
+    throw new Error("이미지가 2MB를 초과합니다.");
   }
 
   const compressed = await imageCompression(file, {
