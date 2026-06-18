@@ -60,6 +60,11 @@ mark.wn-hl-active {
 .wn-content p {
   margin: 0.5em 0;
 }
+/* 빈 단락: ProseMirror(에디터)는 DOM에 <br> 추가 → 한 줄 높이 유지.
+   독자 화면은 <p></p>가 높이 0 → 에디터와 시각 일치시키기 위해 min-height 보정 */
+.wn-content p:empty {
+  min-height: 1.9em;
+}
 .wn-content h1 {
   font-size: 1.7em;
   font-weight: 700;

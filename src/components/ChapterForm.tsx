@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
 import Editor from "@/components/editor/Editor";
@@ -29,16 +29,20 @@ export default function ChapterForm({
   const draftKey = editing ? `draft:chapter:edit:${chapterId}` : `draft:chapter:${novelId}`;
 
   const [ready, setReady] = useState(false);
+  const [tab, setTab] = useState<"write" | "preview">("write");
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
+  const [editorKey, setEditorKey] = useState(0); // 드래프트 로드 시 Editor 강제 리마운트용
   const [customNum, setCustomNum] = useState("");
   const [hidden, setHidden] = useState(initialHidden);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [draftInfo, setDraftInfo] = useState<{ title: string; content: string } | null>(null);
+  const [dirty, setDirty] = useState(false);
+  const submittedRef = useRef(false);
 
-  // 드래프트 존재 확인 (마운트 1회) — 자동 덮어쓰기 대신 배너로 안내
+  // 드래프트 존재 확인 (마운트 1회)
   useEffect(() => {
     try {
       const raw = localStorage.getItem(draftKey);
@@ -48,9 +52,7 @@ export default function ChapterForm({
           setDraftInfo({ title: d.title ?? "", content: d.content ?? "" });
         }
       }
-    } catch {
-      /* ignore */
-    }
+    } catch { /* ignore */ }
     setReady(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -59,7 +61,9 @@ export default function ChapterForm({
     if (!draftInfo) return;
     setTitle(draftInfo.title);
     setContent(draftInfo.content);
+    setEditorKey((k) => k + 1); // Tiptap은 content prop 변경을 감지 못함 → remount
     setDraftInfo(null);
+    setDirty(true);
   };
 
   const discardDraft = () => {
@@ -67,7 +71,7 @@ export default function ChapterForm({
     setDraftInfo(null);
   };
 
-  // 30초마다 자동 임시저장
+  // 30초마다 자동 임시저장 (하나의 key에 덮어씌우기)
   useEffect(() => {
     if (!ready) return;
     const t = setInterval(() => {
@@ -78,6 +82,17 @@ export default function ChapterForm({
     }, 30_000);
     return () => clearInterval(t);
   }, [ready, title, content, draftKey]);
+
+  // 새로고침/탭 닫기 방지 (dirty 상태일 때)
+  useEffect(() => {
+    if (!dirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [dirty]);
 
   if (status === "loading" || !ready)
     return <p className="text-sm text-gray-400">불러오는 중…</p>;
@@ -104,6 +119,8 @@ export default function ChapterForm({
         body: JSON.stringify({ title, content, hidden, ...(customNum ? { chapterNum: Number(customNum) } : {}) }),
       });
       if (!res.ok) throw new Error(await res.text());
+      submittedRef.current = true;
+      setDirty(false);
       localStorage.removeItem(draftKey);
       if (editing) {
         router.push(`/novel/${novelId}/chapter/${redirectNum}`);
@@ -118,6 +135,11 @@ export default function ChapterForm({
     }
   };
 
+  const saveDraftManual = () => {
+    localStorage.setItem(draftKey, JSON.stringify({ title, content }));
+    setSavedAt(new Date().toLocaleTimeString());
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -125,12 +147,12 @@ export default function ChapterForm({
         {savedAt && <span className="text-xs text-gray-400">임시저장됨 {savedAt}</span>}
       </div>
 
-      {/* 임시저장 불러오기 배너 (이 브라우저에만 저장됨 — 나만 보임) */}
+      {/* 임시저장 불러오기 배너 */}
       {draftInfo && (
         <div className="flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-3 py-2 text-sm">
           <span className="flex-1">
             💾 임시저장된 글이 있습니다.{" "}
-            {draftInfo.title && <strong>“{draftInfo.title}”</strong>}
+            {draftInfo.title && <strong>"{draftInfo.title}"</strong>}
           </span>
           <button onClick={loadDraft} className="px-2 py-1 rounded bg-indigo-600 text-white text-xs">
             불러오기
@@ -157,13 +179,53 @@ export default function ChapterForm({
 
       <input
         value={title}
-        onChange={(e) => setTitle(e.target.value)}
+        onChange={(e) => { setTitle(e.target.value); setDirty(true); }}
         maxLength={120}
         className="w-full border rounded-md px-3 py-2 bg-transparent text-lg font-semibold"
         placeholder="회차 제목"
       />
 
-      <Editor content={content} onChange={setContent} />
+      {/* 쓰기 / 미리보기 탭 */}
+      <div className="flex gap-1 border-b border-black/10 dark:border-white/10">
+        <button
+          type="button"
+          onClick={() => setTab("write")}
+          className={`px-4 py-2 text-sm -mb-px border-b-2 transition-colors ${
+            tab === "write"
+              ? "border-indigo-600 text-indigo-600 font-medium"
+              : "border-transparent text-gray-400 hover:text-gray-700"
+          }`}
+        >
+          쓰기
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("preview")}
+          className={`px-4 py-2 text-sm -mb-px border-b-2 transition-colors ${
+            tab === "preview"
+              ? "border-indigo-600 text-indigo-600 font-medium"
+              : "border-transparent text-gray-400 hover:text-gray-700"
+          }`}
+        >
+          미리보기 (독자 화면)
+        </button>
+      </div>
+
+      {tab === "write" ? (
+        <Editor
+          key={editorKey}
+          content={content}
+          onChange={(html) => { setContent(html); setDirty(true); }}
+        />
+      ) : (
+        <div className="border border-black/15 dark:border-white/20 rounded-lg min-h-[420px] bg-[var(--background)]">
+          {content ? (
+            <div className="wn-content py-4" dangerouslySetInnerHTML={{ __html: content }} />
+          ) : (
+            <p className="text-gray-400 text-sm p-4">아직 내용이 없습니다.</p>
+          )}
+        </div>
+      )}
 
       <label className="flex items-center gap-2 text-sm cursor-pointer">
         <input
@@ -186,16 +248,13 @@ export default function ChapterForm({
           {busy ? "저장 중…" : editing ? "저장" : "발행"}
         </button>
         <button
-          onClick={() => {
-            localStorage.setItem(draftKey, JSON.stringify({ title, content }));
-            setSavedAt(new Date().toLocaleTimeString());
-          }}
+          onClick={saveDraftManual}
           className="px-4 py-2 rounded-md border"
         >
           임시저장
         </button>
         <span className="ml-auto self-center text-xs text-gray-400">
-          최대 {MAX_CHARS.toLocaleString()}자 · 이미지 {MAX_IMAGES_PER_CHAPTER}장 · 임시저장은 이 브라우저에만(나만 보임)
+          최대 {MAX_CHARS.toLocaleString()}자 · 이미지 {MAX_IMAGES_PER_CHAPTER}장 · 임시저장은 이 브라우저에만
         </span>
       </div>
     </div>
