@@ -8,7 +8,7 @@ import { YOUTUBE_HOSTS } from "./constants";
  * - img src 는 http/https 만 (data: URI 금지 → 인라인 거대 이미지 차단)
  */
 export function sanitizeContent(dirty: string): string {
-  return sanitizeHtml(dirty, {
+  let html = sanitizeHtml(dirty, {
     allowedTags: [
       "p", "br", "span", "div", "strong", "b", "em", "i", "u", "s",
       "blockquote", "ul", "ol", "li", "a", "img",
@@ -52,6 +52,10 @@ export function sanitizeContent(dirty: string): string {
       }),
     },
   });
+  // TipTap이 기본값도 명시 → 불필요한 HTML 크기 증가 제거
+  html = html.replace(/\btext-align:\s*left\s*;?\s*/gi, "");
+  html = html.replace(/\s?style=""/gi, "");
+  return html;
 }
 
 /** HTML에서 태그를 제거한 순수 텍스트 글자수 (10만자 제한 검증용) */

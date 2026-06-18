@@ -47,6 +47,8 @@ export async function POST(req: NextRequest) {
   // 일일 업로드 한도 (유저당 30장/일)
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
+  // 어제 이전 레코드 삭제 (한도 추적 목적 외 불필요 → DB 용량 절약)
+  void prisma.upload.deleteMany({ where: { userId: user.id, createdAt: { lt: startOfDay } } });
   const todayCount = await prisma.upload.count({
     where: { userId: user.id, createdAt: { gte: startOfDay } },
   });

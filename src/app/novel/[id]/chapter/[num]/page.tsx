@@ -47,7 +47,7 @@ export default async function ChapterPage({
 
   // 북마크 진행도 업데이트 (북마크가 있을 때만, 최대값 갱신)
   if (user) {
-    void prisma.bookmark.updateMany({
+    await prisma.bookmark.updateMany({
       where: {
         userId: user.id,
         novelId: params.id,

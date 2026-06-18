@@ -46,7 +46,6 @@ model Novel {
   updatedAt    DateTime                 @updatedAt
   chapters     Chapter[]
   bookmarks    Bookmark[]
-  searchVector Unsupported("tsvector")?
 
   @@index([title])
   @@index([authorId])
@@ -65,7 +64,6 @@ model Chapter {
   deletedAt    DateTime?
   createdAt    DateTime                 @default(now())
   comments     Comment[]
-  searchVector Unsupported("tsvector")?
 
   @@index([novelId, chapterNum])
 }
@@ -95,6 +93,7 @@ model Report {
   createdAt  DateTime @default(now())
 
   @@index([status])
+  @@index([targetType, targetId])
 }
 
 model Bookmark {
