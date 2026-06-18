@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 export const metadata: Metadata = {
   title: "웹소설 연재소 — 자유 연재 커뮤니티",
   description: "누구나 자유롭게 웹소설을 연재하는 글쓰기 전용 커뮤니티",
+  icons: { icon: "/favicon.svg" },
 };
 
 export default function RootLayout({
