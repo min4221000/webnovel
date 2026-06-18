@@ -33,7 +33,7 @@ export async function POST(
       deletedAt: true,
       title: true,
       isAdult: true,
-      author: { select: { username: true, webhookUrl: true } },
+      author: { select: { username: true } },
     },
   });
   if (!novel || novel.deletedAt)
@@ -110,16 +110,26 @@ export async function POST(
     data: { updatedAt: new Date() },
   });
 
-  // 디스코드 새 회차 알림 (공개 회차만)
-  if (!hidden) await notifyNewChapter({
-    webhookUrl: novel.author.webhookUrl,
-    novelTitle: novel.title,
-    novelId: params.id,
-    chapterNum: chapter.chapterNum,
-    chapterTitle: title,
-    authorName: novel.author.username,
-    isAdult: novel.isAdult,
-  });
+  // 디스코드 새 회차 알림: 북마크한 유저의 webhookUrl로 전송 (공개 회차만)
+  if (!hidden) {
+    const bookmarkers = await prisma.bookmark.findMany({
+      where: { novelId: params.id, user: { webhookUrl: { not: null } } },
+      select: { user: { select: { webhookUrl: true } } },
+    });
+    const webhookUrls = bookmarkers
+      .map((b) => b.user.webhookUrl)
+      .filter(Boolean) as string[];
+
+    void notifyNewChapter({
+      webhookUrls,
+      novelTitle: novel.title,
+      novelId: params.id,
+      chapterNum: chapter.chapterNum,
+      chapterTitle: title,
+      authorName: novel.author.username,
+      isAdult: novel.isAdult,
+    });
+  }
 
   return NextResponse.json({ chapterNum: chapter.chapterNum, hidden });
 }

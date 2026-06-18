@@ -80,9 +80,9 @@ export default function ProfilePage() {
       </div>
 
       <div className="space-y-2 border-t border-black/10 dark:border-white/15 pt-5">
-        <label className="text-sm font-medium block">새 회차 알림 웹후크 (선택)</label>
+        <label className="text-sm font-medium block">북마크 새 회차 알림 웹후크 (선택)</label>
         <p className="text-xs text-gray-400 leading-relaxed">
-          내 작품에 새 회차를 올리면 지정한 Discord 채널로 자동 알림이 갑니다.
+          내가 북마크한 소설에 새 회차가 올라오면 지정한 Discord 채널로 자동 알림이 갑니다.
           <br />
           채널 설정 → 연동 → 웹후크 → 새 웹후크 → URL 복사 후 붙여넣기.
           <br />
