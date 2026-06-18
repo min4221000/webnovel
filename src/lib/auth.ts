@@ -68,12 +68,34 @@ export const authOptions: NextAuthOptions = {
 
         const autoName = serverNick || discordName;
 
+        // Discord 생일로 만 19세 이상 자동 확인
+        let discordAdultVerified = false;
+        if (account.access_token) {
+          try {
+            const ur = await fetch("https://discord.com/api/v10/users/@me", {
+              headers: { Authorization: `Bearer ${account.access_token}` },
+            });
+            if (ur.ok) {
+              const du = await ur.json() as { date_of_birth?: string };
+              if (du.date_of_birth) {
+                const dob = new Date(du.date_of_birth);
+                const today = new Date();
+                let age = today.getFullYear() - dob.getFullYear();
+                const m = today.getMonth() - dob.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+                discordAdultVerified = age >= 19;
+              }
+            }
+          } catch { /* ignore */ }
+        }
+
         const user = await prisma.user.upsert({
           where: { discordId },
           update: {
             username: autoName,
             avatarUrl,
             ...(isAdmin ? { role: "ADMIN" as const } : {}),
+            ...(discordAdultVerified ? { adult: true } : {}),
             // nickname은 사용자가 직접 설정한 값 — 덮어쓰지 않음
           },
           create: {
@@ -81,6 +103,7 @@ export const authOptions: NextAuthOptions = {
             username: autoName,
             avatarUrl,
             role: isAdmin ? "ADMIN" : "USER",
+            adult: discordAdultVerified,
           },
         });
 
