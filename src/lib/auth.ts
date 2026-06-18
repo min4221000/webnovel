@@ -19,18 +19,21 @@ export const authOptions: NextAuthOptions = {
   pages: { signIn: "/login" },
   callbacks: {
     // 디코섭 멤버만 로그인 허용 (REQUIRE_GUILD_MEMBER=1 + DISCORD_GUILD_ID 설정 시)
+    // DISCORD_GUILD_ID는 쉼표로 여러 개 지정 가능 (예: "id1,id2")
     async signIn({ account }) {
-      const guildId = process.env.DISCORD_GUILD_ID;
+      const guildIds = (process.env.DISCORD_GUILD_ID ?? "").split(",").map(s => s.trim()).filter(Boolean);
       const gate = process.env.REQUIRE_GUILD_MEMBER === "1";
-      if (!gate || !guildId) return true; // 게이트 비활성화 → 누구나
+      if (!gate || guildIds.length === 0) return true;
       if (!account?.access_token) return false;
       try {
-        const r = await fetch(
-          `https://discord.com/api/v10/users/@me/guilds/${guildId}/member`,
-          { headers: { Authorization: `Bearer ${account.access_token}` } },
-        );
-        if (r.ok) return true; // 멤버 확인됨
-        return "/not-member"; // 비멤버 → 안내 페이지로
+        for (const guildId of guildIds) {
+          const r = await fetch(
+            `https://discord.com/api/v10/users/@me/guilds/${guildId}/member`,
+            { headers: { Authorization: `Bearer ${account.access_token}` } },
+          );
+          if (r.ok) return true; // 하나라도 멤버면 통과
+        }
+        return "/not-member";
       } catch {
         return false;
       }
