@@ -38,8 +38,8 @@ export async function PATCH(
     : [];
 
   if (!title) return new NextResponse("제목을 입력하세요.", { status: 400 });
-  if (title.length > 120)
-    return new NextResponse("제목은 120자 이하여야 합니다.", { status: 400 });
+  if (title.length > 30)
+    return new NextResponse("제목은 30자 이하여야 합니다.", { status: 400 });
 
   await prisma.novel.update({
     where: { id: params.id },

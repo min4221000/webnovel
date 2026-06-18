@@ -5,6 +5,14 @@ import { useRouter } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
 import { compressAndUpload } from "@/lib/uploadImage";
 
+const TAG_GROUPS = [
+  ["사니", "나모", "키위", "학부생", "손님"],
+  ["일반", "유머", "피폐"],
+  ["장편", "단편"],
+  ["시크릿 플러스"],
+];
+const EXCLUSIVE = ["장편", "단편"];
+
 type Props = {
   novelId?: string;
   initial?: {
@@ -24,12 +32,45 @@ export default function NovelForm({ novelId, initial }: Props) {
 
   const [title, setTitle] = useState(initial?.title ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
-  const [tags, setTags] = useState(initial?.tags ?? "");
+  const [selectedTags, setSelectedTags] = useState<string[]>(
+    initial?.tags ? initial.tags.split(",").map((t) => t.trim()).filter(Boolean) : []
+  );
   const [coverImage, setCoverImage] = useState<string | null>(initial?.coverImage ?? null);
   const [isAdult, setIsAdult] = useState<boolean>(initial?.isAdult ?? false);
   const [hidden, setHidden] = useState<boolean>(initial?.hidden ?? false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  const toggleTag = (tag: string) => {
+    if (tag === "시크릿 플러스") {
+      const next = !selectedTags.includes(tag);
+      setIsAdult(next);
+      setSelectedTags((prev) =>
+        next ? [...prev.filter((t) => t !== tag), tag] : prev.filter((t) => t !== tag)
+      );
+      return;
+    }
+    if (EXCLUSIVE.includes(tag)) {
+      const active = selectedTags.includes(tag);
+      setSelectedTags((prev) => {
+        const without = prev.filter((t) => !EXCLUSIVE.includes(t));
+        return active ? without : [...without, tag];
+      });
+      return;
+    }
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const setAdult = (next: boolean) => {
+    setIsAdult(next);
+    if (next && !selectedTags.includes("시크릿 플러스")) {
+      setSelectedTags((prev) => [...prev, "시크릿 플러스"]);
+    } else if (!next) {
+      setSelectedTags((prev) => prev.filter((t) => t !== "시크릿 플러스"));
+    }
+  };
 
   if (status === "loading") return <p className="text-sm text-gray-400">불러오는 중…</p>;
   if (!session?.user) {
@@ -66,14 +107,7 @@ export default function NovelForm({ novelId, initial }: Props) {
       const res = await fetch(url, {
         method: editing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          description,
-          coverImage,
-          isAdult,
-          hidden,
-          tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
-        }),
+        body: JSON.stringify({ title, description, coverImage, isAdult, hidden, tags: selectedTags }),
       });
       if (!res.ok) throw new Error(await res.text());
       if (editing) {
@@ -90,39 +124,66 @@ export default function NovelForm({ novelId, initial }: Props) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
+    <div className="max-w-2xl mx-auto space-y-5">
       <h1 className="text-2xl font-bold">{editing ? "소설 정보 수정" : "새 소설 등록"}</h1>
 
       <div className="space-y-1">
-        <label className="text-sm font-medium">제목 *</label>
+        <label className="text-sm font-medium flex justify-between">
+          <span>제목 *</span>
+          <span className="text-xs text-gray-400">{title.length}/30</span>
+        </label>
         <input
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          maxLength={120}
+          onChange={(e) => setTitle(e.target.value.slice(0, 30))}
+          maxLength={30}
           className="w-full border rounded-md px-3 py-2 bg-transparent"
           placeholder="작품 제목"
         />
       </div>
 
       <div className="space-y-1">
-        <label className="text-sm font-medium">설명</label>
+        <label className="text-sm font-medium flex justify-between">
+          <span>설명</span>
+          <span className="text-xs text-gray-400">{description.length}/200</span>
+        </label>
         <textarea
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(e) => setDescription(e.target.value.slice(0, 200))}
+          maxLength={200}
           rows={3}
-          className="w-full border rounded-md px-3 py-2 bg-transparent"
-          placeholder="작품 소개"
+          className="w-full border rounded-md px-3 py-2 bg-transparent resize-none"
+          placeholder="작품 소개 (200자 이내)"
         />
       </div>
 
-      <div className="space-y-1">
-        <label className="text-sm font-medium">태그 (쉼표로 구분)</label>
-        <input
-          value={tags}
-          onChange={(e) => setTags(e.target.value)}
-          className="w-full border rounded-md px-3 py-2 bg-transparent"
-          placeholder="판타지, 로맨스, 무협"
-        />
+      <div className="space-y-2">
+        <label className="text-sm font-medium">태그</label>
+        <div className="space-y-2">
+          {TAG_GROUPS.map((group, gi) => (
+            <div key={gi} className="flex flex-wrap gap-2">
+              {group.map((tag) => {
+                const active = selectedTags.includes(tag);
+                const isSecret = tag === "시크릿 플러스";
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => toggleTag(tag)}
+                    className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                      active
+                        ? isSecret
+                          ? "bg-red-600 text-white border-red-600"
+                          : "bg-indigo-600 text-white border-indigo-600"
+                        : "bg-transparent border-black/20 dark:border-white/20 hover:border-indigo-400"
+                    }`}
+                  >
+                    {isSecret ? "🔞 " : ""}{tag}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="space-y-1">
@@ -145,30 +206,32 @@ export default function NovelForm({ novelId, initial }: Props) {
         </div>
       </div>
 
-      <label className="flex items-center gap-2 text-sm cursor-pointer">
-        <input
-          type="checkbox"
-          checked={isAdult}
-          onChange={(e) => setIsAdult(e.target.checked)}
-          className="w-4 h-4"
-        />
-        <span>
-          <strong className="text-red-500">🔞시크릿 플러스 작품</strong> — 시크릿 플러스를 켠
-          이용자에게만 노출됩니다.
-        </span>
-      </label>
+      <div className="space-y-2 border-t pt-4">
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isAdult}
+            onChange={(e) => setAdult(e.target.checked)}
+            className="w-4 h-4"
+          />
+          <span>
+            <strong className="text-red-500">🔞시크릿 플러스 작품</strong> — 시크릿 플러스를 켠
+            이용자에게만 노출됩니다.
+          </span>
+        </label>
 
-      <label className="flex items-center gap-2 text-sm cursor-pointer">
-        <input
-          type="checkbox"
-          checked={hidden}
-          onChange={(e) => setHidden(e.target.checked)}
-          className="w-4 h-4"
-        />
-        <span>
-          <strong>비공개</strong> — 나만 볼 수 있습니다. 나중에 수정에서 공개로 바꿀 수 있습니다.
-        </span>
-      </label>
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={hidden}
+            onChange={(e) => setHidden(e.target.checked)}
+            className="w-4 h-4"
+          />
+          <span>
+            <strong>비공개</strong> — 나만 볼 수 있습니다. 나중에 수정에서 공개로 바꿀 수 있습니다.
+          </span>
+        </label>
+      </div>
 
       {err && <p className="text-sm text-red-500">{err}</p>}
 
