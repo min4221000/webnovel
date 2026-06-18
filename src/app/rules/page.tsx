@@ -5,8 +5,8 @@ export default function RulesPage() {
     <div className="max-w-2xl mx-auto prose-sm space-y-4">
       <h1 className="text-2xl font-bold">이용규정</h1>
       <p className="text-sm text-gray-500">
-        본 열람실은 <strong>사니양 연구실 구성원 전용</strong>입니다.
-        아래 규정을 위반할 경우 경고 → 글 삭제 → 계정 차단의 단계적 제재가
+        본 열람실은 <strong>사니양 연구실 실험체 모임 디스코드 전용</strong>입니다.
+        아래 규정을 위반할 경우 수위에 따라 경고 → 글 삭제 → 계정 차단의 제재가
         적용됩니다.
       </p>
 
