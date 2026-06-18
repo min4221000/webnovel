@@ -21,11 +21,12 @@ export default async function NovelPage({
       coverImage: true,
       tags: true,
       isAdult: true,
+      hidden: true,
       author: { select: { id: true, username: true } },
       chapters: {
         where: { deletedAt: null },
         orderBy: { chapterNum: "asc" },
-        select: { id: true, chapterNum: true, title: true, createdAt: true },
+        select: { id: true, chapterNum: true, title: true, createdAt: true, hidden: true },
       },
     },
   });
@@ -33,6 +34,9 @@ export default async function NovelPage({
   if (!novel) notFound();
 
   const isOwner = !!user && (user.id === novel.author.id || user.role === "ADMIN");
+
+  // 비공개 소설은 작가/어드민만 접근
+  if (novel.hidden && !isOwner) notFound();
 
   // 18+ 작품은 성인 열람 ON 인 본인/관리자만 접근
   const adult = await getViewerAdult();
@@ -67,6 +71,7 @@ export default async function NovelPage({
         <div className="min-w-0">
           <h1 className="text-2xl font-bold">
             {novel.isAdult && <span className="text-red-500 mr-1">[🔞]</span>}
+            {novel.hidden && <span className="text-gray-400 mr-1 text-sm font-normal">[비공개]</span>}
             {novel.title}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
@@ -123,7 +128,7 @@ export default async function NovelPage({
           <p className="text-sm text-gray-400">아직 등록된 회차가 없습니다.</p>
         ) : (
           <ul className="divide-y divide-black/10 dark:divide-white/10 border rounded-lg">
-            {novel.chapters.map((c) => (
+            {novel.chapters.filter(c => isOwner || !c.hidden).map((c) => (
               <li
                 key={c.id}
                 className="flex items-center gap-2 px-4 py-3 hover:bg-black/5 dark:hover:bg-white/5"
@@ -134,6 +139,7 @@ export default async function NovelPage({
                 >
                   <span className="truncate">
                     <span className="text-gray-400 mr-2">{c.chapterNum}화</span>
+                    {c.hidden && <span className="text-gray-400 text-xs mr-1">[비공개]</span>}
                     {c.title}
                   </span>
                   <span className="text-xs text-gray-400 ml-2 shrink-0">

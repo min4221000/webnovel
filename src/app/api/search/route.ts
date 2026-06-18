@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
         username: true,
         avatarUrl: true,
         novels: {
-          where: { deletedAt: null, ...adultFilter },
+          where: { deletedAt: null, hidden: false, ...adultFilter },
           orderBy: { updatedAt: "desc" },
           take: 20,
           select: {
@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
   // ----- 제목 검색 -----
   if (type === "title") {
     const novels = await prisma.novel.findMany({
-      where: { deletedAt: null, ...adultFilter, title: { contains: q, mode: "insensitive" } },
+      where: { deletedAt: null, hidden: false, ...adultFilter, title: { contains: q, mode: "insensitive" } },
       orderBy: { updatedAt: "desc" },
       take: 40,
       select: {
@@ -108,6 +108,7 @@ export async function GET(req: NextRequest) {
     prisma.novel.findMany({
       where: {
         deletedAt: null,
+        hidden: false,
         ...adultFilter,
         OR: [
           { title: { contains: q, mode: "insensitive" } },
@@ -129,7 +130,7 @@ export async function GET(req: NextRequest) {
       where: {
         deletedAt: null,
         content: { contains: q, mode: "insensitive" },
-        novel: { deletedAt: null, ...adultFilter },
+        novel: { deletedAt: null, hidden: false, ...adultFilter },
       },
       take: 40,
       orderBy: { createdAt: "desc" },

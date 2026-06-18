@@ -38,7 +38,8 @@ model Novel {
   authorId     String
   author       User                     @relation(fields: [authorId], references: [id])
   tags         String[]
-  isAdult      Boolean                  @default(false) // 18+ 성인 작품
+  isAdult      Boolean                  @default(false)
+  hidden       Boolean                  @default(false)
   deletedAt    DateTime?
   createdAt    DateTime                 @default(now())
   updatedAt    DateTime                 @updatedAt
@@ -58,6 +59,7 @@ model Chapter {
   content      String                   @db.Text
   charCount    Int
   imageCount   Int                      @default(0)
+  hidden       Boolean                  @default(false)
   deletedAt    DateTime?
   createdAt    DateTime                 @default(now())
   comments     Comment[]

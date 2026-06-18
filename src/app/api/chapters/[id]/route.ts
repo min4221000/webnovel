@@ -48,6 +48,7 @@ export async function PATCH(
   const content = sanitizeContent((body?.content ?? "").toString());
   const charCount = countText(content);
   const imageCount = countImages(content);
+  const hidden = typeof body?.hidden === "boolean" ? body.hidden : undefined;
 
   if (!title) return new NextResponse("제목을 입력하세요.", { status: 400 });
   if (charCount === 0)
@@ -60,7 +61,7 @@ export async function PATCH(
   const oldContent = ch.content ?? "";
   await prisma.chapter.update({
     where: { id: params.id },
-    data: { title, content, charCount, imageCount },
+    data: { title, content, charCount, imageCount, ...(hidden !== undefined ? { hidden } : {}) },
   });
 
   // 교체된 이미지 R2에서 삭제

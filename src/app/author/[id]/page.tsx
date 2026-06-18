@@ -18,7 +18,7 @@ export default async function AuthorPage({
       username: true,
       avatarUrl: true,
       novels: {
-        where: { deletedAt: null, ...(adult ? {} : { isAdult: false }) },
+        where: { deletedAt: null, hidden: false, ...(adult ? {} : { isAdult: false }) },
         orderBy: { updatedAt: "desc" },
         select: {
           id: true,

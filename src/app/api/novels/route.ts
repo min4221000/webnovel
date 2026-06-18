@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
   const description = (body?.description ?? "").toString().trim() || null;
   const coverImage = (body?.coverImage ?? "").toString().trim() || null;
   const isAdult = body?.isAdult === true;
+  const hidden = body?.hidden === true;
   const tags: string[] = Array.isArray(body?.tags)
     ? body.tags.map((t: unknown) => String(t).trim()).filter(Boolean).slice(0, 10)
     : [];
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
     return new NextResponse("제목은 120자 이하여야 합니다.", { status: 400 });
 
   const novel = await prisma.novel.create({
-    data: { title, description, coverImage, isAdult, tags, authorId: user.id },
+    data: { title, description, coverImage, isAdult, hidden, tags, authorId: user.id },
     select: { id: true },
   });
 
@@ -49,7 +50,7 @@ export async function GET(req: NextRequest) {
   );
   const adult = await getViewerAdult();
   const novels = await prisma.novel.findMany({
-    where: { deletedAt: null, ...(adult ? {} : { isAdult: false }) },
+    where: { deletedAt: null, hidden: false, ...(adult ? {} : { isAdult: false }) },
     orderBy: { updatedAt: "desc" },
     take,
     select: {

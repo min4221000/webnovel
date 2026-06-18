@@ -13,6 +13,7 @@ type Props = {
     tags: string;
     coverImage: string | null;
     isAdult?: boolean;
+    hidden?: boolean;
   };
 };
 
@@ -26,6 +27,7 @@ export default function NovelForm({ novelId, initial }: Props) {
   const [tags, setTags] = useState(initial?.tags ?? "");
   const [coverImage, setCoverImage] = useState<string | null>(initial?.coverImage ?? null);
   const [isAdult, setIsAdult] = useState<boolean>(initial?.isAdult ?? false);
+  const [hidden, setHidden] = useState<boolean>(initial?.hidden ?? false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -69,6 +71,7 @@ export default function NovelForm({ novelId, initial }: Props) {
           description,
           coverImage,
           isAdult,
+          hidden,
           tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
         }),
       });
@@ -152,6 +155,18 @@ export default function NovelForm({ novelId, initial }: Props) {
         <span>
           <strong className="text-red-500">🔞시크릿 플러스 작품</strong> — 시크릿 플러스를 켠
           이용자에게만 노출됩니다.
+        </span>
+      </label>
+
+      <label className="flex items-center gap-2 text-sm cursor-pointer">
+        <input
+          type="checkbox"
+          checked={hidden}
+          onChange={(e) => setHidden(e.target.checked)}
+          className="w-4 h-4"
+        />
+        <span>
+          <strong>비공개</strong> — 나만 볼 수 있습니다. 나중에 수정에서 공개로 바꿀 수 있습니다.
         </span>
       </label>
 

@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const adult = await getViewerAdult();
   const novels = await prisma.novel.findMany({
-    where: { deletedAt: null, ...(adult ? {} : { isAdult: false }) },
+    where: { deletedAt: null, hidden: false, ...(adult ? {} : { isAdult: false }) },
     orderBy: { updatedAt: "desc" },
     take: 30,
     select: {

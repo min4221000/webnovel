@@ -20,6 +20,7 @@ export default async function EditChapterPage({
       title: true,
       content: true,
       chapterNum: true,
+      hidden: true,
       novel: { select: { id: true, authorId: true } },
     },
   });
@@ -34,6 +35,7 @@ export default async function EditChapterPage({
       redirectNum={chapter.chapterNum}
       initialTitle={chapter.title}
       initialContent={chapter.content}
+      initialHidden={chapter.hidden}
     />
   );
 }

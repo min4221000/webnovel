@@ -8,10 +8,11 @@ import { MAX_CHARS, MAX_IMAGES_PER_CHAPTER } from "@/lib/constants";
 
 type Props = {
   novelId: string;
-  chapterId?: string; // 있으면 수정 모드
-  redirectNum?: number; // 수정 후 이동할 회차 번호
+  chapterId?: string;
+  redirectNum?: number;
   initialTitle?: string;
   initialContent?: string;
+  initialHidden?: boolean;
 };
 
 export default function ChapterForm({
@@ -20,6 +21,7 @@ export default function ChapterForm({
   redirectNum,
   initialTitle = "",
   initialContent = "",
+  initialHidden = false,
 }: Props) {
   const editing = !!chapterId;
   const { data: session, status } = useSession();
@@ -30,6 +32,7 @@ export default function ChapterForm({
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
   const [customNum, setCustomNum] = useState("");
+  const [hidden, setHidden] = useState(initialHidden);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -98,7 +101,7 @@ export default function ChapterForm({
       const res = await fetch(url, {
         method: editing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, content, ...(customNum ? { chapterNum: Number(customNum) } : {}) }),
+        body: JSON.stringify({ title, content, hidden, ...(customNum ? { chapterNum: Number(customNum) } : {}) }),
       });
       if (!res.ok) throw new Error(await res.text());
       localStorage.removeItem(draftKey);
@@ -161,6 +164,16 @@ export default function ChapterForm({
       />
 
       <Editor content={content} onChange={setContent} />
+
+      <label className="flex items-center gap-2 text-sm cursor-pointer">
+        <input
+          type="checkbox"
+          checked={hidden}
+          onChange={(e) => setHidden(e.target.checked)}
+          className="w-4 h-4"
+        />
+        <span><strong>비공개</strong> — 나만 볼 수 있습니다. 회차 수정에서 공개로 바꿀 수 있습니다.</span>
+      </label>
 
       {err && <p className="text-sm text-red-500 whitespace-pre-wrap">{err}</p>}
 

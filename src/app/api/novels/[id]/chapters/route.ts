@@ -90,6 +90,8 @@ export async function POST(
     chapterNum = (last?.chapterNum ?? 0) + 1;
   }
 
+  const hidden = body?.hidden === true;
+
   const chapter = await prisma.chapter.create({
     data: {
       novelId: params.id,
@@ -98,6 +100,7 @@ export async function POST(
       content,
       charCount,
       imageCount,
+      hidden,
     },
     select: { chapterNum: true },
   });
@@ -107,8 +110,8 @@ export async function POST(
     data: { updatedAt: new Date() },
   });
 
-  // 디스코드 새 회차 알림 (웹훅 설정 시)
-  await notifyNewChapter({
+  // 디스코드 새 회차 알림 (공개 회차만)
+  if (!hidden) await notifyNewChapter({
     webhookUrl: novel.author.webhookUrl,
     novelTitle: novel.title,
     novelId: params.id,
@@ -118,5 +121,5 @@ export async function POST(
     isAdult: novel.isAdult,
   });
 
-  return NextResponse.json({ chapterNum: chapter.chapterNum });
+  return NextResponse.json({ chapterNum: chapter.chapterNum, hidden });
 }
