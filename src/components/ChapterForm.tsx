@@ -32,15 +32,19 @@ export default function ChapterForm({
   const [tab, setTab] = useState<"write" | "preview">("write");
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
-  const [editorKey, setEditorKey] = useState(0); // 드래프트 로드 시 Editor 강제 리마운트용
+  const [editorKey, setEditorKey] = useState(0);
   const [customNum, setCustomNum] = useState("");
   const [hidden, setHidden] = useState(initialHidden);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [draftInfo, setDraftInfo] = useState<{ title: string; content: string } | null>(null);
-  const [dirty, setDirty] = useState(false);
-  const submittedRef = useRef(false);
+
+  // ref로 최신 값 유지 — 클로저 버그 방지 (interval이 stale 값 읽는 문제)
+  const latestTitle = useRef(title);
+  const latestContent = useRef(content);
+  const isDirtyRef = useRef(false);   // 새로고침 방지용
+  const mountedRef = useRef(false);   // onCreate 호출 무시용 (에디터 초기화 시 onChange 발화)
 
   // 드래프트 존재 확인 (마운트 1회)
   useEffect(() => {
@@ -54,16 +58,60 @@ export default function ChapterForm({
       }
     } catch { /* ignore */ }
     setReady(true);
+    // 마운트 직후 약간의 딜레이 후 dirty 추적 시작 (에디터 onCreate 무시)
+    const t = setTimeout(() => { mountedRef.current = true; }, 300);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 새로고침/탭 닫기 방지 — 마운트 시 한 번만 등록, ref로 최신 dirty 읽음
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isDirtyRef.current) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, []);
+
+  // 30초 자동 임시저장 — deps에 title/content 없음, ref로 최신값 읽음 → 타이핑해도 리셋 안 됨
+  useEffect(() => {
+    if (!ready) return;
+    const interval = setInterval(() => {
+      const t = latestTitle.current;
+      const c = latestContent.current;
+      if (t || c) {
+        localStorage.setItem(draftKey, JSON.stringify({ title: t, content: c }));
+        setSavedAt(new Date().toLocaleTimeString());
+      }
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [ready, draftKey]);
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    setTitle(v);
+    latestTitle.current = v;
+    if (mountedRef.current) isDirtyRef.current = true;
+  };
+
+  const handleContentChange = (html: string) => {
+    setContent(html);
+    latestContent.current = html;
+    if (mountedRef.current) isDirtyRef.current = true;
+  };
 
   const loadDraft = () => {
     if (!draftInfo) return;
     setTitle(draftInfo.title);
     setContent(draftInfo.content);
-    setEditorKey((k) => k + 1); // Tiptap은 content prop 변경을 감지 못함 → remount
+    latestTitle.current = draftInfo.title;
+    latestContent.current = draftInfo.content;
+    setEditorKey((k) => k + 1); // Tiptap은 content prop 변경 무시 → remount 강제
     setDraftInfo(null);
-    setDirty(true);
+    isDirtyRef.current = true;
   };
 
   const discardDraft = () => {
@@ -71,28 +119,10 @@ export default function ChapterForm({
     setDraftInfo(null);
   };
 
-  // 30초마다 자동 임시저장 (하나의 key에 덮어씌우기)
-  useEffect(() => {
-    if (!ready) return;
-    const t = setInterval(() => {
-      if (title || content) {
-        localStorage.setItem(draftKey, JSON.stringify({ title, content }));
-        setSavedAt(new Date().toLocaleTimeString());
-      }
-    }, 30_000);
-    return () => clearInterval(t);
-  }, [ready, title, content, draftKey]);
-
-  // 새로고침/탭 닫기 방지 (dirty 상태일 때)
-  useEffect(() => {
-    if (!dirty) return;
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = "";
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [dirty]);
+  const saveDraftManual = () => {
+    localStorage.setItem(draftKey, JSON.stringify({ title: latestTitle.current, content: latestContent.current }));
+    setSavedAt(new Date().toLocaleTimeString());
+  };
 
   if (status === "loading" || !ready)
     return <p className="text-sm text-gray-400">불러오는 중…</p>;
@@ -119,8 +149,7 @@ export default function ChapterForm({
         body: JSON.stringify({ title, content, hidden, ...(customNum ? { chapterNum: Number(customNum) } : {}) }),
       });
       if (!res.ok) throw new Error(await res.text());
-      submittedRef.current = true;
-      setDirty(false);
+      isDirtyRef.current = false;
       localStorage.removeItem(draftKey);
       if (editing) {
         router.push(`/novel/${novelId}/chapter/${redirectNum}`);
@@ -135,11 +164,6 @@ export default function ChapterForm({
     }
   };
 
-  const saveDraftManual = () => {
-    localStorage.setItem(draftKey, JSON.stringify({ title, content }));
-    setSavedAt(new Date().toLocaleTimeString());
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -151,8 +175,8 @@ export default function ChapterForm({
       {draftInfo && (
         <div className="flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-3 py-2 text-sm">
           <span className="flex-1">
-            💾 임시저장된 글이 있습니다.{" "}
-            {draftInfo.title && <strong>"{draftInfo.title}"</strong>}
+            💾 임시저장된 글이 있습니다.
+            {draftInfo.title && <strong> &ldquo;{draftInfo.title}&rdquo;</strong>}
           </span>
           <button onClick={loadDraft} className="px-2 py-1 rounded bg-indigo-600 text-white text-xs">
             불러오기
@@ -179,7 +203,7 @@ export default function ChapterForm({
 
       <input
         value={title}
-        onChange={(e) => { setTitle(e.target.value); setDirty(true); }}
+        onChange={handleTitleChange}
         maxLength={120}
         className="w-full border rounded-md px-3 py-2 bg-transparent text-lg font-semibold"
         placeholder="회차 제목"
@@ -215,7 +239,7 @@ export default function ChapterForm({
         <Editor
           key={editorKey}
           content={content}
-          onChange={(html) => { setContent(html); setDirty(true); }}
+          onChange={handleContentChange}
         />
       ) : (
         <div className="border border-black/15 dark:border-white/20 rounded-lg min-h-[420px] bg-[var(--background)]">
