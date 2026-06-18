@@ -63,6 +63,11 @@ export default async function NovelPage({
 
   return (
     <div className="space-y-6">
+      {/* 플로팅 북마크 버튼 — 로그인 + 비작가 */}
+      {user && !isOwner && (
+        <BookmarkButton novelId={novel.id} initialBookmarked={!!bookmark} />
+      )}
+
       <div className="flex gap-4">
         {novel.coverImage ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -87,15 +92,8 @@ export default async function NovelPage({
             </Link>{" "}
             · {novel.chapters.length}화
           </p>
-          {user && !isOwner && (
-            <div className="flex items-center gap-2 mt-2">
-              <BookmarkButton novelId={novel.id} initialBookmarked={!!bookmark} />
-              {bookmark?.lastReadChapter != null && (
-                <span className="text-xs text-gray-400">
-                  {bookmark.lastReadChapter}화까지 읽음
-                </span>
-              )}
-            </div>
+          {bookmark?.lastReadChapter != null && (
+            <p className="text-xs text-amber-600 mt-1">★ {bookmark.lastReadChapter}화까지 읽음</p>
           )}
           {novel.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
