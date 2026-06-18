@@ -11,7 +11,7 @@ export async function GET() {
   try { user = await requireUser(); } catch (e) { return authErrorResponse(e); }
   const db = await prisma.user.findUnique({
     where: { id: user.id },
-    select: { username: true, nickname: true, avatarUrl: true, webhookUrl: true },
+    select: { username: true, nickname: true, avatarUrl: true, webhookUrl: true, adult: true },
   });
   return NextResponse.json(db);
 }

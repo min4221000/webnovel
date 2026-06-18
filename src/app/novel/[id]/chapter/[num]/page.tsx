@@ -45,6 +45,18 @@ export default async function ChapterPage({
     }
   }
 
+  // 북마크 진행도 업데이트 (북마크가 있을 때만, 최대값 갱신)
+  if (user) {
+    void prisma.bookmark.updateMany({
+      where: {
+        userId: user.id,
+        novelId: params.id,
+        OR: [{ lastReadChapter: null }, { lastReadChapter: { lt: chapterNum } }],
+      },
+      data: { lastReadChapter: chapterNum },
+    });
+  }
+
   const chapter = await prisma.chapter.findFirst({
     where: { novelId: params.id, chapterNum, deletedAt: null },
     select: { id: true, title: true, content: true, chapterNum: true, createdAt: true },

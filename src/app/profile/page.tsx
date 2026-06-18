@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import AdultToggle from "@/components/AdultToggle";
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
@@ -10,6 +11,7 @@ export default function ProfilePage() {
   const [nickname, setNickname] = useState("");
   const [origin, setOrigin] = useState<string | null>(null);
   const [webhookUrl, setWebhookUrl] = useState("");
+  const [adult, setAdult] = useState<boolean | null>(null);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
@@ -21,6 +23,7 @@ export default function ProfilePage() {
       setOrigin(d.nickname ?? null);
       setNickname(d.nickname ?? "");
       setWebhookUrl(d.webhookUrl ?? "");
+      setAdult(d.adult ?? false);
     });
   }, [status, router]);
 
@@ -101,6 +104,13 @@ export default function ProfilePage() {
           </button>
         )}
       </div>
+
+      {adult !== null && (
+        <div className="space-y-2 border-t border-black/10 dark:border-white/15 pt-5">
+          <p className="text-sm font-medium">🔞 시크릿 플러스</p>
+          <AdultToggle initial={adult} />
+        </div>
+      )}
 
       <button
         onClick={save}

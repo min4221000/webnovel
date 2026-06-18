@@ -13,21 +13,22 @@ enum Role {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  discordId String    @unique
+  id        String     @id @default(cuid())
+  discordId String     @unique
   username  String
   avatarUrl String?
-  role      Role      @default(USER)
-  banned    Boolean   @default(false)
+  role      Role       @default(USER)
+  banned    Boolean    @default(false)
   banReason String?
-  adult     Boolean   @default(false)
-  nickname  String?   // 사용자 직접 설정 닉네임 (없으면 Discord 이름 사용)
-  webhookUrl String?  // 작가 개인 디스코드 웹후크 (새 회차 알림 받을 채널)
-  createdAt DateTime  @default(now())
+  adult     Boolean    @default(false)
+  nickname  String?
+  webhookUrl String?
+  createdAt DateTime   @default(now())
   novels    Novel[]
   comments  Comment[]
   reports   Report[]
   uploads   Upload[]
+  bookmarks Bookmark[]
 }
 
 model Novel {
@@ -44,6 +45,7 @@ model Novel {
   createdAt    DateTime                 @default(now())
   updatedAt    DateTime                 @updatedAt
   chapters     Chapter[]
+  bookmarks    Bookmark[]
   searchVector Unsupported("tsvector")?
 
   @@index([title])
@@ -93,6 +95,20 @@ model Report {
   createdAt  DateTime @default(now())
 
   @@index([status])
+}
+
+model Bookmark {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  novelId         String
+  novel           Novel    @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  lastReadChapter Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, novelId])
+  @@index([userId])
 }
 
 // 일일 업로드 한도 추적 (유저당 30장/일)

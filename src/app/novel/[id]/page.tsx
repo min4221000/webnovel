@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, getViewerAdult } from "@/lib/session";
 import DeleteButton from "@/components/DeleteButton";
+import BookmarkButton from "@/components/BookmarkButton";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,11 @@ export default async function NovelPage({
   if (!novel) notFound();
 
   const isOwner = !!user && (user.id === novel.author.id || user.role === "ADMIN");
+
+  const bookmark = user ? await prisma.bookmark.findUnique({
+    where: { userId_novelId: { userId: user.id, novelId: params.id } },
+    select: { lastReadChapter: true },
+  }) : null;
 
   // 비공개 소설은 작가/어드민만 접근
   if (novel.hidden && !isOwner) notFound();
@@ -81,6 +87,16 @@ export default async function NovelPage({
             </Link>{" "}
             · {novel.chapters.length}화
           </p>
+          {user && !isOwner && (
+            <div className="flex items-center gap-2 mt-2">
+              <BookmarkButton novelId={novel.id} initialBookmarked={!!bookmark} />
+              {bookmark?.lastReadChapter != null && (
+                <span className="text-xs text-gray-400">
+                  {bookmark.lastReadChapter}화까지 읽음
+                </span>
+              )}
+            </div>
+          )}
           {novel.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
               {novel.tags.map((t) => (

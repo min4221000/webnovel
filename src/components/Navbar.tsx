@@ -17,12 +17,17 @@ export default function Navbar() {
         <Link href="/search" className="text-sm text-gray-500 hover:underline">
           검색
         </Link>
-        <Link href="/rules" className="text-sm text-gray-500 hover:underline">
-          이용규정
-        </Link>
-        <Link href="/adult" className="text-sm text-gray-500 hover:underline">
-          🔞
-        </Link>
+
+        {status !== "loading" && user && (
+          <>
+            <Link href="/drafts" className="text-sm text-gray-500 hover:underline">
+              비밀글
+            </Link>
+            <Link href="/bookmarks" className="text-sm text-gray-500 hover:underline">
+              북마크
+            </Link>
+          </>
+        )}
 
         <div className="ml-auto flex items-center gap-3">
           {status === "loading" ? null : user ? (
