@@ -11,7 +11,7 @@ export default function Navbar() {
     <header className="border-b border-black/10 dark:border-white/10 sticky top-0 z-40 bg-[var(--background)]/90 backdrop-blur">
       <nav className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-4">
         <Link href="/" className="font-bold text-lg shrink-0">
-          웹소설 연재소
+          사니양 연구 보고서 열람실
         </Link>
 
         <Link href="/search" className="text-sm text-gray-500 hover:underline">

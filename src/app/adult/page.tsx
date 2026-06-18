@@ -3,7 +3,7 @@ import { getCurrentUser, getViewerAdult } from "@/lib/session";
 import AdultToggle from "@/components/AdultToggle";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "성인(18+) 설정 — 웹소설 연재소" };
+export const metadata = { title: "성인(18+) 설정 — 사니양 연구 보고서 열람실" };
 
 export default async function AdultPage() {
   const user = await getCurrentUser();
