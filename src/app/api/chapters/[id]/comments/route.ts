@@ -9,6 +9,8 @@ export const dynamic = "force-dynamic";
 
 const MAX_COMMENT_LEN = 2000;
 
+const BLUR_THRESHOLD = 3; // 신고 N회 이상 → 블러
+
 // 댓글 목록 (비로그인 조회 가능)
 export async function GET(
   _req: NextRequest,
@@ -25,7 +27,25 @@ export async function GET(
       author: { select: { id: true, username: true, avatarUrl: true } },
     },
   });
-  return NextResponse.json({ comments });
+
+  // 신고 수 집계 (rejected 제외)
+  const ids = comments.map((c) => c.id);
+  const reportGroups = ids.length
+    ? await prisma.report.groupBy({
+        by: ["targetId"],
+        where: { targetType: "comment", targetId: { in: ids }, status: { not: "rejected" } },
+        _count: { id: true },
+      })
+    : [];
+  const countMap = new Map(reportGroups.map((r) => [r.targetId, r._count.id]));
+
+  const result = comments.map((c) => ({
+    ...c,
+    reportCount: countMap.get(c.id) ?? 0,
+    blurred: (countMap.get(c.id) ?? 0) >= BLUR_THRESHOLD,
+  }));
+
+  return NextResponse.json({ comments: result });
 }
 
 // 댓글 작성 (로그인 필요)
