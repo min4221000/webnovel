@@ -31,6 +31,17 @@ export async function POST(req: NextRequest) {
   }
   const body = await req.json().catch(() => null);
   const adult = body?.adult === true;
+
+  if (adult) {
+    const db = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { minorLocked: true },
+    });
+    if (db?.minorLocked) {
+      return new NextResponse("Discord 생일 기준 미성년자는 성인 콘텐츠를 열람할 수 없습니다.", { status: 403 });
+    }
+  }
+
   await prisma.user.update({
     where: { id: user.id },
     data: { adult },

@@ -71,8 +71,9 @@ export const authOptions: NextAuthOptions = {
 
         const autoName = serverNick || discordName;
 
-        // Discord 생일로 만 19세 이상 자동 확인
+        // Discord 생일로 나이 확인 (생일 등록된 경우만)
         let discordAdultVerified = false;
+        let discordMinorConfirmed = false;
         if (account.access_token) {
           try {
             const ur = await fetch("https://discord.com/api/v10/users/@me", {
@@ -87,6 +88,7 @@ export const authOptions: NextAuthOptions = {
                 const m = today.getMonth() - dob.getMonth();
                 if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
                 discordAdultVerified = age >= 19;
+                discordMinorConfirmed = age < 19;
               }
             }
           } catch { /* ignore */ }
@@ -98,8 +100,8 @@ export const authOptions: NextAuthOptions = {
             username: autoName,
             avatarUrl,
             ...(isAdmin ? { role: "ADMIN" as const } : {}),
-            ...(discordAdultVerified ? { adult: true } : {}),
-            // nickname은 사용자가 직접 설정한 값 — 덮어쓰지 않음
+            ...(discordAdultVerified ? { adult: true, minorLocked: false } : {}),
+            ...(discordMinorConfirmed ? { adult: false, minorLocked: true } : {}),
           },
           create: {
             discordId,
@@ -107,6 +109,7 @@ export const authOptions: NextAuthOptions = {
             avatarUrl,
             role: isAdmin ? "ADMIN" : "USER",
             adult: discordAdultVerified,
+            minorLocked: discordMinorConfirmed,
           },
         });
 
