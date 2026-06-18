@@ -21,7 +21,6 @@ model User {
   banned    Boolean   @default(false)
   banReason String?
   adult     Boolean   @default(false)
-  minorLocked Boolean @default(false)
   nickname  String?   // 사용자 직접 설정 닉네임 (없으면 Discord 이름 사용)
   webhookUrl String?  // 작가 개인 디스코드 웹후크 (새 회차 알림 받을 채널)
   createdAt DateTime  @default(now())

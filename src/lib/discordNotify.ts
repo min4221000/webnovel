@@ -24,7 +24,7 @@ export async function notifyNewChapter(opts: {
     url: link,
     color: opts.isAdult ? 0xef4444 : 0x6366f1,
     fields: [{ name: "작가", value: opts.authorName, inline: true }],
-    footer: { text: opts.isAdult ? "🔞 성인 작품" : "새 회차 연재" },
+    footer: { text: opts.isAdult ? "🔞 시크릿 플러스" : "새 회차 연재" },
     timestamp: new Date().toISOString(),
   };
 

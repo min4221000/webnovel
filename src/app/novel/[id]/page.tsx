@@ -40,12 +40,12 @@ export default async function NovelPage({
     return (
       <div className="max-w-xl mx-auto text-center py-16 space-y-4">
         <p className="text-5xl">🔞</p>
-        <h1 className="text-xl font-bold">성인(18+) 작품입니다</h1>
+        <h1 className="text-xl font-bold">🔞시크릿 플러스 작품입니다</h1>
         <p className="text-sm text-gray-500">
-          이 작품을 보려면 만 19세 이상 성인 열람 설정이 필요합니다.
+          이 작품을 보려면 만 19세 이상 시크릿 플러스 설정이 필요합니다.
         </p>
         <Link href="/adult" className="inline-block px-4 py-2 rounded-md bg-red-600 text-white text-sm">
-          18+ 설정하러 가기
+          🔞시크릿 플러스 설정하러 가기
         </Link>
       </div>
     );
@@ -66,7 +66,7 @@ export default async function NovelPage({
         )}
         <div className="min-w-0">
           <h1 className="text-2xl font-bold">
-            {novel.isAdult && <span className="text-red-500 mr-1">[18+]</span>}
+            {novel.isAdult && <span className="text-red-500 mr-1">[🔞]</span>}
             {novel.title}
           </h1>
           <p className="text-sm text-gray-500 mt-1">

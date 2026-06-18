@@ -150,7 +150,7 @@ export default function NovelForm({ novelId, initial }: Props) {
           className="w-4 h-4"
         />
         <span>
-          <strong className="text-red-500">성인(18+) 작품</strong> — 18+ 열람을 켠
+          <strong className="text-red-500">🔞시크릿 플러스 작품</strong> — 시크릿 플러스를 켠
           이용자에게만 노출됩니다.
         </span>
       </label>

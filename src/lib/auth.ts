@@ -71,45 +71,18 @@ export const authOptions: NextAuthOptions = {
 
         const autoName = serverNick || discordName;
 
-        // Discord 생일로 나이 확인 (생일 등록된 경우만)
-        let discordAdultVerified = false;
-        let discordMinorConfirmed = false;
-        if (account.access_token) {
-          try {
-            const ur = await fetch("https://discord.com/api/v10/users/@me", {
-              headers: { Authorization: `Bearer ${account.access_token}` },
-            });
-            if (ur.ok) {
-              const du = await ur.json() as { date_of_birth?: string };
-              if (du.date_of_birth) {
-                const dob = new Date(du.date_of_birth);
-                const today = new Date();
-                let age = today.getFullYear() - dob.getFullYear();
-                const m = today.getMonth() - dob.getMonth();
-                if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
-                discordAdultVerified = age >= 19;
-                discordMinorConfirmed = age < 19;
-              }
-            }
-          } catch { /* ignore */ }
-        }
-
         const user = await prisma.user.upsert({
           where: { discordId },
           update: {
             username: autoName,
             avatarUrl,
             ...(isAdmin ? { role: "ADMIN" as const } : {}),
-            ...(discordAdultVerified ? { adult: true, minorLocked: false } : {}),
-            ...(discordMinorConfirmed ? { adult: false, minorLocked: true } : {}),
           },
           create: {
             discordId,
             username: autoName,
             avatarUrl,
             role: isAdmin ? "ADMIN" : "USER",
-            adult: discordAdultVerified,
-            minorLocked: discordMinorConfirmed,
           },
         });
 

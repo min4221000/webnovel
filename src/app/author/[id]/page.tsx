@@ -61,7 +61,7 @@ export default async function AuthorPage({
                 )}
                 <div className="min-w-0">
                   <h2 className="font-semibold truncate">
-                    {n.isAdult && <span className="text-red-500 mr-1">[18+]</span>}
+                    {n.isAdult && <span className="text-red-500 mr-1">[🔞]</span>}
                     {n.title}
                   </h2>
                   <p className="text-xs text-gray-500">{n._count.chapters}화</p>

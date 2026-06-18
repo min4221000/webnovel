@@ -10,7 +10,7 @@ export default function AdultToggle({ initial }: { initial: boolean }) {
 
   const set = async (next: boolean) => {
     if (next) {
-      if (!confirm("본인은 만 19세 이상이며, 성인(18+) 콘텐츠 열람에 동의합니다.")) return;
+      if (!confirm("본인은 만 19세 이상이며, 🔞시크릿 플러스 콘텐츠 열람에 동의합니다.")) return;
     }
     setBusy(true);
     const res = await fetch("/api/me/adult", {
@@ -32,7 +32,7 @@ export default function AdultToggle({ initial }: { initial: boolean }) {
       <span className="text-sm">
         현재 상태:{" "}
         <strong className={adult ? "text-red-500" : "text-gray-500"}>
-          {adult ? "18+ 열람 ON" : "OFF (성인 작품 숨김)"}
+          {adult ? "🔞시크릿 플러스 ON" : "OFF (시크릿 플러스 숨김)"}
         </strong>
       </span>
       {adult ? (
@@ -49,7 +49,7 @@ export default function AdultToggle({ initial }: { initial: boolean }) {
           disabled={busy}
           className="px-3 py-1.5 rounded-md bg-red-600 text-white text-sm disabled:opacity-50"
         >
-          만 19세 이상 — 18+ 켜기
+          만 19세 이상 — 🔞시크릿 플러스 켜기
         </button>
       )}
     </div>

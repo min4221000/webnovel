@@ -32,7 +32,7 @@ export default async function Home() {
         </Link>{" "}
         ·{" "}
         <Link href="/adult" className="underline font-medium">
-          {adult ? "🔞 18+ 열람 ON" : "🔞 18+ 설정"}
+          {adult ? "🔞 시크릿 플러스 ON" : "🔞 시크릿 플러스 설정"}
         </Link>
       </div>
 
@@ -66,7 +66,7 @@ export default async function Home() {
                   )}
                   <div className="min-w-0">
                     <h2 className="font-semibold truncate">
-                      {n.isAdult && <span className="text-red-500 mr-1">[18+]</span>}
+                      {n.isAdult && <span className="text-red-500 mr-1">[🔞]</span>}
                       {n.title}
                     </h2>
                     <p className="text-xs text-gray-500 truncate">
