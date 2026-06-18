@@ -63,8 +63,8 @@ export default async function NovelPage({
 
   return (
     <div className="space-y-6">
-      {/* 플로팅 북마크 버튼 — 로그인 + 비작가 */}
-      {user && !isOwner && (
+      {/* 플로팅 북마크 버튼 — 로그인 시 누구나 */}
+      {user && (
         <BookmarkButton novelId={novel.id} initialBookmarked={!!bookmark} />
       )}
 
