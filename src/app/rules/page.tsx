@@ -41,6 +41,10 @@ export default function RulesPage() {
           <strong>용도 준수</strong> — 본 열람실은 글쓰기 전용입니다. 잡담·친목
           목적의 게시물은 삭제될 수 있습니다.
         </li>
+        <li>
+          <strong>악용 금지</strong> — 웹사이트의 버그·허점을 악용하거나,
+          신고 도배 등 시스템을 남용하는 행위는 즉시 제재됩니다.
+        </li>
       </ol>
 
       <div className="text-sm text-gray-500 border-t pt-4 space-y-3">
