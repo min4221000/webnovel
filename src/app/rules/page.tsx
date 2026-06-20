@@ -64,6 +64,10 @@ export default function RulesPage() {
             <strong className="font-mono">_cornbutter</strong> 로 DM 부탁드립니다.
           </p>
         </div>
+
+        <p className="text-xs text-gray-400 pt-2">
+          본 열람실은 개인 비용으로 운영되며, 사정에 따라 사전 고지 없이 서비스가 중단될 수 있습니다.
+        </p>
       </div>
     </div>
   );
