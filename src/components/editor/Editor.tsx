@@ -52,6 +52,55 @@ function Tooltip({ text, children }: { text: string; children: React.ReactNode }
   );
 }
 
+const PALETTE = [
+  "#000000", "#434343", "#666666", "#999999", "#cccccc", "#ffffff",
+  "#ff0000", "#ff4444", "#ff8800", "#ffbb00", "#ffff00", "#88ff00",
+  "#00ff00", "#00ff88", "#00ffff", "#0088ff", "#0000ff", "#8800ff",
+  "#ff00ff", "#ff0088", "#880000", "#884400", "#888800", "#008800",
+  "#004488", "#000088", "#440088", "#880044",
+];
+
+function ColorPalette({
+  onSelect,
+  onReset,
+  resetLabel,
+}: {
+  onSelect: (color: string) => void;
+  onReset: () => void;
+  resetLabel: string;
+}) {
+  return (
+    <div className="absolute top-full left-0 mt-1 p-2 bg-white dark:bg-gray-800 border rounded-lg shadow-xl z-50 w-48">
+      <button
+        type="button"
+        onClick={onReset}
+        className="text-xs text-gray-500 hover:underline mb-1.5 block"
+      >
+        {resetLabel}
+      </button>
+      <div className="grid grid-cols-7 gap-1">
+        {PALETTE.map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => onSelect(c)}
+            className="w-5 h-5 rounded border border-black/20 dark:border-white/20 hover:scale-125 transition-transform"
+            style={{ background: c }}
+          />
+        ))}
+      </div>
+      <label className="flex items-center gap-1 mt-2 text-xs text-gray-500 cursor-pointer">
+        직접 선택
+        <input
+          type="color"
+          className="w-5 h-5 cursor-pointer"
+          onChange={(e) => onSelect(e.target.value)}
+        />
+      </label>
+    </div>
+  );
+}
+
 const SPECIAL_CHARS: { open: string; close?: string; title: string }[] = [
   { open: "…", title: "말줄임표" },
   { open: "—", title: "긴줄표" },
@@ -103,6 +152,8 @@ export default function Editor({ content = "", onChange }: Props) {
   const [imgCount, setImgCount] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [hlColor, setHlColor] = useState("#ffe58a");
+  const [showTextColor, setShowTextColor] = useState(false);
+  const [showBgColor, setShowBgColor] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const sync = useCallback(
@@ -262,27 +313,37 @@ export default function Editor({ content = "", onChange }: Props) {
         </Btn>
 
         {/* 글자색 */}
-        <label title="글자색" className="px-1 flex items-center cursor-pointer text-sm">
-          <span style={{ color: editor.getAttributes("textStyle").color || undefined }}>색</span>
-          <input
-            type="color"
-            className="w-0 h-0 opacity-0"
-            onChange={(e) => editor.chain().focus().setColor(e.target.value).run()}
-          />
-        </label>
+        <span className="relative">
+          <Btn
+            title="글자색"
+            onClick={() => { setShowTextColor(!showTextColor); setShowBgColor(false); }}
+          >
+            <span style={{ color: editor.getAttributes("textStyle").color || undefined }}>색</span>
+          </Btn>
+          {showTextColor && (
+            <ColorPalette
+              resetLabel="기본 글자색으로"
+              onReset={() => { editor.chain().focus().unsetColor().run(); setShowTextColor(false); }}
+              onSelect={(c) => { editor.chain().focus().setColor(c).run(); setShowTextColor(false); }}
+            />
+          )}
+        </span>
         {/* 배경색(형광) */}
-        <label title="형광펜" className="px-1 flex items-center cursor-pointer text-sm">
-          <span className="px-0.5 rounded" style={{ background: hlColor }}>밑</span>
-          <input
-            type="color"
-            value={hlColor}
-            className="w-0 h-0 opacity-0"
-            onChange={(e) => {
-              setHlColor(e.target.value);
-              editor.chain().focus().setHighlight({ color: e.target.value }).run();
-            }}
-          />
-        </label>
+        <span className="relative">
+          <Btn
+            title="형광펜"
+            onClick={() => { setShowBgColor(!showBgColor); setShowTextColor(false); }}
+          >
+            <span className="px-0.5 rounded" style={{ background: hlColor }}>밑</span>
+          </Btn>
+          {showBgColor && (
+            <ColorPalette
+              resetLabel="형광 제거"
+              onReset={() => { editor.chain().focus().unsetHighlight().run(); setShowBgColor(false); }}
+              onSelect={(c) => { setHlColor(c); editor.chain().focus().setHighlight({ color: c }).run(); setShowBgColor(false); }}
+            />
+          )}
+        </span>
 
         <Divider />
         <Btn title="왼쪽" active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()}>좌</Btn>
