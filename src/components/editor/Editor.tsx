@@ -294,12 +294,12 @@ export default function Editor({ content = "", onChange }: Props) {
         <select
           title="줄 간격"
           className="text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded px-1"
+          value={editor.getAttributes("paragraph").lineHeight ?? ""}
           onChange={(e) =>
             e.target.value
               ? editor.chain().focus().setLineHeight(e.target.value).run()
               : editor.chain().focus().unsetLineHeight().run()
           }
-          defaultValue=""
         >
           <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">행간</option>
           {[1.0, 1.5, 2.0, 2.5, 3.0].map((v) => (
