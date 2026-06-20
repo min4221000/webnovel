@@ -89,14 +89,6 @@ function ColorPalette({
           />
         ))}
       </div>
-      <label className="flex items-center gap-1 mt-2 text-xs text-gray-500 cursor-pointer">
-        직접 선택
-        <input
-          type="color"
-          className="w-5 h-5 cursor-pointer"
-          onChange={(e) => onSelect(e.target.value)}
-        />
-      </label>
     </div>
   );
 }
