@@ -119,24 +119,6 @@ export default function Comments({ chapterId }: { chapterId: string }) {
           <ReportButton targetType="comment" targetId={c.id} />
         </div>
 
-        {replyTo === c.id && (
-          <div className="mt-2 flex gap-2">
-            <input
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-              placeholder="답글 입력…"
-              maxLength={2000}
-              className="flex-1 border rounded-md px-2 py-1 text-sm bg-transparent"
-            />
-            <button
-              onClick={() => post(replyText, c.id)}
-              disabled={busy}
-              className="px-3 py-1 text-sm rounded-md bg-indigo-600 text-white disabled:opacity-50"
-            >
-              등록
-            </button>
-          </div>
-        )}
       </div>
     );
   };
@@ -176,6 +158,26 @@ export default function Comments({ chapterId }: { chapterId: string }) {
           {tops.map((c) => (
             <div key={c.id}>
               <Item c={c} />
+              {replyTo === c.id && (
+                <div className="mt-2 ml-8 flex gap-2">
+                  <input
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder="답글 입력…"
+                    maxLength={2000}
+                    className="flex-1 border rounded-md px-2 py-1 text-sm bg-transparent"
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); post(replyText, c.id); } }}
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => post(replyText, c.id)}
+                    disabled={busy}
+                    className="px-3 py-1 text-sm rounded-md bg-indigo-600 text-white disabled:opacity-50"
+                  >
+                    등록
+                  </button>
+                </div>
+              )}
               {repliesOf(c.id).map((r) => <Item key={r.id} c={r} isReply />)}
             </div>
           ))}
