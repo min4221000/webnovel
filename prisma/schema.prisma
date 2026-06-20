@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "cockroachdb"
   url      = env("DATABASE_URL")
 }
 
@@ -57,7 +57,7 @@ model Chapter {
   novel        Novel                    @relation(fields: [novelId], references: [id], onDelete: Cascade)
   chapterNum   Int
   title        String
-  content      String                   @db.Text
+  content      String
   charCount    Int
   imageCount   Int                      @default(0)
   hidden       Boolean                  @default(false)
