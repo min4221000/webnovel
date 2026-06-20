@@ -137,6 +137,7 @@ export async function GET(req: NextRequest) {
     prisma.chapter.findMany({
       where: {
         deletedAt: null,
+        hidden: false,
         content: { contains: q, mode: "insensitive" },
         novel: { deletedAt: null, hidden: false, ...adultFilter },
       },

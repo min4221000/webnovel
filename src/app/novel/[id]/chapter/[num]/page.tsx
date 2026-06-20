@@ -20,11 +20,14 @@ export default async function ChapterPage({
   const user = await getCurrentUser();
   const novel = await prisma.novel.findFirst({
     where: { id: params.id, deletedAt: null },
-    select: { id: true, title: true, authorId: true, isAdult: true },
+    select: { id: true, title: true, authorId: true, isAdult: true, hidden: true },
   });
   if (!novel) notFound();
 
   const isOwner = !!user && (user.id === novel.authorId || user.role === "ADMIN");
+
+  // 비공개 소설은 작가/어드민만
+  if (novel.hidden && !isOwner) notFound();
 
   // 18+ 작품은 성인 열람 ON 인 본인/관리자만
   if (novel.isAdult && !isOwner) {
@@ -59,18 +62,22 @@ export default async function ChapterPage({
 
   const chapter = await prisma.chapter.findFirst({
     where: { novelId: params.id, chapterNum, deletedAt: null },
-    select: { id: true, title: true, content: true, chapterNum: true, createdAt: true },
+    select: { id: true, title: true, content: true, chapterNum: true, createdAt: true, hidden: true },
   });
   if (!chapter) notFound();
 
+  // 비공개 회차는 작가/어드민만
+  if (chapter.hidden && !isOwner) notFound();
+
+  const navFilter = { novelId: params.id, deletedAt: null, ...(isOwner ? {} : { hidden: false }) };
   const [prev, next] = await Promise.all([
     prisma.chapter.findFirst({
-      where: { novelId: params.id, deletedAt: null, chapterNum: { lt: chapterNum } },
+      where: { ...navFilter, chapterNum: { lt: chapterNum } },
       orderBy: { chapterNum: "desc" },
       select: { chapterNum: true },
     }),
     prisma.chapter.findFirst({
-      where: { novelId: params.id, deletedAt: null, chapterNum: { gt: chapterNum } },
+      where: { ...navFilter, chapterNum: { gt: chapterNum } },
       orderBy: { chapterNum: "asc" },
       select: { chapterNum: true },
     }),
