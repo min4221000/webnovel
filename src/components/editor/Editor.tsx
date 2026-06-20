@@ -16,7 +16,7 @@ import TableRow from "@tiptap/extension-table-row";
 import TableHeader from "@tiptap/extension-table-header";
 import TableCell from "@tiptap/extension-table-cell";
 
-import { FontSize, ResizableImage } from "./extensions";
+import { FontSize, LineHeight, ResizableImage } from "./extensions";
 import { WnEffect } from "./effectExtension";
 import { compressAndUpload } from "@/lib/uploadImage";
 import {
@@ -126,6 +126,7 @@ export default function Editor({ content = "", onChange }: Props) {
       FontSize,
       Highlight.configure({ multicolor: true }),
       TextAlign.configure({ types: ["heading", "paragraph", "image"] }),
+      LineHeight,
       Link.configure({
         openOnClick: false,
         autolink: true,
@@ -288,6 +289,25 @@ export default function Editor({ content = "", onChange }: Props) {
         <Btn title="가운데" active={editor.isActive({ textAlign: "center" })} onClick={() => editor.chain().focus().setTextAlign("center").run()}>중</Btn>
         <Btn title="오른쪽" active={editor.isActive({ textAlign: "right" })} onClick={() => editor.chain().focus().setTextAlign("right").run()}>우</Btn>
         <Btn title="양쪽" active={editor.isActive({ textAlign: "justify" })} onClick={() => editor.chain().focus().setTextAlign("justify").run()}>양</Btn>
+
+        {/* 줄간격 */}
+        <select
+          title="줄 간격"
+          className="text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded px-1"
+          onChange={(e) =>
+            e.target.value
+              ? editor.chain().focus().setLineHeight(e.target.value).run()
+              : editor.chain().focus().unsetLineHeight().run()
+          }
+          defaultValue=""
+        >
+          <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">행간</option>
+          {[1.0, 1.5, 2.0, 2.5, 3.0].map((v) => (
+            <option key={v} value={String(v)} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+              {v.toFixed(1)}
+            </option>
+          ))}
+        </select>
 
         <Divider />
         <Btn title="글머리 목록" active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()}>•</Btn>

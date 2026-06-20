@@ -6,15 +6,52 @@ import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
 import { useRef, useCallback, useState } from "react";
 
-// ===== 글자 크기 =====
+// ===== 줄 간격 =====
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
+    lineHeight: {
+      setLineHeight: (height: string) => ReturnType;
+      unsetLineHeight: () => ReturnType;
+    };
     fontSize: {
       setFontSize: (size: string) => ReturnType;
       unsetFontSize: () => ReturnType;
     };
   }
 }
+
+export const LineHeight = Extension.create({
+  name: "lineHeight",
+  addGlobalAttributes() {
+    return [
+      {
+        types: ["paragraph", "heading"],
+        attributes: {
+          lineHeight: {
+            default: null,
+            parseHTML: (el) => (el as HTMLElement).style.lineHeight || null,
+            renderHTML: (attrs) =>
+              attrs.lineHeight ? { style: `line-height: ${attrs.lineHeight}` } : {},
+          },
+        },
+      },
+    ];
+  },
+  addCommands() {
+    return {
+      setLineHeight:
+        (height) =>
+        ({ commands }) =>
+          commands.updateAttributes("paragraph", { lineHeight: height }) &&
+          commands.updateAttributes("heading", { lineHeight: height }),
+      unsetLineHeight:
+        () =>
+        ({ commands }) =>
+          commands.updateAttributes("paragraph", { lineHeight: null }) &&
+          commands.updateAttributes("heading", { lineHeight: null }),
+    };
+  },
+});
 
 export const FontSize = Extension.create({
   name: "fontSize",

@@ -34,6 +34,7 @@ export function sanitizeContent(dirty: string): string {
         color: [/^#(0x)?[0-9a-fA-F]{3,8}$/, /^rgba?\([\d\s,.%]+\)$/],
         "background-color": [/^#(0x)?[0-9a-fA-F]{3,8}$/, /^rgba?\([\d\s,.%]+\)$/],
         "text-align": [/^(left|right|center|justify)$/],
+        "line-height": [/^\d+(\.\d+)?$/],
         "font-family": [/^[\w\s,'"\-가-힣]+$/],
         "font-size": [/^\d{1,3}(px|em|rem|%)$/],
         width: [/^\d{1,4}(px|%)$/],
