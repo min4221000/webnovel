@@ -4,23 +4,37 @@ import { getViewerAdult } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
+const PAGE_SIZE = 10;
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: { page?: string };
+}) {
   const adult = await getViewerAdult();
-  const novels = await prisma.novel.findMany({
-    where: { deletedAt: null, hidden: false, ...(adult ? {} : { isAdult: false }) },
-    orderBy: { updatedAt: "desc" },
-    take: 30,
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      coverImage: true,
-      tags: true,
-      isAdult: true,
-      author: { select: { id: true, username: true } },
-      _count: { select: { chapters: { where: { deletedAt: null } } } },
-    },
-  });
+  const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
+  const where = { deletedAt: null, hidden: false, ...(adult ? {} : { isAdult: false }) } as const;
+
+  const [novels, total] = await Promise.all([
+    prisma.novel.findMany({
+      where,
+      orderBy: { updatedAt: "desc" },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        coverImage: true,
+        tags: true,
+        isAdult: true,
+        author: { select: { id: true, username: true } },
+        _count: { select: { chapters: { where: { deletedAt: null } } } },
+      },
+    }),
+    prisma.novel.count({ where }),
+  ]);
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
     <div className="space-y-6">
@@ -82,6 +96,40 @@ export default async function Home() {
               </li>
             ))}
           </ul>
+        )}
+
+        {totalPages > 1 && (
+          <nav className="flex justify-center gap-2 pt-4">
+            {page > 1 && (
+              <Link
+                href={`/?page=${page - 1}`}
+                className="px-3 py-1 rounded border text-sm hover:border-indigo-400"
+              >
+                ← 이전
+              </Link>
+            )}
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <Link
+                key={p}
+                href={`/?page=${p}`}
+                className={`px-3 py-1 rounded border text-sm ${
+                  p === page
+                    ? "bg-indigo-600 text-white border-indigo-600"
+                    : "hover:border-indigo-400"
+                }`}
+              >
+                {p}
+              </Link>
+            ))}
+            {page < totalPages && (
+              <Link
+                href={`/?page=${page + 1}`}
+                className="px-3 py-1 rounded border text-sm hover:border-indigo-400"
+              >
+                다음 →
+              </Link>
+            )}
+          </nav>
         )}
       </section>
     </div>

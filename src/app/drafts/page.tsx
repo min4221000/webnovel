@@ -5,48 +5,67 @@ import { getCurrentUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
-export default async function DraftsPage() {
+const PAGE_SIZE = 10;
+
+export default async function DraftsPage({
+  searchParams,
+}: {
+  searchParams: { page?: string };
+}) {
   const user = await getCurrentUser();
   if (!user) redirect("/");
 
-  const novels = await prisma.novel.findMany({
-    where: { authorId: user.id, deletedAt: null, hidden: true },
-    orderBy: { updatedAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      isAdult: true,
-      updatedAt: true,
-      chapters: {
-        where: { deletedAt: null },
-        orderBy: { chapterNum: "desc" },
-        select: { id: true, chapterNum: true, title: true, hidden: true },
-      },
-    },
-  });
+  const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
 
-  // 공개 소설 중 비공개 회차가 있는 것도 포함
-  const publicNovelsWithHiddenChapters = await prisma.novel.findMany({
-    where: {
-      authorId: user.id,
-      deletedAt: null,
-      hidden: false,
-      chapters: { some: { hidden: true, deletedAt: null } },
-    },
-    orderBy: { updatedAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      isAdult: true,
-      updatedAt: true,
-      chapters: {
-        where: { deletedAt: null, hidden: true },
-        orderBy: { chapterNum: "asc" },
-        select: { id: true, chapterNum: true, title: true, hidden: true },
-      },
-    },
-  });
+  const hiddenWhere = { authorId: user.id, deletedAt: null, hidden: true } as const;
+  const publicHiddenWhere = {
+    authorId: user.id,
+    deletedAt: null,
+    hidden: false,
+    chapters: { some: { hidden: true, deletedAt: null } },
+  } as const;
 
+  const [novels, publicNovelsWithHiddenChapters, hiddenCount, publicHiddenCount] = await Promise.all([
+    prisma.novel.findMany({
+      where: hiddenWhere,
+      orderBy: { updatedAt: "desc" },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+      select: {
+        id: true,
+        title: true,
+        isAdult: true,
+        updatedAt: true,
+        chapters: {
+          where: { deletedAt: null },
+          orderBy: { chapterNum: "desc" },
+          select: { id: true, chapterNum: true, title: true, hidden: true },
+        },
+      },
+    }),
+    prisma.novel.findMany({
+      where: publicHiddenWhere,
+      orderBy: { updatedAt: "desc" },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+      select: {
+        id: true,
+        title: true,
+        isAdult: true,
+        updatedAt: true,
+        chapters: {
+          where: { deletedAt: null, hidden: true },
+          orderBy: { chapterNum: "asc" },
+          select: { id: true, chapterNum: true, title: true, hidden: true },
+        },
+      },
+    }),
+    prisma.novel.count({ where: hiddenWhere }),
+    prisma.novel.count({ where: publicHiddenWhere }),
+  ]);
+
+  const totalItems = Math.max(hiddenCount, publicHiddenCount);
+  const totalPages = Math.ceil(totalItems / PAGE_SIZE);
   const isEmpty = novels.length === 0 && publicNovelsWithHiddenChapters.length === 0;
 
   return (
@@ -143,6 +162,40 @@ export default async function DraftsPage() {
             </div>
           ))}
         </section>
+      )}
+
+      {totalPages > 1 && (
+        <nav className="flex justify-center gap-2 pt-4">
+          {page > 1 && (
+            <Link
+              href={`/drafts?page=${page - 1}`}
+              className="px-3 py-1 rounded border text-sm hover:border-indigo-400"
+            >
+              ← 이전
+            </Link>
+          )}
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+            <Link
+              key={p}
+              href={`/drafts?page=${p}`}
+              className={`px-3 py-1 rounded border text-sm ${
+                p === page
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "hover:border-indigo-400"
+              }`}
+            >
+              {p}
+            </Link>
+          ))}
+          {page < totalPages && (
+            <Link
+              href={`/drafts?page=${page + 1}`}
+              className="px-3 py-1 rounded border text-sm hover:border-indigo-400"
+            >
+              다음 →
+            </Link>
+          )}
+        </nav>
       )}
     </div>
   );
