@@ -128,7 +128,7 @@ export default async function NovelPage({
                 url={`/api/novels/${novel.id}`}
                 redirectTo="/"
                 label="소설 삭제"
-                confirmMsg="이 소설을 삭제할까요? (복구 가능한 소프트 삭제)"
+                confirmMsg="이 소설을 삭제할까요? 복구가 필요하면 관리자에게 문의하세요."
                 className="text-sm text-gray-400 hover:text-red-500"
               />
             </div>

@@ -22,7 +22,21 @@ type Report = {
 };
 
 type StatusFilter = "pending" | "resolved" | "rejected";
-type Tab = "reports" | "users";
+type Tab = "reports" | "users" | "restore";
+
+type DeletedNovel = {
+  id: string;
+  title: string;
+  deletedAt: string;
+  author: { username: string; nickname: string | null };
+};
+type DeletedChapter = {
+  id: string;
+  title: string;
+  chapterNum: number;
+  deletedAt: string;
+  novel: { id: string; title: string };
+};
 
 type UserInfo = {
   id: string;
@@ -47,6 +61,11 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<UserInfo[]>([]);
   const [userSearch, setUserSearch] = useState("");
   const [userLoading, setUserLoading] = useState(false);
+
+  // 복구 탭
+  const [deletedNovels, setDeletedNovels] = useState<DeletedNovel[]>([]);
+  const [deletedChapters, setDeletedChapters] = useState<DeletedChapter[]>([]);
+  const [restoreLoading, setRestoreLoading] = useState(false);
 
   const loadReports = useCallback(async () => {
     setLoading(true);
@@ -148,6 +167,34 @@ export default function AdminDashboard() {
     } else alert(await res.text());
   };
 
+  const loadDeleted = async () => {
+    setRestoreLoading(true);
+    const res = await fetch("/api/admin/restore");
+    if (res.ok) {
+      const d = await res.json();
+      setDeletedNovels(d.novels);
+      setDeletedChapters(d.chapters);
+    }
+    setRestoreLoading(false);
+  };
+
+  useEffect(() => {
+    if (tab === "restore") loadDeleted();
+  }, [tab]);
+
+  const restoreItem = async (type: "novel" | "chapter", id: string) => {
+    if (!confirm("이 항목을 복구할까요?")) return;
+    setBusy(id);
+    const res = await fetch("/api/admin/restore", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type, id }),
+    });
+    setBusy(null);
+    if (res.ok) loadDeleted();
+    else alert(await res.text());
+  };
+
   const FILTERS: { key: StatusFilter; label: string }[] = [
     { key: "pending", label: "대기" },
     { key: "resolved", label: "처리됨" },
@@ -171,6 +218,12 @@ export default function AdminDashboard() {
           className={`px-4 py-2 text-sm -mb-px border-b-2 ${tab === "users" ? "border-indigo-600 font-semibold" : "border-transparent text-gray-500"}`}
         >
           유저 관리
+        </button>
+        <button
+          onClick={() => setTab("restore")}
+          className={`px-4 py-2 text-sm -mb-px border-b-2 ${tab === "restore" ? "border-indigo-600 font-semibold" : "border-transparent text-gray-500"}`}
+        >
+          삭제 복구
         </button>
       </div>
 
@@ -352,6 +405,73 @@ export default function AdminDashboard() {
                 </li>
               ))}
             </ul>
+          )}
+        </>
+      )}
+
+      {/* ─── 복구 탭 ─── */}
+      {tab === "restore" && (
+        <>
+          {restoreLoading ? (
+            <p className="text-sm text-gray-400">불러오는 중…</p>
+          ) : deletedNovels.length === 0 && deletedChapters.length === 0 ? (
+            <p className="text-sm text-gray-400">삭제된 항목이 없습니다.</p>
+          ) : (
+            <div className="space-y-4">
+              {deletedNovels.length > 0 && (
+                <section>
+                  <h2 className="text-sm font-semibold text-gray-500 mb-2">삭제된 소설</h2>
+                  <ul className="space-y-2">
+                    {deletedNovels.map((n) => (
+                      <li key={n.id} className="border rounded-lg p-3 flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{n.title}</p>
+                          <p className="text-xs text-gray-500">
+                            작가: {n.author.nickname || n.author.username} · 삭제: {new Date(n.deletedAt).toLocaleString()}
+                          </p>
+                        </div>
+                        <button
+                          disabled={busy === n.id}
+                          onClick={() => restoreItem("novel", n.id)}
+                          className="text-xs px-3 py-1 rounded bg-green-600 text-white disabled:opacity-40"
+                        >
+                          복구
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+              {deletedChapters.length > 0 && (
+                <section>
+                  <h2 className="text-sm font-semibold text-gray-500 mb-2">삭제된 회차</h2>
+                  <ul className="space-y-2">
+                    {deletedChapters.map((c) => (
+                      <li key={c.id} className="border rounded-lg p-3 flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">
+                            <Link href={`/novel/${c.novel.id}`} className="text-gray-400 hover:underline mr-1">
+                              {c.novel.title}
+                            </Link>
+                            {c.chapterNum}화 — {c.title}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            삭제: {new Date(c.deletedAt).toLocaleString()}
+                          </p>
+                        </div>
+                        <button
+                          disabled={busy === c.id}
+                          onClick={() => restoreItem("chapter", c.id)}
+                          className="text-xs px-3 py-1 rounded bg-green-600 text-white disabled:opacity-40"
+                        >
+                          복구
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+            </div>
           )}
         </>
       )}
