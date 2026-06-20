@@ -109,7 +109,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ type, results });
   }
 
-  // ----- 통합 검색 (제목 + 설명 + 태그 + 회차 본문) -----
+  // ----- 통합 검색 (제목 + 설명 + 태그 + 작가 + 회차 본문) -----
   const [byMeta, byContent] = await Promise.all([
     prisma.novel.findMany({
       where: {
@@ -119,7 +119,9 @@ export async function GET(req: NextRequest) {
         OR: [
           { title: { contains: q, mode: "insensitive" } },
           { description: { contains: q, mode: "insensitive" } },
-          { tags: { has: q } },
+          { tags: { hasSome: [q] } },
+          { author: { username: { contains: q, mode: "insensitive" } } },
+          { author: { nickname: { contains: q, mode: "insensitive" } } },
         ],
       },
       take: 40,
