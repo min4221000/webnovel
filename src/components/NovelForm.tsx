@@ -6,8 +6,8 @@ import { useSession, signIn } from "next-auth/react";
 import { compressAndUpload } from "@/lib/uploadImage";
 
 const TAG_GROUPS = [
-  ["사니", "나모", "키위", "학부생", "손님"],
-  ["일반", "유머", "피폐"],
+  ["사니", "나모", "키위", "학부생", "손님", "주인공"],
+  ["일반", "유머", "피폐", "달달"],
   ["장편", "단편"],
   ["시크릿 플러스"],
 ];
