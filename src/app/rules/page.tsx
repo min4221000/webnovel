@@ -43,8 +43,27 @@ export default function RulesPage() {
         </li>
       </ol>
 
-      <div className="text-sm text-gray-500 border-t pt-4">
-        신고는 각 글/댓글의 신고 버튼으로 접수되며, 관리자가 검토 후 처리합니다.
+      <div className="text-sm text-gray-500 border-t pt-4 space-y-3">
+        <p>신고는 각 글/댓글의 신고 버튼으로 접수되며, 관리자가 검토 후 처리합니다.</p>
+
+        <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-4 py-3">
+          <p className="font-medium text-amber-800 dark:text-amber-300 mb-1">안내사항</p>
+          <p>
+            본 열람실은 개인이 운영하는 서버입니다. 예기치 않은 서버 장애나 데이터 손실이
+            발생할 수 있으므로, 작성하신 글은 <strong>별도로 텍스트 파일 등으로 백업</strong>해두시는
+            것을 권장합니다. 또한{" "}
+            <strong>사니양연구실 실험체 모임 디스코드 &ldquo;개인 연구 결과 보고서&rdquo; 채널</strong>에
+            동시에 올려두시면 더 안전합니다.
+          </p>
+        </div>
+
+        <div className="rounded-lg border border-black/10 dark:border-white/10 px-4 py-3">
+          <p className="font-medium mb-1">문의/개선 제안/서버 장애 신고</p>
+          <p>
+            문의사항, 개선 아이디어, 서버 오류 제보 등은 디스코드{" "}
+            <strong className="font-mono">_cornbutter</strong> 로 DM 부탁드립니다.
+          </p>
+        </div>
       </div>
     </div>
   );
