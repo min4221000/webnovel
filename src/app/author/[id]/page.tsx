@@ -16,6 +16,7 @@ export default async function AuthorPage({
     select: {
       id: true,
       username: true,
+      nickname: true,
       avatarUrl: true,
       novels: {
         where: { deletedAt: null, hidden: false, ...(adult ? {} : { isAdult: false }) },
@@ -41,7 +42,7 @@ export default async function AuthorPage({
           <img src={author.avatarUrl} alt="" className="w-12 h-12 rounded-full" />
         )}
         <div>
-          <h1 className="text-2xl font-bold">{author.username}</h1>
+          <h1 className="text-2xl font-bold">{author.nickname || author.username}</h1>
           <p className="text-sm text-gray-500">{author.novels.length}개 작품</p>
         </div>
       </div>

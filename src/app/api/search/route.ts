@@ -55,11 +55,17 @@ export async function GET(req: NextRequest) {
   // ----- 글쓴이 검색 -----
   if (type === "author") {
     const authors = await prisma.user.findMany({
-      where: { username: { contains: q, mode: "insensitive" } },
+      where: {
+        OR: [
+          { username: { contains: q, mode: "insensitive" } },
+          { nickname: { contains: q, mode: "insensitive" } },
+        ],
+      },
       take: 10,
       select: {
         id: true,
         username: true,
+        nickname: true,
         avatarUrl: true,
         novels: {
           where: { deletedAt: null, hidden: false, ...adultFilter },
@@ -88,7 +94,7 @@ export async function GET(req: NextRequest) {
         title: true,
         coverImage: true,
         description: true,
-        author: { select: { id: true, username: true } },
+        author: { select: { id: true, username: true, nickname: true } },
         _count: { select: { chapters: { where: { deletedAt: null } } } },
       },
     });
@@ -122,7 +128,7 @@ export async function GET(req: NextRequest) {
         title: true,
         coverImage: true,
         description: true,
-        author: { select: { id: true, username: true } },
+        author: { select: { id: true, username: true, nickname: true } },
         _count: { select: { chapters: { where: { deletedAt: null } } } },
       },
     }),
@@ -143,7 +149,7 @@ export async function GET(req: NextRequest) {
             id: true,
             title: true,
             coverImage: true,
-            author: { select: { id: true, username: true } },
+            author: { select: { id: true, username: true, nickname: true } },
             _count: { select: { chapters: { where: { deletedAt: null } } } },
           },
         },
@@ -155,7 +161,7 @@ export async function GET(req: NextRequest) {
     novelId: string;
     title: string;
     coverImage: string | null;
-    author: { id: string; username: string };
+    author: { id: string; username: string; nickname: string | null };
     chapterCount: number;
     snippetHtml: string | null;
     matchedChapter: { num: number; title: string } | null;

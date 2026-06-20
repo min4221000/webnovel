@@ -9,7 +9,7 @@ type NovelResult = {
   novelId: string;
   title: string;
   coverImage: string | null;
-  author: { id: string; username: string };
+  author: { id: string; username: string; nickname: string | null };
   chapterCount: number;
   snippetHtml: string | null;
   matchedChapter?: { num: number; title: string } | null;
@@ -18,6 +18,7 @@ type NovelResult = {
 type AuthorResult = {
   id: string;
   username: string;
+  nickname: string | null;
   avatarUrl: string | null;
   novels: { id: string; title: string; coverImage: string | null; _count: { chapters: number } }[];
 };
@@ -112,7 +113,7 @@ export default function SearchPage() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={a.avatarUrl} alt="" className="w-6 h-6 rounded-full" />
                   )}
-                  {a.username}
+                  {a.nickname || a.username}
                 </Link>
                 <ul className="mt-2 pl-2 text-sm space-y-1">
                   {a.novels.map((n) => (
@@ -147,7 +148,7 @@ export default function SearchPage() {
                 <div className="min-w-0">
                   <h2 className="font-semibold truncate">{n.title}</h2>
                   <p className="text-xs text-gray-500">
-                    {n.author.username} · {n.chapterCount}화
+                    {n.author.nickname || n.author.username} · {n.chapterCount}화
                     {n.matchedChapter && ` · ${n.matchedChapter.num}화 "${n.matchedChapter.title}"`}
                   </p>
                   {n.snippetHtml && (

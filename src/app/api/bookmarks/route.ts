@@ -25,7 +25,7 @@ export async function GET() {
           coverImage: true,
           isAdult: true,
           deletedAt: true,
-          author: { select: { id: true, username: true } },
+          author: { select: { id: true, username: true, nickname: true } },
           _count: { select: { chapters: { where: { deletedAt: null } } } },
         },
       },

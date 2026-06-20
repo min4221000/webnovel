@@ -21,7 +21,7 @@ export default async function BookmarksPage() {
           coverImage: true,
           isAdult: true,
           deletedAt: true,
-          author: { select: { id: true, username: true } },
+          author: { select: { id: true, username: true, nickname: true } },
           _count: { select: { chapters: { where: { deletedAt: null, hidden: false } } } },
         },
       },
@@ -59,7 +59,7 @@ export default async function BookmarksPage() {
                       {n.isAdult && <span className="text-red-500 mr-1">[🔞]</span>}
                       {n.title}
                     </h2>
-                    <p className="text-xs text-gray-500">{n.author.username} · 전체 {total}화</p>
+                    <p className="text-xs text-gray-500">{n.author.nickname || n.author.username} · 전체 {total}화</p>
 
                     <div className="mt-2 space-y-1">
                       <div className="flex justify-between text-xs text-gray-400">

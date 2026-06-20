@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
       title: true,
       coverImage: true,
       createdAt: true,
-      author: { select: { id: true, username: true } },
+      author: { select: { id: true, username: true, nickname: true } },
       _count: { select: { chapters: { where: { deletedAt: null } } } },
     },
   });

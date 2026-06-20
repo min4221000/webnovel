@@ -23,7 +23,7 @@ export default async function NovelPage({
       tags: true,
       isAdult: true,
       hidden: true,
-      author: { select: { id: true, username: true } },
+      author: { select: { id: true, username: true, nickname: true } },
       chapters: {
         where: { deletedAt: null },
         orderBy: { chapterNum: "asc" },
@@ -88,7 +88,7 @@ export default async function NovelPage({
           <p className="text-sm text-gray-500 mt-1">
             글쓴이{" "}
             <Link href={`/author/${novel.author.id}`} className="underline">
-              {novel.author.username}
+              {novel.author.nickname || novel.author.username}
             </Link>{" "}
             · {novel.chapters.length}화
           </p>

@@ -11,7 +11,7 @@ type C = {
   createdAt: string;
   reportCount: number;
   blurred: boolean;
-  author: { id: string; username: string; avatarUrl: string | null };
+  author: { id: string; username: string; nickname: string | null; avatarUrl: string | null };
 };
 
 export default function Comments({ chapterId }: { chapterId: string }) {
@@ -72,7 +72,7 @@ export default function Comments({ chapterId }: { chapterId: string }) {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={c.author.avatarUrl} alt="" className="w-5 h-5 rounded-full" />
           )}
-          <span className="font-medium">{c.author.username}</span>
+          <span className="font-medium">{c.author.nickname || c.author.username}</span>
           <span className="text-xs text-gray-400">{new Date(c.createdAt).toLocaleString()}</span>
           {/* 관리자: 신고수 뱃지 */}
           {isAdmin && c.reportCount > 0 && (

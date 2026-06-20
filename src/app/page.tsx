@@ -28,7 +28,7 @@ export default async function Home({
         coverImage: true,
         tags: true,
         isAdult: true,
-        author: { select: { id: true, username: true } },
+        author: { select: { id: true, username: true, nickname: true } },
         _count: { select: { chapters: { where: { deletedAt: null } } } },
       },
     }),
@@ -84,7 +84,7 @@ export default async function Home({
                       {n.title}
                     </h2>
                     <p className="text-xs text-gray-500 truncate">
-                      {n.author.username} · {n._count.chapters}화
+                      {n.author.nickname || n.author.username} · {n._count.chapters}화
                     </p>
                     {n.description && (
                       <p className="text-xs text-gray-400 line-clamp-2 mt-1">

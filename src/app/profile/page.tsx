@@ -41,7 +41,7 @@ export default function ProfilePage() {
       const d = await res.json();
       setOrigin(d.nickname);
       setWebhookUrl(d.webhookUrl ?? "");
-      setMsg("저장됨. 닉네임은 다음 로그인 시 적용됩니다.");
+      setMsg("저장됨. 모든 작품·댓글에 즉시 반영됩니다 (본인 네비바 표시는 다음 로그인 후).");
     } else {
       setErr(await res.text().catch(() => "저장 실패"));
     }

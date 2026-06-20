@@ -24,7 +24,7 @@ export async function GET(
       content: true,
       parentId: true,
       createdAt: true,
-      author: { select: { id: true, username: true, avatarUrl: true } },
+      author: { select: { id: true, username: true, nickname: true, avatarUrl: true } },
     },
   });
 
@@ -99,7 +99,7 @@ export async function POST(
       content: true,
       parentId: true,
       createdAt: true,
-      author: { select: { id: true, username: true, avatarUrl: true } },
+      author: { select: { id: true, username: true, nickname: true, avatarUrl: true } },
     },
   });
 
