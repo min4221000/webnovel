@@ -26,7 +26,7 @@ export async function GET() {
           isAdult: true,
           deletedAt: true,
           author: { select: { id: true, username: true, nickname: true } },
-          _count: { select: { chapters: { where: { deletedAt: null } } } },
+          _count: { select: { chapters: { where: { deletedAt: null, hidden: false } } } },
         },
       },
     },

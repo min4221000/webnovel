@@ -26,7 +26,7 @@ export default async function AuthorPage({
           title: true,
           coverImage: true,
           isAdult: true,
-          _count: { select: { chapters: { where: { deletedAt: null } } } },
+          _count: { select: { chapters: { where: { deletedAt: null, hidden: false } } } },
         },
       },
     },
