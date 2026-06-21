@@ -230,6 +230,14 @@ export default function AdminDashboard() {
       {/* ─── 신고 탭 ─── */}
       {tab === "reports" && (
         <>
+          <div className="rounded-lg border border-black/10 dark:border-white/10 px-4 py-3 text-xs text-gray-500 dark:text-gray-400 space-y-1 leading-relaxed">
+            <p className="font-medium text-gray-700 dark:text-gray-300">ℹ️ 신고 처리 안내</p>
+            <ul className="list-disc pl-5 space-y-0.5">
+              <li><strong>신고 3건 이상</strong> 누적 시 해당 글·댓글은 <strong>자동 숨김</strong> 처리됩니다 (복구 가능).</li>
+              <li>작성자 차단은 자동으로 되지 않습니다. 악의적 신고 도배일 수 있으니 내용을 직접 확인 후 &ldquo;작성자 차단&rdquo;을 눌러주세요.</li>
+              <li>정당한 신고가 아니면 &ldquo;반려&rdquo;, 처리했으면 &ldquo;처리 완료&rdquo;를 눌러 목록을 정리하세요.</li>
+            </ul>
+          </div>
           <div className="flex gap-1 border-b border-black/10">
             {FILTERS.map((f) => (
               <button
@@ -412,6 +420,14 @@ export default function AdminDashboard() {
       {/* ─── 복구 탭 ─── */}
       {tab === "restore" && (
         <>
+          <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-4 py-3 text-sm text-amber-800 dark:text-amber-200 space-y-1">
+            <p className="font-medium">ℹ️ 삭제 복구 안내</p>
+            <ul className="list-disc pl-5 space-y-0.5 text-xs leading-relaxed">
+              <li>작가가 삭제한 글·회차는 즉시 사라지지 않고 여기에 보관됩니다.</li>
+              <li><strong>삭제 후 7일이 지나면 매일 자동으로 영구 삭제</strong>되며, 첨부 이미지도 함께 지워져 복구가 불가능해집니다.</li>
+              <li>복구가 필요하면 7일 안에 아래 목록에서 &ldquo;복구&rdquo;를 눌러주세요.</li>
+            </ul>
+          </div>
           {restoreLoading ? (
             <p className="text-sm text-gray-400">불러오는 중…</p>
           ) : deletedNovels.length === 0 && deletedChapters.length === 0 ? (
