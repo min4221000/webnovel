@@ -25,18 +25,23 @@ export const authOptions: NextAuthOptions = {
       const gate = process.env.REQUIRE_GUILD_MEMBER === "1";
       if (!gate || guildIds.length === 0) return true;
       if (!account?.access_token) return false;
-      try {
-        for (const guildId of guildIds) {
+      // 404(명확한 비멤버)만 차단. 401/429/5xx/네트워크 오류는 일시적이므로 통과
+      // (OAuth 동의 직후 토큰이 막 발급돼 멤버 API가 일시 실패하는 경우 오탐 방지)
+      let definiteNonMember = true;
+      for (const guildId of guildIds) {
+        try {
           const r = await fetch(
             `https://discord.com/api/v10/users/@me/guilds/${guildId}/member`,
             { headers: { Authorization: `Bearer ${account.access_token}` } },
           );
           if (r.ok) return true; // 하나라도 멤버면 통과
+          if (r.status !== 404) definiteNonMember = false; // 일시적 오류
+        } catch {
+          definiteNonMember = false; // 네트워크 오류 → 일시적
         }
-        return "/not-member";
-      } catch {
-        return false;
       }
+      // 모든 길드에서 확실히 404(비멤버)일 때만 차단
+      return definiteNonMember ? "/not-member" : true;
     },
     async jwt({ token, account, profile }) {
       if (account && profile) {
