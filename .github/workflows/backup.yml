@@ -2,28 +2,52 @@ name: Daily DB Backup
 
 on:
   schedule:
-    - cron: "0 2 * * *"   # 매일 새벽 2시 UTC (한국 오전 11시)
-  workflow_dispatch:        # 수동 실행 버튼
+    - cron: "0 2 * * *"
+  workflow_dispatch:
 
 jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
-      - name: Install pg_dump
-        run: sudo apt-get install -y postgresql-client
+      - name: Install pg_dump v13 (CockroachDB 호환)
+        run: |
+          set -euo pipefail
+          sudo install -d /usr/share/keyrings
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | sudo gpg --dearmor -o /usr/share/keyrings/pgdg.gpg
+          echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-13
+          /usr/lib/postgresql/13/bin/pg_dump --version
+
+      - name: Provide CA cert for libpq
+        run: |
+          mkdir -p ~/.postgresql
+          cp /etc/ssl/certs/ca-certificates.crt ~/.postgresql/root.crt
 
       - name: Dump database
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          pg_dump "$DATABASE_URL" \
-            --no-password \
-            --format=custom \
-            --file=backup_$(date +%Y%m%d_%H%M%S).dump
+          set -euo pipefail
+          OUT="backup_$(date +%Y%m%d_%H%M%S).sql"
+          /usr/lib/postgresql/13/bin/pg_dump "$DATABASE_URL" \
+            --no-owner \
+            --no-privileges \
+            --format=plain \
+            --file="$OUT"
+          SIZE=$(stat -c%s "$OUT")
+          echo "dump size: $SIZE bytes"
+          if [ "$SIZE" -lt 1000 ]; then
+            echo "::error::Dump too small ($SIZE bytes) — backup likely failed"
+            exit 1
+          fi
+          gzip "$OUT"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: db-backup-${{ github.run_id }}
-          path: "*.dump"
-          retention-days: 90   # 90일 보관 후 자동 삭제
+          path: "*.sql.gz"
+          retention-days: 90

@@ -1,0 +1,38 @@
+name: Weekly R2 Image Backup
+
+on:
+  schedule:
+    - cron: "0 3 * * 0"
+  workflow_dispatch:
+
+jobs:
+  r2-backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync R2 bucket
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        run: |
+          set -euo pipefail
+          if [ -z "${R2_ACCOUNT_ID:-}" ] || [ -z "${R2_BUCKET_NAME:-}" ]; then
+            echo "::error::R2 secrets missing"
+            exit 1
+          fi
+          mkdir -p r2dump
+          aws s3 sync "s3://${R2_BUCKET_NAME}" ./r2dump \
+            --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
+            --no-progress
+          COUNT=$(find r2dump -type f | wc -l)
+          echo "synced files: $COUNT"
+          tar -czf "r2_backup_$(date +%Y%m%d).tar.gz" -C r2dump .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: r2-backup-${{ github.run_id }}
+          path: "*.tar.gz"
+          retention-days: 60
