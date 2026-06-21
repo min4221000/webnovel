@@ -9,26 +9,30 @@ jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
-      - name: Install pg_dump
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Install pg_dump v13 (CockroachDB 호환)
+        run: |
+          set -euo pipefail
+          sudo install -d /usr/share/keyrings
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | sudo gpg --dearmor -o /usr/share/keyrings/pgdg.gpg
+          echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-13
+          /usr/lib/postgresql/13/bin/pg_dump --version
 
       - name: Provide CA cert for libpq
         run: |
-          mkdir -p "$HOME/.postgresql"
-          cp /etc/ssl/certs/ca-certificates.crt "$HOME/.postgresql/root.crt"
-          echo "=== cert check ==="
-          ls -la "$HOME/.postgresql/"
-          echo "HOME=$HOME"
+          mkdir -p ~/.postgresql
+          cp /etc/ssl/certs/ca-certificates.crt ~/.postgresql/root.crt
 
       - name: Dump database
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          PGSSLMODE: require
         run: |
           set -euo pipefail
-          ls -la "$HOME/.postgresql/root.crt"
           OUT="backup_$(date +%Y%m%d_%H%M%S).sql"
-          pg_dump "$DATABASE_URL" \
+          /usr/lib/postgresql/13/bin/pg_dump "$DATABASE_URL" \
             --no-owner \
             --no-privileges \
             --format=plain \
@@ -36,7 +40,7 @@ jobs:
           SIZE=$(stat -c%s "$OUT")
           echo "dump size: $SIZE bytes"
           if [ "$SIZE" -lt 1000 ]; then
-            echo "::error::Dump too small ($SIZE bytes)"
+            echo "::error::Dump too small ($SIZE bytes) — backup likely failed"
             exit 1
           fi
           gzip "$OUT"
