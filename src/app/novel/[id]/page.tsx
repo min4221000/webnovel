@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, getViewerAdult } from "@/lib/session";
+import { rateLimit } from "@/lib/ratelimit";
 import DeleteButton from "@/components/DeleteButton";
 import BookmarkButton from "@/components/BookmarkButton";
 import StatusBadge from "@/components/StatusBadge";
@@ -66,11 +68,15 @@ export default async function NovelPage({
   }
 
   // 조회수 +1 (작가/어드민 본인·비공개·19+ 비열람자는 제외 — 게이트 통과 후 카운트)
+  // IP+소설당 1시간 1회만 카운트 → 새로고침 스팸 write/조회수 조작 방지 (RU 절약)
   if (!isOwner && !novel.hidden) {
-    await prisma.novel.update({
-      where: { id: params.id },
-      data: { views: { increment: 1 } },
-    });
+    const ip = headers().get("x-forwarded-for")?.split(",")[0]?.trim() || "anon";
+    if (await rateLimit(`view:${ip}:${params.id}`, 1, 3600)) {
+      await prisma.novel.update({
+        where: { id: params.id },
+        data: { views: { increment: 1 } },
+      });
+    }
   }
 
   return (

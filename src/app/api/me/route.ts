@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { authErrorResponse } from "@/lib/apiError";
+import { rateLimit } from "@/lib/ratelimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,6 +20,11 @@ export async function GET() {
 export async function PATCH(req: NextRequest) {
   let user;
   try { user = await requireUser(); } catch (e) { return authErrorResponse(e); }
+
+  if (!(await rateLimit(`me:${user.id}`, 10, 60))) {
+    return new NextResponse("요청이 너무 잦습니다. 잠시 후 다시 시도하세요.", { status: 429 });
+  }
+
   const body = await req.json().catch(() => ({}));
 
   const data: { nickname?: string | null; webhookUrl?: string | null } = {};
