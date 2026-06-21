@@ -197,12 +197,14 @@ export default function ChapterReader({ html }: { html: string }) {
 
     let wasDark = false;
     let activeIdx = -1;
-    let rafId = 0;
+    let ticking = false;
     const root = document.documentElement;
 
     const onScroll = () => {
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(() => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
         const mid = window.innerHeight * 0.55;
 
         let dark = false;
@@ -247,7 +249,6 @@ export default function ChapterReader({ html }: { html: string }) {
 
     return () => {
       window.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(rafId);
       root.style.removeProperty("--background");
       root.style.removeProperty("--foreground");
       styledMap.forEach((_, i) => showAll(i));
