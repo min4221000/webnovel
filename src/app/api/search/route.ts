@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getViewerAdult } from "@/lib/session";
+import { rateLimit } from "@/lib/ratelimit";
+
+// 회차 본문 검색은 ILIKE 풀스캔 + content 통째 fetch라 비쌈 → take 상한
+const CONTENT_SEARCH_TAKE = 20;
+const META_SEARCH_TAKE = 40;
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -48,6 +53,15 @@ export async function GET(req: NextRequest) {
   const type = sp.get("type") || "unified";
   if (!q) return NextResponse.json({ type, results: [] });
 
+  // 비로그인 가능 + 풀스캔이라 비쌈 → IP 단위 rate limit (RU 폭주/DoS 방지)
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anon";
+  if (!(await rateLimit(`search:${ip}`, 20, 10))) {
+    return new NextResponse("검색이 너무 잦습니다. 잠시 후 다시 시도하세요.", { status: 429 });
+  }
+
+  // 본문 풀스캔은 2자 이상부터 (1자 검색은 사실상 전체 매칭 → 막대한 RU)
+  const allowContentSearch = q.length >= 2;
+
   // 성인 열람 OFF면 18+ 작품 제외
   const adult = await getViewerAdult();
   const adultFilter = adult ? {} : { isAdult: false };
@@ -88,7 +102,7 @@ export async function GET(req: NextRequest) {
     const novels = await prisma.novel.findMany({
       where: { deletedAt: null, hidden: false, ...adultFilter, title: { contains: q, mode: "insensitive" } },
       orderBy: { updatedAt: "desc" },
-      take: 40,
+      take: META_SEARCH_TAKE,
       select: {
         id: true,
         title: true,
@@ -124,7 +138,7 @@ export async function GET(req: NextRequest) {
           { author: { nickname: { contains: q, mode: "insensitive" } } },
         ],
       },
-      take: 40,
+      take: META_SEARCH_TAKE,
       select: {
         id: true,
         title: true,
@@ -134,30 +148,32 @@ export async function GET(req: NextRequest) {
         _count: { select: { chapters: { where: { deletedAt: null, hidden: false } } } },
       },
     }),
-    prisma.chapter.findMany({
-      where: {
-        deletedAt: null,
-        hidden: false,
-        content: { contains: q, mode: "insensitive" },
-        novel: { deletedAt: null, hidden: false, ...adultFilter },
-      },
-      take: 40,
-      orderBy: { createdAt: "desc" },
-      select: {
-        chapterNum: true,
-        title: true,
-        content: true,
-        novel: {
-          select: {
-            id: true,
-            title: true,
-            coverImage: true,
-            author: { select: { id: true, username: true, nickname: true } },
-            _count: { select: { chapters: { where: { deletedAt: null, hidden: false } } } },
+    allowContentSearch
+      ? prisma.chapter.findMany({
+          where: {
+            deletedAt: null,
+            hidden: false,
+            content: { contains: q, mode: "insensitive" },
+            novel: { deletedAt: null, hidden: false, ...adultFilter },
           },
-        },
-      },
-    }),
+          take: CONTENT_SEARCH_TAKE,
+          orderBy: { createdAt: "desc" },
+          select: {
+            chapterNum: true,
+            title: true,
+            content: true,
+            novel: {
+              select: {
+                id: true,
+                title: true,
+                coverImage: true,
+                author: { select: { id: true, username: true, nickname: true } },
+                _count: { select: { chapters: { where: { deletedAt: null, hidden: false } } } },
+              },
+            },
+          },
+        })
+      : Promise.resolve([] as never[]),
   ]);
 
   type Result = {

@@ -71,15 +71,15 @@ export async function GET(req: NextRequest) {
   const chapterMap = new Map(chapters.map((c) => [c.id, c]));
   const commentMap = new Map(comments.map((c) => [c.id, c]));
 
-  // 각 대상의 신고 건수
-  const allTargetIds = reports.map((r) => `${r.targetType}:${r.targetId}`);
-  const uniqueTargets = Array.from(new Set(allTargetIds));
-  const countMap = new Map<string, number>();
-  for (const key of uniqueTargets) {
-    const [tt, tid] = key.split(":");
-    const c = await prisma.report.count({ where: { targetType: tt, targetId: tid, status: "pending" } });
-    countMap.set(key, c);
-  }
+  // 각 대상의 pending 신고 건수 — groupBy 1회 (N+1 순차 count 루프 제거)
+  const countRows = await prisma.report.groupBy({
+    by: ["targetType", "targetId"],
+    where: { status: "pending", targetId: { in: reports.map((r) => r.targetId) } },
+    _count: { id: true },
+  });
+  const countMap = new Map(
+    countRows.map((r) => [`${r.targetType}:${r.targetId}`, r._count.id]),
+  );
 
   const enriched = reports.map((r) => {
     if (r.targetType === "chapter") {
