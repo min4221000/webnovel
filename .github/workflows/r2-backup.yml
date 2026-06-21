@@ -21,25 +21,29 @@ jobs:
           ACC=$(echo "$R2_ACCOUNT_ID" | tr -d '"'"'"' \t\r\n')
           BKT=$(echo "$R2_BUCKET_NAME" | tr -d '"'"'"' \t\r\n')
           if [ -z "$ACC" ] || [ -z "$BKT" ]; then
-            echo "::error::R2 secrets missing"
-            exit 1
+            echo "::error::R2 secrets missing"; exit 1
           fi
           echo "account id length: ${#ACC} (앞4: ${ACC:0:4})"
           echo "bucket name length: ${#BKT}"
+
+          # R2 custom endpoint은 path-style 주소 필요 (코파일럿 제안)
+          mkdir -p ~/.aws
+          printf '[default]\ns3 =\n  addressing_style = path\n' > ~/.aws/config
+
           EP="https://${ACC}.r2.cloudflarestorage.com"
-          echo "=== ${BKT} 객체 목록 (에러 그대로 노출) ==="
+
           echo "=== 토큰이 볼 수 있는 버킷 목록 ==="
           aws s3api list-buckets --endpoint-url "$EP" --query "Buckets[].Name" --output text || echo "list-buckets FAILED"
-          echo "=== list-objects-v2 상세 ==="
+
+          echo "=== list-objects-v2 상세 (에러 그대로) ==="
           aws s3api list-objects-v2 --bucket "$BKT" --endpoint-url "$EP" --max-items 5 2>&1 || true
-          aws s3 ls "s3://${BKT}" --endpoint-url "$EP" --recursive
+
           mkdir -p r2dump
           aws s3 sync "s3://${BKT}" ./r2dump --endpoint-url "$EP" --no-progress
           COUNT=$(find r2dump -type f | wc -l)
           echo "synced files: $COUNT"
           if [ "$COUNT" -eq 0 ]; then
-            echo "::error::0 files synced — R2_BUCKET_NAME 확인 필요"
-            exit 1
+            echo "::error::0 files synced — 위 디버그 목록 참고"; exit 1
           fi
           tar -czf "r2_backup_$(date +%Y%m%d).tar.gz" -C r2dump .
 
