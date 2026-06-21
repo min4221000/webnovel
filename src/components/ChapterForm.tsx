@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
 import Editor from "@/components/editor/Editor";
+import ChapterReader from "@/components/ChapterReader";
 import { MAX_CHARS, MAX_IMAGES_PER_CHAPTER } from "@/lib/constants";
 
 type Props = {
@@ -242,9 +243,9 @@ export default function ChapterForm({
           onChange={handleContentChange}
         />
       ) : (
-        <div className="border border-black/15 dark:border-white/20 rounded-lg min-h-[420px] bg-[var(--background)]">
+        <div className="border border-black/15 dark:border-white/20 rounded-lg min-h-[420px] bg-[var(--background)] px-4">
           {content ? (
-            <div className="wn-content py-4" dangerouslySetInnerHTML={{ __html: content }} />
+            <ChapterReader html={content} />
           ) : (
             <p className="text-gray-400 text-sm p-4">아직 내용이 없습니다.</p>
           )}
