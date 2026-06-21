@@ -22,13 +22,19 @@ jobs:
             echo "::error::R2 secrets missing"
             exit 1
           fi
+          EP="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          echo "=== 버킷 목록 (디버그) ==="
+          aws s3 ls --endpoint-url "$EP" || true
+          echo "=== ${R2_BUCKET_NAME} 객체 (디버그) ==="
+          aws s3 ls "s3://${R2_BUCKET_NAME}" --endpoint-url "$EP" --recursive || true
           mkdir -p r2dump
-          aws s3 sync "s3://${R2_BUCKET_NAME}" ./r2dump \
-            --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
-            --no-progress
+          aws s3 sync "s3://${R2_BUCKET_NAME}" ./r2dump --endpoint-url "$EP" --no-progress
           COUNT=$(find r2dump -type f | wc -l)
           echo "synced files: $COUNT"
-          tar -czf "r2_backup_$(date +%Y%m%d).tar.gz" -C r2dump .
+          if [ "$COUNT" -eq 0 ]; then
+            echo "::error::0 files synced — R2_BUCKET_NAME 확인 필요 (위 디버그 목록 참고)"
+            exit 1
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
