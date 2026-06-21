@@ -1,47 +1,42 @@
-name: Weekly R2 Image Backup
+name: Daily DB Backup
 
 on:
   schedule:
-    - cron: "0 3 * * 0"
+    - cron: "0 2 * * *"
   workflow_dispatch:
 
 jobs:
-  r2-backup:
+  backup:
     runs-on: ubuntu-latest
     steps:
-      - name: Sync R2 bucket
+      - name: Export DB as JSON
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: auto
-          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          SITE_URL: ${{ secrets.SITE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           set -euo pipefail
-          ACC=$(echo "$R2_ACCOUNT_ID" | tr -d '"'"'"' \t\r\n')
-          BKT=$(echo "$R2_BUCKET_NAME" | tr -d '"'"'"' \t\r\n')
-          if [ -z "$ACC" ] || [ -z "$BKT" ]; then
-            echo "::error::R2 secrets missing"
+          OUT="backup_$(date +%Y%m%d_%H%M%S).json"
+          HTTP=$(curl -sS -w "%{http_code}" -o "$OUT" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${SITE_URL}/api/cron/export")
+          echo "HTTP $HTTP"
+          if [ "$HTTP" != "200" ]; then
+            echo "::error::Export failed (HTTP $HTTP)"
+            cat "$OUT" || true
             exit 1
           fi
-          echo "account id length: ${#ACC} (앞4: ${ACC:0:4})"
-          echo "bucket name length: ${#BKT}"
-          EP="https://${ACC}.r2.cloudflarestorage.com"
-          echo "=== ${BKT} 객체 목록 (에러 그대로 노출) ==="
-          aws s3 ls "s3://${BKT}" --endpoint-url "$EP" --recursive
-          mkdir -p r2dump
-          aws s3 sync "s3://${BKT}" ./r2dump --endpoint-url "$EP" --no-progress
-          COUNT=$(find r2dump -type f | wc -l)
-          echo "synced files: $COUNT"
-          if [ "$COUNT" -eq 0 ]; then
-            echo "::error::0 files synced — R2_BUCKET_NAME 확인 필요"
+          SIZE=$(stat -c%s "$OUT")
+          echo "dump size: $SIZE bytes"
+          if [ "$SIZE" -lt 50 ]; then
+            echo "::error::Dump too small ($SIZE bytes)"
             exit 1
           fi
-          tar -czf "r2_backup_$(date +%Y%m%d).tar.gz" -C r2dump .
+          grep -q '"counts"' "$OUT" || { echo "::error::Invalid dump"; exit 1; }
+          gzip "$OUT"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: r2-backup-${{ github.run_id }}
-          path: "*.tar.gz"
-          retention-days: 60
+          name: db-backup-${{ github.run_id }}
+          path: "*.json.gz"
+          retention-days: 90
