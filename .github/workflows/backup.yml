@@ -2,28 +2,46 @@ name: Daily DB Backup
 
 on:
   schedule:
-    - cron: "0 2 * * *"   # 매일 새벽 2시 UTC (한국 오전 11시)
-  workflow_dispatch:        # 수동 실행 버튼
+    - cron: "0 2 * * *"
+  workflow_dispatch:
 
 jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
-      - name: Install pg_dump
-        run: sudo apt-get install -y postgresql-client
+      - name: Install pg_dump (v16)
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
       - name: Dump database
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          pg_dump "$DATABASE_URL" \
-            --no-password \
-            --format=custom \
-            --file=backup_$(date +%Y%m%d_%H%M%S).dump
+          set -euo pipefail
+          URL="$DATABASE_URL"
+          if echo "$URL" | grep -q "sslrootcert="; then
+            URL=$(echo "$URL" | sed -E 's/sslrootcert=[^&]*/sslrootcert=system/')
+          elif echo "$URL" | grep -q "?"; then
+            URL="$URL&sslrootcert=system"
+          else
+            URL="$URL?sslrootcert=system"
+          fi
+          OUT="backup_$(date +%Y%m%d_%H%M%S).sql"
+          pg_dump "$URL" \
+            --no-owner \
+            --no-privileges \
+            --format=plain \
+            --file="$OUT"
+          SIZE=$(stat -c%s "$OUT")
+          echo "dump size: $SIZE bytes"
+          if [ "$SIZE" -lt 1000 ]; then
+            echo "::error::Dump too small ($SIZE bytes) — backup likely failed"
+            exit 1
+          fi
+          gzip "$OUT"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: db-backup-${{ github.run_id }}
-          path: "*.dump"
-          retention-days: 90   # 90일 보관 후 자동 삭제
+          path: "*.sql.gz"
+          retention-days: 90
