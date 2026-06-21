@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/session";
 import { authErrorResponse } from "@/lib/apiError";
 import { sanitizeContent, countText, countImages } from "@/lib/sanitize";
 import { MAX_CHARS, MAX_IMAGES_PER_CHAPTER } from "@/lib/constants";
-import { deleteR2Keys, removedKeys, extractR2Keys } from "@/lib/r2";
+import { deleteR2Keys, removedKeys } from "@/lib/r2";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -51,6 +51,8 @@ export async function PATCH(
   const hidden = typeof body?.hidden === "boolean" ? body.hidden : undefined;
 
   if (!title) return new NextResponse("제목을 입력하세요.", { status: 400 });
+  if (title.length > 100)
+    return new NextResponse("회차 제목은 100자 이하여야 합니다.", { status: 400 });
   if (charCount === 0)
     return new NextResponse("본문이 비어 있습니다.", { status: 400 });
   if (charCount > MAX_CHARS)
@@ -91,17 +93,11 @@ export async function DELETE(
   if (ch.novel.authorId !== user.id && user.role !== "ADMIN")
     return authErrorResponse(new Error("FORBIDDEN"));
 
-  const keys = extractR2Keys(ch.content ?? "");
+  // 소프트 삭제만 (이미지는 보존 → 관리자 복구 시 깨지지 않음)
   await prisma.chapter.update({
     where: { id: params.id },
     data: { deletedAt: new Date() },
   });
-
-  // 소프트 삭제 시 이미지도 R2에서 삭제 (복구해도 이미지는 재업로드 필요)
-  if (keys.length) {
-    await deleteR2Keys(keys).catch(() => {});
-    await prisma.upload.deleteMany({ where: { url: { in: keys.map((k) => `${process.env.R2_PUBLIC_URL}/${k}`) } } });
-  }
 
   return NextResponse.json({ ok: true });
 }

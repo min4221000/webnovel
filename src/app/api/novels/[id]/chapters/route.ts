@@ -45,6 +45,8 @@ export async function POST(
   const title = (body?.title ?? "").toString().trim();
   const rawContent = (body?.content ?? "").toString();
   if (!title) return new NextResponse("회차 제목을 입력하세요.", { status: 400 });
+  if (title.length > 100)
+    return new NextResponse("회차 제목은 100자 이하여야 합니다.", { status: 400 });
 
   // 서버측 새니타이즈 + 검증 (클라이언트 우회 방어)
   const content = sanitizeContent(rawContent);

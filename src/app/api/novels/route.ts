@@ -33,6 +33,8 @@ export async function POST(req: NextRequest) {
   if (!title) return new NextResponse("제목을 입력하세요.", { status: 400 });
   if (title.length > 30)
     return new NextResponse("제목은 30자 이하여야 합니다.", { status: 400 });
+  if (description && description.length > 200)
+    return new NextResponse("설명은 200자 이하여야 합니다.", { status: 400 });
 
   const novel = await prisma.novel.create({
     data: { title, description, coverImage, isAdult, hidden, tags, authorId: user.id },
