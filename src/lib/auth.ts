@@ -49,9 +49,12 @@ export const authOptions: NextAuthOptions = {
         const discordName =
           p.global_name || p.username || (token.name as string) || "user";
         const avatarUrl = (token.picture as string | undefined) ?? null;
-        const isAdmin =
-          !!process.env.ADMIN_DISCORD_ID &&
-          process.env.ADMIN_DISCORD_ID === discordId;
+        // ADMIN_DISCORD_ID는 쉼표로 여러 명 지정 가능 (예: "id1,id2")
+        const adminIds = (process.env.ADMIN_DISCORD_ID ?? "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        const isAdmin = adminIds.includes(discordId);
 
         // 서버 닉네임 가져오기 (DISCORD_GUILD_ID 설정 시)
         let serverNick: string | null = null;
