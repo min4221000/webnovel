@@ -64,8 +64,13 @@ export async function rateLimit(
       });
       limiters.set(id, rl);
     }
-    const { success } = await rl.limit(key);
-    return success;
+    try {
+      const { success } = await rl.limit(key);
+      return success;
+    } catch {
+      // redis 네트워크 오류 등 → in-memory 폴백 (요청을 500으로 죽이지 않음)
+      return memLimit(key, max, windowSec * 1000);
+    }
   }
   return memLimit(key, max, windowSec * 1000);
 }

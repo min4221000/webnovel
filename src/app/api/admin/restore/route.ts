@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/session";
 import { authErrorResponse } from "@/lib/apiError";
+import { invalidateNovels } from "@/lib/queries";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -57,6 +58,7 @@ export async function POST(req: NextRequest) {
       where: { id },
       data: { deletedAt: null },
     });
+    invalidateNovels();
     return NextResponse.json({ ok: true });
   }
 
@@ -65,6 +67,7 @@ export async function POST(req: NextRequest) {
       where: { id },
       data: { deletedAt: null },
     });
+    invalidateNovels();
     return NextResponse.json({ ok: true });
   }
 

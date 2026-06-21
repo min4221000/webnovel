@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { displayName } from "@/lib/displayName";
 
 type Tab = "unified" | "title" | "author";
 
@@ -113,7 +114,7 @@ export default function SearchPage() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={a.avatarUrl} alt="" className="w-6 h-6 rounded-full" />
                   )}
-                  {a.nickname || a.username}
+                  {displayName(a)}
                 </Link>
                 <ul className="mt-2 pl-2 text-sm space-y-1">
                   {a.novels.map((n) => (
@@ -148,7 +149,7 @@ export default function SearchPage() {
                 <div className="min-w-0">
                   <h2 className="font-semibold truncate">{n.title}</h2>
                   <p className="text-xs text-gray-500">
-                    {n.author.nickname || n.author.username} · {n.chapterCount}화
+                    {displayName(n.author)} · {n.chapterCount}화
                     {n.matchedChapter && ` · ${n.matchedChapter.num}화 "${n.matchedChapter.title}"`}
                   </p>
                   {n.snippetHtml && (

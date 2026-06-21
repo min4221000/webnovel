@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getViewerAdult } from "@/lib/session";
+import { displayName } from "@/lib/displayName";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +43,7 @@ export default async function AuthorPage({
           <img src={author.avatarUrl} alt="" className="w-12 h-12 rounded-full" />
         )}
         <div>
-          <h1 className="text-2xl font-bold">{author.nickname || author.username}</h1>
+          <h1 className="text-2xl font-bold">{displayName(author)}</h1>
           <p className="text-sm text-gray-500">{author.novels.length}개 작품</p>
         </div>
       </div>

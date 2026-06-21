@@ -48,7 +48,16 @@ export default async function ChapterPage({
     }
   }
 
-  // 북마크 진행도 업데이트 (북마크가 있을 때만, 최대값 갱신)
+  const chapter = await prisma.chapter.findFirst({
+    where: { novelId: params.id, chapterNum, deletedAt: null },
+    select: { id: true, title: true, content: true, chapterNum: true, createdAt: true, hidden: true },
+  });
+  if (!chapter) notFound();
+
+  // 비공개 회차는 작가/어드민만
+  if (chapter.hidden && !isOwner) notFound();
+
+  // 북마크 진행도 업데이트 (실재하는 회차 확인 후, 최대값 갱신)
   if (user) {
     await prisma.bookmark.updateMany({
       where: {
@@ -59,15 +68,6 @@ export default async function ChapterPage({
       data: { lastReadChapter: chapterNum },
     });
   }
-
-  const chapter = await prisma.chapter.findFirst({
-    where: { novelId: params.id, chapterNum, deletedAt: null },
-    select: { id: true, title: true, content: true, chapterNum: true, createdAt: true, hidden: true },
-  });
-  if (!chapter) notFound();
-
-  // 비공개 회차는 작가/어드민만
-  if (chapter.hidden && !isOwner) notFound();
 
   const navFilter = { novelId: params.id, deletedAt: null, ...(isOwner ? {} : { hidden: false }) };
   const [prev, next] = await Promise.all([

@@ -61,9 +61,9 @@ export const authOptions: NextAuthOptions = {
           .filter(Boolean);
         const isAdmin = adminIds.includes(discordId);
 
-        // 서버 닉네임 가져오기 (DISCORD_GUILD_ID 설정 시)
+        // 서버 닉네임 가져오기 (DISCORD_GUILD_ID 설정 시; 쉼표 다중이면 첫 길드 기준)
         let serverNick: string | null = null;
-        const guildId = process.env.DISCORD_GUILD_ID;
+        const guildId = (process.env.DISCORD_GUILD_ID ?? "").split(",").map((s) => s.trim()).filter(Boolean)[0];
         if (guildId && account.access_token) {
           try {
             const r = await fetch(

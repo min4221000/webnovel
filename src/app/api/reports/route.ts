@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { authErrorResponse } from "@/lib/apiError";
 import { rateLimit } from "@/lib/ratelimit";
+import { invalidateNovels } from "@/lib/queries";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,14 +59,18 @@ export async function POST(req: NextRequest) {
   });
 
   if (count >= 3) {
-    // 3건 이상 → 글/댓글 자동 숨김 (복구 가능한 soft delete, 임시 조치)
+    // 3건 이상 → 임시 숨김 (관리자 판단 전까지 비노출)
     // 차단은 관리자가 신고 탭에서 직접 판단 (신고 도배 악용 방지)
     if (targetType === "chapter") {
+      // hidden 사용: deletedAt(soft-delete)은 7일 뒤 cron이 영구삭제 →
+      // 다계정 신고 도배로 글이 영구 증발하는 악용 방지. hidden은 purge 안 탐.
       await prisma.chapter.update({
         where: { id: targetId },
-        data: { deletedAt: new Date() },
+        data: { hidden: true },
       });
+      invalidateNovels(); // 회차 숨김 → 목록 회차수 갱신
     } else {
+      // 댓글은 hidden 필드가 없어 soft-delete. 관리자 복구탭에서 7일 내 복구 가능.
       await prisma.comment.update({
         where: { id: targetId },
         data: { deletedAt: new Date() },

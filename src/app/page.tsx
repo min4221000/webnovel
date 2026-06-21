@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
 import { getViewerAdult } from "@/lib/session";
+import { listNovels } from "@/lib/queries";
+import { displayName } from "@/lib/displayName";
 import StatusBadge from "@/components/StatusBadge";
 
 export const dynamic = "force-dynamic";
@@ -14,28 +15,8 @@ export default async function Home({
 }) {
   const adult = await getViewerAdult();
   const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
-  const where = { deletedAt: null, hidden: false, ...(adult ? {} : { isAdult: false }) } as const;
 
-  const [novels, total] = await Promise.all([
-    prisma.novel.findMany({
-      where,
-      orderBy: { updatedAt: "desc" },
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        coverImage: true,
-        tags: true,
-        isAdult: true,
-        status: true,
-        author: { select: { id: true, username: true, nickname: true } },
-        _count: { select: { chapters: { where: { deletedAt: null, hidden: false } } } },
-      },
-    }),
-    prisma.novel.count({ where }),
-  ]);
+  const { novels, total } = await listNovels(adult, page, PAGE_SIZE);
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
@@ -87,7 +68,7 @@ export default async function Home({
                       {n.status !== "ongoing" && <StatusBadge status={n.status} />}
                     </h2>
                     <p className="text-xs text-gray-500 truncate">
-                      {n.author.nickname || n.author.username} · {n._count.chapters}화
+                      {displayName(n.author)} · {n._count.chapters}화
                     </p>
                     {n.description && (
                       <p className="text-xs text-gray-400 line-clamp-2 mt-1">

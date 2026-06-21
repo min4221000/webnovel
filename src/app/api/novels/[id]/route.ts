@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { authErrorResponse } from "@/lib/apiError";
+import { invalidateNovels } from "@/lib/queries";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -48,6 +49,7 @@ export async function PATCH(
     where: { id: params.id },
     data: { title, description, coverImage, isAdult, hidden, status, tags },
   });
+  invalidateNovels();
   return NextResponse.json({ ok: true });
 }
 
@@ -76,5 +78,6 @@ export async function DELETE(
     where: { id: params.id },
     data: { deletedAt: new Date() },
   });
+  invalidateNovels();
   return NextResponse.json({ ok: true });
 }

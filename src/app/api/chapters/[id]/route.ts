@@ -5,6 +5,7 @@ import { authErrorResponse } from "@/lib/apiError";
 import { sanitizeContent, countText, countImages } from "@/lib/sanitize";
 import { MAX_CHARS, MAX_IMAGES_PER_CHAPTER } from "@/lib/constants";
 import { deleteR2Keys, removedKeys } from "@/lib/r2";
+import { invalidateNovels } from "@/lib/queries";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,6 +38,7 @@ export async function PATCH(
   if (body?.restore === true) {
     if (user.role !== "ADMIN") return authErrorResponse(new Error("FORBIDDEN"));
     await prisma.chapter.update({ where: { id: params.id }, data: { deletedAt: null } });
+    invalidateNovels();
     return NextResponse.json({ ok: true });
   }
 
@@ -73,6 +75,7 @@ export async function PATCH(
     await prisma.upload.deleteMany({ where: { url: { in: gone.map((k) => `${process.env.R2_PUBLIC_URL}/${k}`) } } });
   }
 
+  invalidateNovels(); // hidden 토글 시 회차수 변동 → 목록 갱신
   return NextResponse.json({ ok: true });
 }
 
@@ -99,5 +102,6 @@ export async function DELETE(
     data: { deletedAt: new Date() },
   });
 
+  invalidateNovels(); // 회차수 변동 → 목록 갱신
   return NextResponse.json({ ok: true });
 }

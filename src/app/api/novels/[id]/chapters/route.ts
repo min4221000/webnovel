@@ -6,6 +6,8 @@ import { sanitizeContent, countText, countImages } from "@/lib/sanitize";
 import { rateLimit } from "@/lib/ratelimit";
 import { MAX_CHARS, MAX_IMAGES_PER_CHAPTER } from "@/lib/constants";
 import { notifyNewChapter } from "@/lib/discordNotify";
+import { invalidateNovels } from "@/lib/queries";
+import { extractR2Keys, deleteR2Keys } from "@/lib/r2";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -73,13 +75,20 @@ export async function POST(
   if (requestedNum && Number.isInteger(requestedNum) && requestedNum > 0) {
     const dup = await prisma.chapter.findFirst({
       where: { novelId: params.id, chapterNum: requestedNum },
-      select: { id: true, deletedAt: true },
+      select: { id: true, deletedAt: true, content: true },
     });
     if (dup && !dup.deletedAt) {
       return new NextResponse(`${requestedNum}화는 이미 존재합니다. 다른 번호를 입력하세요.`, { status: 409 });
     }
     if (dup && dup.deletedAt) {
-      // 삭제된 회차 번호 재사용: 기존 삭제 레코드 제거
+      // 삭제된 회차 번호 재사용: 기존 삭제 레코드의 R2 이미지 먼저 정리 후 제거 (고아 이미지 방지)
+      const keys = extractR2Keys(dup.content ?? "");
+      if (keys.length) {
+        await deleteR2Keys(keys).catch(() => {});
+        await prisma.upload.deleteMany({
+          where: { url: { in: keys.map((k) => `${process.env.R2_PUBLIC_URL}/${k}`) } },
+        });
+      }
       await prisma.chapter.delete({ where: { id: dup.id } });
     }
     chapterNum = requestedNum;
@@ -111,6 +120,7 @@ export async function POST(
     where: { id: params.id },
     data: { updatedAt: new Date() },
   });
+  invalidateNovels(); // 회차수·최신순 변동 → 목록 갱신
 
   // 디스코드 새 회차 알림: 북마크한 유저의 webhookUrl로 전송 (공개 회차만)
   if (!hidden) {

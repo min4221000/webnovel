@@ -72,7 +72,7 @@ export function countText(html: string): number {
   return Array.from(text.replace(/\s+/g, " ").trim()).length;
 }
 
-/** content 내 <img> 개수 (회차당 3장 제한 검증용) */
+/** content 내 <img> 개수 (회차당 이미지 수 제한 검증용) */
 export function countImages(html: string): number {
   const matches = html.match(/<img\b/gi);
   return matches ? matches.length : 0;

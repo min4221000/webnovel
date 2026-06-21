@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSession, signIn } from "next-auth/react";
 import ReportButton from "./ReportButton";
+import { displayName } from "@/lib/displayName";
 
 type C = {
   id: string;
@@ -72,7 +73,7 @@ export default function Comments({ chapterId }: { chapterId: string }) {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={c.author.avatarUrl} alt="" className="w-5 h-5 rounded-full" />
           )}
-          <span className="font-medium">{c.author.nickname || c.author.username}</span>
+          <span className="font-medium">{displayName(c.author)}</span>
           <span className="text-xs text-gray-400">{new Date(c.createdAt).toLocaleString()}</span>
           {/* 관리자: 신고수 뱃지 */}
           {isAdmin && c.reportCount > 0 && (

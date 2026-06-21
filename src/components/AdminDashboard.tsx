@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { displayName } from "@/lib/displayName";
 
 type Report = {
   id: string;
@@ -371,7 +372,7 @@ export default function AdminDashboard() {
                 <li key={u.id} className="border rounded-lg p-3 flex items-start gap-3">
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold">{u.nickname ?? u.username}</span>
+                      <span className="font-semibold">{displayName(u)}</span>
                       {u.nickname && (
                         <span className="text-xs text-gray-400">({u.username})</span>
                       )}
@@ -401,7 +402,7 @@ export default function AdminDashboard() {
                           </button>
                         ) : (
                           <button
-                            onClick={() => banUser(u.id, u.nickname ?? u.username)}
+                            onClick={() => banUser(u.id, displayName(u))}
                             className="text-xs px-2 py-1 rounded bg-orange-600 text-white"
                           >
                             차단
@@ -443,7 +444,7 @@ export default function AdminDashboard() {
                         <div>
                           <p className="font-medium">{n.title}</p>
                           <p className="text-xs text-gray-500">
-                            작가: {n.author.nickname || n.author.username} · 삭제: {new Date(n.deletedAt).toLocaleString()}
+                            작가: {displayName(n.author)} · 삭제: {new Date(n.deletedAt).toLocaleString()}
                           </p>
                         </div>
                         <button

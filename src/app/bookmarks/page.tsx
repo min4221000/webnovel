@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
+import { displayName } from "@/lib/displayName";
 
 export const dynamic = "force-dynamic";
 
@@ -59,7 +60,7 @@ export default async function BookmarksPage() {
                       {n.isAdult && <span className="text-red-500 mr-1">[🔞]</span>}
                       {n.title}
                     </h2>
-                    <p className="text-xs text-gray-500">{n.author.nickname || n.author.username} · 전체 {total}화</p>
+                    <p className="text-xs text-gray-500">{displayName(n.author)} · 전체 {total}화</p>
 
                     <div className="mt-2 space-y-1">
                       <div className="flex justify-between text-xs text-gray-400">

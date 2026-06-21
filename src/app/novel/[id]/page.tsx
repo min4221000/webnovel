@@ -5,6 +5,7 @@ import { getCurrentUser, getViewerAdult } from "@/lib/session";
 import DeleteButton from "@/components/DeleteButton";
 import BookmarkButton from "@/components/BookmarkButton";
 import StatusBadge from "@/components/StatusBadge";
+import { displayName } from "@/lib/displayName";
 
 export const dynamic = "force-dynamic";
 
@@ -47,14 +48,6 @@ export default async function NovelPage({
   // 비공개 소설은 작가/어드민만 접근
   if (novel.hidden && !isOwner) notFound();
 
-  // 조회수 +1 (작가/어드민 본인 조회는 제외)
-  if (!isOwner && !novel.hidden) {
-    await prisma.novel.update({
-      where: { id: params.id },
-      data: { views: { increment: 1 } },
-    });
-  }
-
   // 18+ 작품은 성인 열람 ON 인 본인/관리자만 접근
   const adult = await getViewerAdult();
   if (novel.isAdult && !adult && !isOwner) {
@@ -70,6 +63,14 @@ export default async function NovelPage({
         </Link>
       </div>
     );
+  }
+
+  // 조회수 +1 (작가/어드민 본인·비공개·19+ 비열람자는 제외 — 게이트 통과 후 카운트)
+  if (!isOwner && !novel.hidden) {
+    await prisma.novel.update({
+      where: { id: params.id },
+      data: { views: { increment: 1 } },
+    });
   }
 
   return (
@@ -100,7 +101,7 @@ export default async function NovelPage({
           <p className="text-sm text-gray-500 mt-1">
             글쓴이{" "}
             <Link href={`/author/${novel.author.id}`} className="underline">
-              {novel.author.nickname || novel.author.username}
+              {displayName(novel.author)}
             </Link>{" "}
             · {novel.chapters.filter((c) => isOwner || !c.hidden).length}화 · 👁 {novel.views.toLocaleString()}
           </p>

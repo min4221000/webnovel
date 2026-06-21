@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, getViewerAdult } from "@/lib/session";
 import { authErrorResponse } from "@/lib/apiError";
 import { rateLimit } from "@/lib/ratelimit";
+import { invalidateNovels } from "@/lib/queries";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,6 +43,7 @@ export async function POST(req: NextRequest) {
     select: { id: true },
   });
 
+  if (!hidden) invalidateNovels();
   return NextResponse.json({ id: novel.id });
 }
 
