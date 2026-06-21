@@ -9,45 +9,34 @@ jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
-      - name: Install pg_dump v13 (CockroachDB 호환)
-        run: |
-          set -euo pipefail
-          sudo install -d /usr/share/keyrings
-          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
-            | sudo gpg --dearmor -o /usr/share/keyrings/pgdg.gpg
-          echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
-            | sudo tee /etc/apt/sources.list.d/pgdg.list
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client-13
-          /usr/lib/postgresql/13/bin/pg_dump --version
-
-      - name: Provide CA cert for libpq
-        run: |
-          mkdir -p ~/.postgresql
-          cp /etc/ssl/certs/ca-certificates.crt ~/.postgresql/root.crt
-
-      - name: Dump database
+      - name: Export DB as JSON
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SITE_URL: ${{ secrets.SITE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           set -euo pipefail
-          OUT="backup_$(date +%Y%m%d_%H%M%S).sql"
-          /usr/lib/postgresql/13/bin/pg_dump "$DATABASE_URL" \
-            --no-owner \
-            --no-privileges \
-            --format=plain \
-            --file="$OUT"
-          SIZE=$(stat -c%s "$OUT")
-          echo "dump size: $SIZE bytes"
-          if [ "$SIZE" -lt 1000 ]; then
-            echo "::error::Dump too small ($SIZE bytes) — backup likely failed"
+          OUT="backup_$(date +%Y%m%d_%H%M%S).json"
+          HTTP=$(curl -sS -w "%{http_code}" -o "$OUT" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${SITE_URL}/api/cron/export")
+          echo "HTTP $HTTP"
+          if [ "$HTTP" != "200" ]; then
+            echo "::error::Export failed (HTTP $HTTP)"
+            cat "$OUT" || true
             exit 1
           fi
+          SIZE=$(stat -c%s "$OUT")
+          echo "dump size: $SIZE bytes"
+          if [ "$SIZE" -lt 50 ]; then
+            echo "::error::Dump too small ($SIZE bytes)"
+            exit 1
+          fi
+          grep -q '"counts"' "$OUT" || { echo "::error::Invalid dump"; exit 1; }
           gzip "$OUT"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: db-backup-${{ github.run_id }}
-          path: "*.sql.gz"
+          path: "*.json.gz"
           retention-days: 90
