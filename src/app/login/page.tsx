@@ -1,12 +1,9 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 
 function LoginInner() {
-  const sp = useSearchParams();
-  const callbackUrl = sp.get("callbackUrl") || "/";
+  // 로그인 후 항상 메인으로 (이전 페이지로 안 돌아감)
   return (
     <div className="max-w-sm mx-auto mt-20 text-center space-y-5">
       <div className="text-5xl">📖</div>
@@ -17,7 +14,7 @@ function LoginInner() {
         Discord로 로그인해 주세요.
       </p>
       <button
-        onClick={() => signIn("discord", { callbackUrl })}
+        onClick={() => signIn("discord", { callbackUrl: "/" })}
         className="px-5 py-2.5 rounded-md bg-[#5865F2] text-white font-medium hover:opacity-90"
       >
         Discord로 로그인
@@ -27,9 +24,5 @@ function LoginInner() {
 }
 
 export default function LoginPage() {
-  return (
-    <Suspense fallback={null}>
-      <LoginInner />
-    </Suspense>
-  );
+  return <LoginInner />;
 }

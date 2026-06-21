@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useSession, signIn, signOut } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
@@ -71,13 +71,13 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              {/* 미로그인: 로그인 버튼 */}
-              <button
-                onClick={() => signIn("discord")}
+              {/* 미로그인: 로그인 페이지로 이동 (직접 signIn 안 함 → 콜백 일관성) */}
+              <Link
+                href="/login"
                 className="text-sm px-3 py-1.5 rounded-md bg-[#5865F2] text-white hover:bg-[#4752c4]"
               >
-                Discord 로그인
-              </button>
+                로그인
+              </Link>
               {/* 모바일 검색 햄버거 */}
               <button
                 onClick={() => setOpen((o) => !o)}
