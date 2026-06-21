@@ -1,0 +1,49 @@
+name: Daily DB Backup
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install pg_dump
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Provide CA cert for libpq
+        run: |
+          mkdir -p "$HOME/.postgresql"
+          cp /etc/ssl/certs/ca-certificates.crt "$HOME/.postgresql/root.crt"
+          echo "=== cert check ==="
+          ls -la "$HOME/.postgresql/"
+          echo "HOME=$HOME"
+
+      - name: Dump database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PGSSLMODE: require
+        run: |
+          set -euo pipefail
+          ls -la "$HOME/.postgresql/root.crt"
+          OUT="backup_$(date +%Y%m%d_%H%M%S).sql"
+          pg_dump "$DATABASE_URL" \
+            --no-owner \
+            --no-privileges \
+            --format=plain \
+            --file="$OUT"
+          SIZE=$(stat -c%s "$OUT")
+          echo "dump size: $SIZE bytes"
+          if [ "$SIZE" -lt 1000 ]; then
+            echo "::error::Dump too small ($SIZE bytes)"
+            exit 1
+          fi
+          gzip "$OUT"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: "*.sql.gz"
+          retention-days: 90
