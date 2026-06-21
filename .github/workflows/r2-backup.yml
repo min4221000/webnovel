@@ -28,6 +28,10 @@ jobs:
           echo "bucket name length: ${#BKT}"
           EP="https://${ACC}.r2.cloudflarestorage.com"
           echo "=== ${BKT} 객체 목록 (에러 그대로 노출) ==="
+          echo "=== 토큰이 볼 수 있는 버킷 목록 ==="
+          aws s3api list-buckets --endpoint-url "$EP" --query "Buckets[].Name" --output text || echo "list-buckets FAILED"
+          echo "=== list-objects-v2 상세 ==="
+          aws s3api list-objects-v2 --bucket "$BKT" --endpoint-url "$EP" --max-items 5 2>&1 || true
           aws s3 ls "s3://${BKT}" --endpoint-url "$EP" --recursive
           mkdir -p r2dump
           aws s3 sync "s3://${BKT}" ./r2dump --endpoint-url "$EP" --no-progress
