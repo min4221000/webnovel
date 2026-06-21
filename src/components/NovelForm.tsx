@@ -22,8 +22,15 @@ type Props = {
     coverImage: string | null;
     isAdult?: boolean;
     hidden?: boolean;
+    status?: string;
   };
 };
+
+const STATUS_OPTIONS = [
+  { value: "ongoing", label: "연재중" },
+  { value: "completed", label: "완결" },
+  { value: "hiatus", label: "휴재" },
+];
 
 export default function NovelForm({ novelId, initial }: Props) {
   const editing = !!novelId;
@@ -38,6 +45,7 @@ export default function NovelForm({ novelId, initial }: Props) {
   const [coverImage, setCoverImage] = useState<string | null>(initial?.coverImage ?? null);
   const [isAdult, setIsAdult] = useState<boolean>(initial?.isAdult ?? false);
   const [hidden, setHidden] = useState<boolean>(initial?.hidden ?? false);
+  const [statusVal, setStatusVal] = useState<string>(initial?.status ?? "ongoing");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -107,7 +115,7 @@ export default function NovelForm({ novelId, initial }: Props) {
       const res = await fetch(url, {
         method: editing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description, coverImage, isAdult, hidden, tags: selectedTags }),
+        body: JSON.stringify({ title, description, coverImage, isAdult, hidden, status: statusVal, tags: selectedTags }),
       });
       if (!res.ok) throw new Error(await res.text());
       if (editing) {
@@ -182,6 +190,26 @@ export default function NovelForm({ novelId, initial }: Props) {
                 );
               })}
             </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">연재 상태</label>
+        <div className="flex flex-wrap gap-2">
+          {STATUS_OPTIONS.map((s) => (
+            <button
+              key={s.value}
+              type="button"
+              onClick={() => setStatusVal(s.value)}
+              className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                statusVal === s.value
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "bg-transparent border-black/20 dark:border-white/20 hover:border-indigo-400"
+              }`}
+            >
+              {s.label}
+            </button>
           ))}
         </div>
       </div>

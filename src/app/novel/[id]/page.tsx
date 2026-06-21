@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser, getViewerAdult } from "@/lib/session";
 import DeleteButton from "@/components/DeleteButton";
 import BookmarkButton from "@/components/BookmarkButton";
+import StatusBadge from "@/components/StatusBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,8 @@ export default async function NovelPage({
       tags: true,
       isAdult: true,
       hidden: true,
+      status: true,
+      views: true,
       author: { select: { id: true, username: true, nickname: true } },
       chapters: {
         where: { deletedAt: null },
@@ -43,6 +46,14 @@ export default async function NovelPage({
 
   // 비공개 소설은 작가/어드민만 접근
   if (novel.hidden && !isOwner) notFound();
+
+  // 조회수 +1 (작가/어드민 본인 조회는 제외)
+  if (!isOwner && !novel.hidden) {
+    await prisma.novel.update({
+      where: { id: params.id },
+      data: { views: { increment: 1 } },
+    });
+  }
 
   // 18+ 작품은 성인 열람 ON 인 본인/관리자만 접근
   const adult = await getViewerAdult();
@@ -84,13 +95,14 @@ export default async function NovelPage({
             {novel.isAdult && <span className="text-red-500 mr-1">[🔞]</span>}
             {novel.hidden && <span className="text-gray-400 mr-1 text-sm font-normal">[비공개]</span>}
             {novel.title}
+            <StatusBadge status={novel.status} />
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             글쓴이{" "}
             <Link href={`/author/${novel.author.id}`} className="underline">
               {novel.author.nickname || novel.author.username}
             </Link>{" "}
-            · {novel.chapters.length}화
+            · {novel.chapters.filter((c) => isOwner || !c.hidden).length}화 · 👁 {novel.views.toLocaleString()}
           </p>
           {bookmark?.lastReadChapter != null && (
             <p className="text-xs text-amber-600 mt-1">★ {bookmark.lastReadChapter}화까지 읽음</p>

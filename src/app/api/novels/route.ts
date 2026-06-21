@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
   const coverImage = (body?.coverImage ?? "").toString().trim() || null;
   const isAdult = body?.isAdult === true;
   const hidden = body?.hidden === true;
+  const status = ["ongoing", "completed", "hiatus"].includes(body?.status) ? body.status : "ongoing";
   const tags: string[] = Array.isArray(body?.tags)
     ? body.tags.map((t: unknown) => String(t).trim()).filter(Boolean).slice(0, 10)
     : [];
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
     return new NextResponse("설명은 200자 이하여야 합니다.", { status: 400 });
 
   const novel = await prisma.novel.create({
-    data: { title, description, coverImage, isAdult, hidden, tags, authorId: user.id },
+    data: { title, description, coverImage, isAdult, hidden, status, tags, authorId: user.id },
     select: { id: true },
   });
 

@@ -33,6 +33,7 @@ export async function PATCH(
   const coverImage = (body?.coverImage ?? "").toString().trim() || null;
   const isAdult = body?.isAdult === true;
   const hidden = body?.hidden === true;
+  const status = ["ongoing", "completed", "hiatus"].includes(body?.status) ? body.status : "ongoing";
   const tags: string[] = Array.isArray(body?.tags)
     ? body.tags.map((t: unknown) => String(t).trim()).filter(Boolean).slice(0, 10)
     : [];
@@ -45,7 +46,7 @@ export async function PATCH(
 
   await prisma.novel.update({
     where: { id: params.id },
-    data: { title, description, coverImage, isAdult, hidden, tags },
+    data: { title, description, coverImage, isAdult, hidden, status, tags },
   });
   return NextResponse.json({ ok: true });
 }

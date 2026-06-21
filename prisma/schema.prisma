@@ -41,6 +41,8 @@ model Novel {
   tags         String[]
   isAdult      Boolean                  @default(false)
   hidden       Boolean                  @default(false)
+  status       String                   @default("ongoing") // ongoing | completed | hiatus
+  views        Int                      @default(0)
   deletedAt    DateTime?
   createdAt    DateTime                 @default(now())
   updatedAt    DateTime                 @updatedAt

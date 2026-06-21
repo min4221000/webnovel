@@ -23,6 +23,7 @@ export default async function EditNovelPage({
       coverImage: true,
       isAdult: true,
       hidden: true,
+      status: true,
       authorId: true,
     },
   });
@@ -39,6 +40,7 @@ export default async function EditNovelPage({
         coverImage: novel.coverImage,
         isAdult: novel.isAdult,
         hidden: novel.hidden,
+        status: novel.status,
       }}
     />
   );

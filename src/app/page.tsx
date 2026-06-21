@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getViewerAdult } from "@/lib/session";
+import StatusBadge from "@/components/StatusBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,7 @@ export default async function Home({
         coverImage: true,
         tags: true,
         isAdult: true,
+        status: true,
         author: { select: { id: true, username: true, nickname: true } },
         _count: { select: { chapters: { where: { deletedAt: null, hidden: false } } } },
       },
@@ -82,6 +84,7 @@ export default async function Home({
                     <h2 className="font-semibold truncate">
                       {n.isAdult && <span className="text-red-500 mr-1">[🔞]</span>}
                       {n.title}
+                      {n.status !== "ongoing" && <StatusBadge status={n.status} />}
                     </h2>
                     <p className="text-xs text-gray-500 truncate">
                       {n.author.nickname || n.author.username} · {n._count.chapters}화
