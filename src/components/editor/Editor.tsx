@@ -195,12 +195,12 @@ export default function Editor({ content = "", onChange }: Props) {
         const text = cb.getData("text/plain");
         if (!text || !text.includes("\n")) return false;
 
-        const html = cb.getData("text/html") || "";
-        const textBreaks = (text.match(/\n/g) || []).length;
-        const htmlBreaks = (html.match(/<(br|\/p|\/div|\/h[1-6]|\/li)\b/gi) || []).length;
-        // html이 충분히 줄 구조를 가지면 기본 경로(transformPastedHTML)에 맡김
-        if (htmlBreaks >= textBreaks && html) return false;
+        // 에디터 내부 복붙은 ProseMirror 포맷으로 서식 보존 (기본 경로)
+        const types = Array.from(cb.types || []);
+        if (types.some((t) => t.startsWith("application/x-prosemirror"))) return false;
 
+        // 외부 출처(Discord/Google Docs/메모장/워드 등) → 줄 구조는 text/plain 기준으로 통일
+        // html 경로는 빈 단락 표현이 source마다 달라(<p><br></p> / <p>&nbsp;</p> 등) 간격 어긋남.
         event.preventDefault();
         const schema = view.state.schema;
         // 각 줄 = 한 단락 (빈 줄도 빈 단락으로 살림). \n 하나당 단락 하나.
