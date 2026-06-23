@@ -130,6 +130,7 @@ export async function POST(
     try {
       await notifyChapterToSubscribers({
         novelId: params.id,
+        authorId: novel.authorId,
         novelTitle: novel.title,
         chapterNum: chapter.chapterNum,
         chapterTitle: title,

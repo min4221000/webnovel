@@ -23,7 +23,6 @@ type Props = {
     isAdult?: boolean;
     hidden?: boolean;
     status?: string;
-    newNovelNotified?: boolean;
   };
 };
 
@@ -47,8 +46,6 @@ export default function NovelForm({ novelId, initial }: Props) {
   const [isAdult, setIsAdult] = useState<boolean>(initial?.isAdult ?? false);
   const [hidden, setHidden] = useState<boolean>(initial?.hidden ?? false);
   const [statusVal, setStatusVal] = useState<string>(initial?.status ?? "ongoing");
-  const alreadyAnnounced = initial?.newNovelNotified ?? false;
-  const [sendAlert, setSendAlert] = useState(false); // 신작 알림 보내기 (저장 시 발송)
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -118,7 +115,7 @@ export default function NovelForm({ novelId, initial }: Props) {
       const res = await fetch(url, {
         method: editing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description, coverImage, isAdult, hidden, status: statusVal, tags: selectedTags, announce: sendAlert && !hidden }),
+        body: JSON.stringify({ title, description, coverImage, isAdult, hidden, status: statusVal, tags: selectedTags }),
       });
       if (!res.ok) throw new Error(await res.text());
       if (editing) {
@@ -262,27 +259,6 @@ export default function NovelForm({ novelId, initial }: Props) {
             <strong>비공개</strong> — 나만 볼 수 있습니다. 나중에 수정에서 공개로 바꿀 수 있습니다.
           </span>
         </label>
-
-        {/* 신작 알림 — 비공개·시플처럼 체크하면 저장 시 발송. 이미 보냈으면 숨김. */}
-        {!alreadyAnnounced && (
-          <label className={`flex items-start gap-2 text-sm ${hidden ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}>
-            <input
-              type="checkbox"
-              checked={sendAlert && !hidden}
-              disabled={hidden}
-              onChange={(e) => setSendAlert(e.target.checked)}
-              className="w-4 h-4 mt-0.5"
-            />
-            <span>
-              <strong className="text-emerald-600">📚 신작 알림 보내기</strong> — 저장 시{" "}
-              &ldquo;신작 알림 받기&rdquo;를 켠 이용자에게 발송됩니다. <strong>1회만</strong> 가능.
-              {hidden && <span className="text-amber-500"> (공개 상태에서만)</span>}
-            </span>
-          </label>
-        )}
-        {alreadyAnnounced && (
-          <p className="text-xs text-gray-400">📚 이 소설의 신작 알림은 이미 발송되었습니다.</p>
-        )}
       </div>
 
       {err && <p className="text-sm text-red-500">{err}</p>}

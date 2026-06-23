@@ -32,6 +32,21 @@ model User {
   reports   Report[]
   uploads   Upload[]
   bookmarks Bookmark[]
+  following Follow[]   @relation("following") // 내가 팔로우한 작가들
+  followers Follow[]   @relation("followers") // 나를 팔로우한 사람들
+}
+
+// 작가 팔로우: follower가 author를 팔로우 → author의 새 회차 알림 수신
+model Follow {
+  id         String   @id @default(cuid())
+  followerId String
+  follower   User     @relation("following", fields: [followerId], references: [id])
+  authorId   String
+  author     User     @relation("followers", fields: [authorId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@unique([followerId, authorId])
+  @@index([authorId])
 }
 
 model Novel {

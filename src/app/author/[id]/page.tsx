@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getViewerAdult, getCurrentUser } from "@/lib/session";
 import { displayName } from "@/lib/displayName";
-import NewNovelAlertToggle from "@/components/NewNovelAlertToggle";
+import FollowButton from "@/components/FollowButton";
 
 export const dynamic = "force-dynamic";
 
@@ -14,9 +14,14 @@ export default async function AuthorPage({
 }) {
   const adult = await getViewerAdult();
   const viewer = await getCurrentUser();
-  const me = viewer
-    ? await prisma.user.findUnique({ where: { id: viewer.id }, select: { notifyNewNovels: true } })
-    : null;
+  // 내가 이 작가를 팔로우 중인지 (본인 페이지면 버튼 숨김)
+  const isSelf = viewer?.id === params.id;
+  const following = viewer && !isSelf
+    ? !!(await prisma.follow.findUnique({
+        where: { followerId_authorId: { followerId: viewer.id, authorId: params.id } },
+        select: { id: true },
+      }))
+    : false;
   const author = await prisma.user.findUnique({
     where: { id: params.id },
     select: {
@@ -51,9 +56,9 @@ export default async function AuthorPage({
           <h1 className="text-2xl font-bold">{displayName(author)}</h1>
           <p className="text-sm text-gray-500">{author.novels.length}개 작품</p>
         </div>
-        {viewer && (
+        {viewer && !isSelf && (
           <div className="ml-auto">
-            <NewNovelAlertToggle initial={me?.notifyNewNovels ?? false} />
+            <FollowButton authorId={params.id} initialFollowing={following} />
           </div>
         )}
       </div>

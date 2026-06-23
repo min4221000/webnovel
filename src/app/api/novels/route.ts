@@ -4,7 +4,6 @@ import { requireUser, getViewerAdult } from "@/lib/session";
 import { authErrorResponse } from "@/lib/apiError";
 import { rateLimit } from "@/lib/ratelimit";
 import { invalidateNovels } from "@/lib/queries";
-import { announceNewNovel } from "@/lib/announceNovel";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -45,15 +44,6 @@ export async function POST(req: NextRequest) {
   });
 
   if (!hidden) invalidateNovels();
-  // 신작 알림 체크 시 발송 (공개 + 미발송 조건은 헬퍼가 확인).
-  // best-effort: 알림 실패해도 소설 등록(이미 성공)은 깨지지 않도록.
-  if (body?.announce === true) {
-    try {
-      await announceNewNovel(novel.id);
-    } catch (e) {
-      console.error("신작 알림 실패:", e);
-    }
-  }
   return NextResponse.json({ id: novel.id });
 }
 

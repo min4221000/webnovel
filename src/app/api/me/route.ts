@@ -12,7 +12,7 @@ export async function GET() {
   try { user = await requireUser(); } catch (e) { return authErrorResponse(e); }
   const db = await prisma.user.findUnique({
     where: { id: user.id },
-    select: { username: true, nickname: true, avatarUrl: true, webhookUrl: true, adult: true, notifyNewNovels: true, notifyAllChapters: true, previewBookmarkBody: true },
+    select: { username: true, nickname: true, avatarUrl: true, webhookUrl: true, adult: true, notifyAllChapters: true, previewBookmarkBody: true },
   });
   return NextResponse.json(db);
 }
@@ -30,17 +30,12 @@ export async function PATCH(req: NextRequest) {
   const data: {
     nickname?: string | null;
     webhookUrl?: string | null;
-    notifyNewNovels?: boolean;
     notifyAllChapters?: boolean;
     previewBookmarkBody?: boolean;
   } = {};
 
   if (typeof body.nickname === "string") {
     data.nickname = body.nickname.trim().slice(0, 30) || null;
-  }
-
-  if (typeof body.notifyNewNovels === "boolean") {
-    data.notifyNewNovels = body.notifyNewNovels;
   }
 
   if (typeof body.notifyAllChapters === "boolean") {
@@ -65,7 +60,7 @@ export async function PATCH(req: NextRequest) {
   const updated = await prisma.user.update({
     where: { id: user.id },
     data,
-    select: { nickname: true, webhookUrl: true, notifyNewNovels: true, notifyAllChapters: true, previewBookmarkBody: true },
+    select: { nickname: true, webhookUrl: true, notifyAllChapters: true, previewBookmarkBody: true },
   });
   return NextResponse.json({ ok: true, ...updated });
 }

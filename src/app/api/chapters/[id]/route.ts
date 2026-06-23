@@ -101,6 +101,7 @@ export async function PATCH(
     try {
       await notifyChapterToSubscribers({
         novelId: ch.novel.id,
+        authorId: ch.novel.authorId,
         novelTitle: ch.novel.title,
         chapterNum: ch.chapterNum,
         chapterTitle: title,

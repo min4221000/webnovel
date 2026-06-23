@@ -41,7 +41,6 @@ export default function ProfilePage() {
   const [nickname, setNickname] = useState("");
   const [origin, setOrigin] = useState<string | null>(null);
   const [webhookUrl, setWebhookUrl] = useState("");
-  const [notifyNewNovels, setNotifyNewNovels] = useState(false);
   const [notifyAllChapters, setNotifyAllChapters] = useState(false);
   const [previewBookmarkBody, setPreviewBookmarkBody] = useState(false);
   const [adult, setAdult] = useState<boolean | null>(null);
@@ -56,7 +55,6 @@ export default function ProfilePage() {
       setOrigin(d.nickname ?? null);
       setNickname(d.nickname ?? "");
       setWebhookUrl(d.webhookUrl ?? "");
-      setNotifyNewNovels(d.notifyNewNovels ?? false);
       setNotifyAllChapters(d.notifyAllChapters ?? false);
       setPreviewBookmarkBody(d.previewBookmarkBody ?? false);
       setAdult(d.adult ?? false);
@@ -71,7 +69,7 @@ export default function ProfilePage() {
       const res = await fetch("/api/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nickname, webhookUrl, notifyNewNovels, notifyAllChapters, previewBookmarkBody }),
+        body: JSON.stringify({ nickname, webhookUrl, notifyAllChapters, previewBookmarkBody }),
       });
       if (res.ok) {
         const d = await res.json();
@@ -157,23 +155,16 @@ export default function ProfilePage() {
         {/* 2단계: 받을 알림 종류 */}
         <div className="space-y-2">
           <label className="text-sm font-medium block">② 어떤 알림을 받을지</label>
-          <div className="rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 p-3 text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
-            ☆ <strong>북마크한 작품의 새 회차</strong>는 위 채널만 연결돼 있으면 <strong>항상</strong> 옵니다.
-            (작품 페이지의 ☆ 버튼으로 북마크)
+          <div className="rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 p-3 text-xs text-gray-600 dark:text-gray-300 leading-relaxed space-y-1">
+            <p>☆ <strong>북마크한 작품</strong>의 새 회차는 위 채널만 연결돼 있으면 <strong>항상</strong> 옵니다. (작품 페이지의 ☆ 버튼)</p>
+            <p>＋ <strong>팔로우한 작가</strong>의 새 회차도 항상 옵니다. (작가 페이지의 <strong>팔로우</strong> 버튼 → 그 작가의 모든 작품)</p>
           </div>
           <ToggleRow
             checked={notifyAllChapters}
             onChange={setNotifyAllChapters}
             icon="📖"
             title="모든 작품의 새 회차"
-            desc="북마크 안 한 작품이라도, 누군가 새 회차를 올리면 전부 알림이 옵니다."
-          />
-          <ToggleRow
-            checked={notifyNewNovels}
-            onChange={setNotifyNewNovels}
-            icon="📚"
-            title="새 소설(신작) 등록"
-            desc={<>새 작품이 올라오면 알림. <span className="text-gray-400">(19+ 신작은 시크릿 플러스를 켠 경우만)</span></>}
+            desc="북마크·팔로우와 무관하게, 누군가 새 회차를 올리면 전부 알림이 옵니다."
           />
         </div>
 
