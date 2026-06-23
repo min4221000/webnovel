@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getViewerAdult } from "@/lib/session";
+import { getViewerAdult, getCurrentUser } from "@/lib/session";
 import { displayName } from "@/lib/displayName";
+import NewNovelAlertToggle from "@/components/NewNovelAlertToggle";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,10 @@ export default async function AuthorPage({
   params: { id: string };
 }) {
   const adult = await getViewerAdult();
+  const viewer = await getCurrentUser();
+  const me = viewer
+    ? await prisma.user.findUnique({ where: { id: viewer.id }, select: { notifyNewNovels: true } })
+    : null;
   const author = await prisma.user.findUnique({
     where: { id: params.id },
     select: {
@@ -46,6 +51,11 @@ export default async function AuthorPage({
           <h1 className="text-2xl font-bold">{displayName(author)}</h1>
           <p className="text-sm text-gray-500">{author.novels.length}개 작품</p>
         </div>
+        {viewer && (
+          <div className="ml-auto">
+            <NewNovelAlertToggle initial={me?.notifyNewNovels ?? false} />
+          </div>
+        )}
       </div>
 
       {author.novels.length === 0 ? (
