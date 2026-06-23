@@ -15,7 +15,10 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
-  session: { strategy: "jwt" },
+  // 로그인 유지: 90일간 세션 유지, 활동 시 매일 자동 갱신 (사실상 계속 로그인)
+  // 차단/권한은 매 요청 requireUser()가 DB 재확인하므로 길어도 안전
+  session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 90, updateAge: 60 * 60 * 24 },
+  jwt: { maxAge: 60 * 60 * 24 * 90 },
   pages: { signIn: "/login" },
   callbacks: {
     // 디코섭 멤버만 로그인 허용 (REQUIRE_GUILD_MEMBER=1 + DISCORD_GUILD_ID 설정 시)

@@ -140,6 +140,7 @@ export async function POST(
       chapterTitle: title,
       authorName: novel.author.username,
       isAdult: novel.isAdult,
+      contentHtml: content, // 미리보기용 (19+는 notify 내부에서 생략)
     });
   }
 
