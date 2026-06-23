@@ -42,15 +42,18 @@ a {
   transition: color 1000ms ease, background-color 1000ms ease;
 }
 
-/* 본문 검색 하이라이트 (Ctrl+F 커스텀 검색용) — STEP4 */
+/* 본문 검색 하이라이트 (Ctrl+F 커스텀 검색용) */
 mark.wn-hl {
-  background: #ffe58a;
+  background: #ffe58a !important;
   color: inherit;
   border-radius: 2px;
+  padding: 1px 2px;
+  transition: none !important;
 }
 mark.wn-hl-active {
-  background: #ff9f43;
+  background: #ff9f43 !important;
   color: #1a1a1a;
+  transition: none !important;
 }
 
 /* ===== 에디터/본문 렌더 공통 스타일 (Tailwind preflight 보정) =====
