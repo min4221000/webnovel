@@ -83,51 +83,19 @@ export default async function DraftsPage({
         <section className="space-y-3">
           <h2 className="font-semibold text-sm text-gray-500">비공개 소설</h2>
           {novels.map((n) => (
-            <div key={n.id} className="border rounded-lg p-4 space-y-2">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="font-semibold">
-                    {n.isAdult && <span className="text-red-500 mr-1 text-sm">[🔞]</span>}
-                    {n.title}
-                  </h3>
-                  <p className="text-xs text-gray-400">
-                    {n.chapters.length}화 · 수정 {new Date(n.updatedAt).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="flex gap-2 shrink-0">
-                  <Link
-                    href={`/write/${n.id}/edit`}
-                    className="text-xs px-2 py-1 rounded border hover:border-indigo-400"
-                  >
-                    정보 수정
-                  </Link>
-                  <Link
-                    href={`/write/${n.id}/chapter/new`}
-                    className="text-xs px-2 py-1 rounded bg-indigo-600 text-white"
-                  >
-                    + 회차 쓰기
-                  </Link>
-                </div>
-              </div>
-              {n.chapters.length > 0 && (
-                <ul className="divide-y divide-black/5 dark:divide-white/5 text-sm">
-                  {n.chapters.map((c) => (
-                    <li key={c.id} className="flex items-center justify-between py-1.5">
-                      <Link href={`/novel/${n.id}/chapter/${c.chapterNum}`} className="hover:underline truncate">
-                        <span className="text-gray-400 mr-1">{c.chapterNum}화</span>
-                        {c.title}
-                      </Link>
-                      <Link
-                        href={`/write/${n.id}/chapter/${c.id}/edit`}
-                        className="text-xs text-gray-400 hover:text-indigo-500 shrink-0 ml-2"
-                      >
-                        수정
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            <Link
+              key={n.id}
+              href={`/novel/${n.id}`}
+              className="block border rounded-lg p-4 hover:border-indigo-400 transition-colors"
+            >
+              <h3 className="font-semibold">
+                {n.isAdult && <span className="text-red-500 mr-1 text-sm">[🔞]</span>}
+                {n.title}
+              </h3>
+              <p className="text-xs text-gray-400 mt-1">
+                {n.chapters.length}화 · 수정 {new Date(n.updatedAt).toLocaleDateString()} · 클릭해서 회차 목록·수정·삭제
+              </p>
+            </Link>
           ))}
         </section>
       )}
