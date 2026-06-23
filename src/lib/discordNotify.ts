@@ -19,15 +19,48 @@ function htmlToDiscordText(html: string): string {
     .trim();
 }
 
+// 본문을 문단/줄 경계에서 size 단위로 분할. maxParts 초과분은 잘림(truncated=true).
+function chunkText(text: string, size: number, maxParts: number): { parts: string[]; truncated: boolean } {
+  const parts: string[] = [];
+  let i = 0;
+  while (i < text.length && parts.length < maxParts) {
+    let end = Math.min(i + size, text.length);
+    if (end < text.length) {
+      const slice = text.slice(i, end);
+      const br = slice.lastIndexOf("\n\n");
+      const nl = slice.lastIndexOf("\n");
+      const at = br > size * 0.5 ? br : nl > size * 0.5 ? nl : -1;
+      if (at > 0) end = i + at;
+    }
+    parts.push(text.slice(i, end).trim());
+    i = end;
+  }
+  return { parts: parts.filter(Boolean), truncated: i < text.length };
+}
+
+type Embed = {
+  title: string;
+  description: string;
+  color: number;
+  url?: string;
+  fields?: { name: string; value: string; inline: boolean }[];
+  footer?: { text: string };
+  timestamp?: string;
+};
+type Message = { content?: string; embeds: Embed[] };
+
+const PART_SIZE = 4000; // embed description 한도 4096 여유
+const MAX_PARTS = 8; // 너무 긴 회차 도배 방지 (≈32k자), 초과분은 링크 유도
+
 export async function notifyNewChapter(opts: {
   webhookUrls: string[];
   novelTitle: string;
   novelId: string;
   chapterNum: number;
   chapterTitle: string;
-  authorName: string;
+  authorName: string; // 별명/서버닉 우선 (호출부에서 displayName 처리)
   isAdult: boolean;
-  contentHtml?: string; // 있으면 본문 통째로 첨부 (Discord 한도까지)
+  contentHtml?: string;
 }): Promise<void> {
   const valid = opts.webhookUrls.filter((u) => WEBHOOK_RE.test(u));
   if (valid.length === 0) return;
@@ -35,46 +68,58 @@ export async function notifyNewChapter(opts: {
   const base = (process.env.NEXTAUTH_URL || "").replace(/\/$/, "");
   const link = base ? `${base}/novel/${opts.novelId}/chapter/${opts.chapterNum}` : undefined;
 
-  // 본문 전체를 줄바꿈·문단간격 보존해 첨부.
-  // Discord embed 합산 한도 6000자 → 제목/푸터/링크 여유 빼고 본문 예산 ~5500.
-  // 초과분만 잘림(이건 Discord 구조적 한계 — 한 메시지엔 더 못 넣음).
-  const titleLine = `**${opts.chapterTitle}**`;
-  const linkLine = link ? `\n\n**[▶ ${opts.chapterNum}화 이어 읽기](${link})**` : "";
-  const budget = 5500 - titleLine.length - linkLine.length;
+  const full = opts.contentHtml ? htmlToDiscordText(opts.contentHtml) : "";
+  const { parts, truncated } = full
+    ? chunkText(full, PART_SIZE, MAX_PARTS)
+    : { parts: [] as string[], truncated: false };
 
-  let body = opts.contentHtml ? htmlToDiscordText(opts.contentHtml) : "";
-  let cut = false;
-  if (body.length > budget) {
-    const sliced = body.slice(0, budget);
-    const br = sliced.lastIndexOf("\n\n");
-    body = (br > budget * 0.5 ? sliced.slice(0, br) : sliced).trimEnd();
-    cut = true;
+  const headerTitle = `📖 ${opts.novelTitle} — ${opts.chapterNum}화`;
+  const color = opts.isAdult ? 0xef4444 : 0x6366f1;
+  const footerText = opts.isAdult ? "🔞 시크릿 플러스" : "새 회차 연재";
+  const linkLine = link
+    ? `\n\n**[▶ ${opts.chapterNum}화 ${parts.length > 1 ? "전체 보기" : "바로 읽기"}](${link})**`
+    : "";
+
+  // 메시지(=POST) 배열. 본문이 길면 여러 메시지로 "이어서" 연속 전송.
+  // 작가/푸터/링크는 마지막 메시지에만 (글 끝에 표시).
+  const total = Math.max(parts.length, 1);
+  const messages: Message[] = [];
+  for (let idx = 0; idx < total; idx++) {
+    const isFirst = idx === 0;
+    const isLast = idx === total - 1;
+    const chunk = parts[idx] ?? "";
+
+    let desc = isFirst ? `**${opts.chapterTitle}**\n\n` : "";
+    desc += chunk;
+    if (isLast) desc += (truncated ? "\n\n…(이어서는 사이트에서 ↓)" : "") + linkLine;
+
+    const embed: Embed = {
+      title: isFirst ? headerTitle : `${headerTitle} (이어서 ${idx + 1}/${total})`,
+      description: desc.slice(0, 4096),
+      color,
+    };
+    if (isFirst && link) embed.url = link;
+    if (isLast) {
+      embed.fields = [{ name: "작가", value: opts.authorName, inline: true }];
+      embed.footer = { text: footerText };
+      embed.timestamp = new Date().toISOString();
+    }
+
+    const msg: Message = { embeds: [embed] };
+    if (isFirst) msg.content = `**${opts.novelTitle}** 새 회차가 올라왔습니다!`;
+    messages.push(msg);
   }
 
-  const description =
-    titleLine +
-    (body ? `\n\n${body}` : "") +
-    (cut ? "\n\n…(이어서는 사이트에서 ↓)" : "") +
-    linkLine;
-
-  const payload = JSON.stringify({
-    content: `**${opts.novelTitle}** 새 회차가 올라왔습니다!`,
-    embeds: [
-      {
-        title: `📖 ${opts.novelTitle} — ${opts.chapterNum}화`,
-        description: description.slice(0, 4096), // 디코 embed description 상한
-        url: link,
-        color: opts.isAdult ? 0xef4444 : 0x6366f1,
-        fields: [{ name: "작가", value: opts.authorName, inline: true }],
-        footer: { text: opts.isAdult ? "🔞 시크릿 플러스" : "새 회차 연재" },
-        timestamp: new Date().toISOString(),
-      },
-    ],
-  });
-
-  await Promise.allSettled(
-    valid.map((url) =>
-      fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: payload })
-    )
-  );
+  // 웹훅별로 순서 보장하며 전송(파트 순서 중요), 웹훅 간엔 병렬. rate limit 여유 딜레이.
+  async function sendTo(url: string) {
+    for (let k = 0; k < messages.length; k++) {
+      await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(messages[k]),
+      }).catch(() => {});
+      if (k < messages.length - 1) await new Promise((r) => setTimeout(r, 400));
+    }
+  }
+  await Promise.allSettled(valid.map(sendTo));
 }

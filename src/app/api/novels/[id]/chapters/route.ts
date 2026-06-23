@@ -6,6 +6,7 @@ import { sanitizeContent, countText, countImages } from "@/lib/sanitize";
 import { rateLimit } from "@/lib/ratelimit";
 import { MAX_CHARS, MAX_IMAGES_PER_CHAPTER } from "@/lib/constants";
 import { notifyNewChapter } from "@/lib/discordNotify";
+import { displayName } from "@/lib/displayName";
 import { invalidateNovels } from "@/lib/queries";
 import { extractR2Keys, deleteR2Keys } from "@/lib/r2";
 
@@ -35,7 +36,7 @@ export async function POST(
       deletedAt: true,
       title: true,
       isAdult: true,
-      author: { select: { username: true } },
+      author: { select: { username: true, nickname: true } },
     },
   });
   if (!novel || novel.deletedAt)
@@ -132,15 +133,15 @@ export async function POST(
       .map((b) => b.user.webhookUrl)
       .filter(Boolean) as string[];
 
-    void notifyNewChapter({
+    await notifyNewChapter({
       webhookUrls,
       novelTitle: novel.title,
       novelId: params.id,
       chapterNum: chapter.chapterNum,
       chapterTitle: title,
-      authorName: novel.author.username,
+      authorName: displayName(novel.author), // 별명/서버닉 우선
       isAdult: novel.isAdult,
-      contentHtml: content, // 미리보기용 (19+는 notify 내부에서 생략)
+      contentHtml: content,
     });
   }
 
