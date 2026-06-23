@@ -12,7 +12,7 @@ export async function GET() {
   try { user = await requireUser(); } catch (e) { return authErrorResponse(e); }
   const db = await prisma.user.findUnique({
     where: { id: user.id },
-    select: { username: true, nickname: true, avatarUrl: true, webhookUrl: true, adult: true, notifyNewNovels: true },
+    select: { username: true, nickname: true, avatarUrl: true, webhookUrl: true, adult: true, notifyNewNovels: true, previewBookmarkBody: true },
   });
   return NextResponse.json(db);
 }
@@ -27,7 +27,12 @@ export async function PATCH(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}));
 
-  const data: { nickname?: string | null; webhookUrl?: string | null; notifyNewNovels?: boolean } = {};
+  const data: {
+    nickname?: string | null;
+    webhookUrl?: string | null;
+    notifyNewNovels?: boolean;
+    previewBookmarkBody?: boolean;
+  } = {};
 
   if (typeof body.nickname === "string") {
     data.nickname = body.nickname.trim().slice(0, 30) || null;
@@ -35,6 +40,10 @@ export async function PATCH(req: NextRequest) {
 
   if (typeof body.notifyNewNovels === "boolean") {
     data.notifyNewNovels = body.notifyNewNovels;
+  }
+
+  if (typeof body.previewBookmarkBody === "boolean") {
+    data.previewBookmarkBody = body.previewBookmarkBody;
   }
 
   if (typeof body.webhookUrl === "string") {
@@ -51,7 +60,7 @@ export async function PATCH(req: NextRequest) {
   const updated = await prisma.user.update({
     where: { id: user.id },
     data,
-    select: { nickname: true, webhookUrl: true, notifyNewNovels: true },
+    select: { nickname: true, webhookUrl: true, notifyNewNovels: true, previewBookmarkBody: true },
   });
   return NextResponse.json({ ok: true, ...updated });
 }

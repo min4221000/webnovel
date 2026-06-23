@@ -6,7 +6,7 @@ import { sanitizeContent, countText, countImages } from "@/lib/sanitize";
 import { MAX_CHARS, MAX_IMAGES_PER_CHAPTER } from "@/lib/constants";
 import { deleteR2Keys, removedKeys } from "@/lib/r2";
 import { invalidateNovels } from "@/lib/queries";
-import { notifyNewChapter } from "@/lib/discordNotify";
+import { notifyChapterToBookmarkers } from "@/lib/notifyChapter";
 import { displayName } from "@/lib/displayName";
 
 export const runtime = "nodejs";
@@ -30,31 +30,6 @@ async function loadChapterOwner(id: string) {
         },
       },
     },
-  });
-}
-
-// 비공개 회차 발행 시 북마커에게 디코 알림 (includeBody=false면 제목+링크만 — 스포 방지)
-async function notifyBookmarkers(
-  ch: NonNullable<Awaited<ReturnType<typeof loadChapterOwner>>>,
-  title: string,
-  content: string,
-  includeBody: boolean,
-) {
-  const bookmarkers = await prisma.bookmark.findMany({
-    where: { novelId: ch.novel.id, user: { webhookUrl: { not: null } } },
-    select: { user: { select: { webhookUrl: true } } },
-  });
-  const webhookUrls = bookmarkers.map((b) => b.user.webhookUrl).filter(Boolean) as string[];
-  if (webhookUrls.length === 0) return;
-  await notifyNewChapter({
-    webhookUrls,
-    novelTitle: ch.novel.title,
-    novelId: ch.novel.id,
-    chapterNum: ch.chapterNum,
-    chapterTitle: title,
-    authorName: displayName(ch.novel.author),
-    isAdult: ch.novel.isAdult,
-    contentHtml: includeBody ? content : undefined,
   });
 }
 
@@ -120,9 +95,17 @@ export async function PATCH(
 
   invalidateNovels(); // hidden 토글 시 회차수 변동 → 목록 갱신
 
-  // 발행 요청이면 북마커에게 디코 알림 (최신 title/content 기준)
+  // 발행 요청이면 북마커에게 디코 알림 (본문 포함 여부는 수신자별 설정)
   if (publish) {
-    await notifyBookmarkers(ch, title, content, body?.notifyBody !== false);
+    await notifyChapterToBookmarkers({
+      novelId: ch.novel.id,
+      novelTitle: ch.novel.title,
+      chapterNum: ch.chapterNum,
+      chapterTitle: title,
+      authorName: displayName(ch.novel.author),
+      isAdult: ch.novel.isAdult,
+      content,
+    });
     return NextResponse.json({ ok: true, published: true });
   }
   return NextResponse.json({ ok: true });

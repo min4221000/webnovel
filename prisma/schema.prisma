@@ -24,6 +24,7 @@ model User {
   nickname  String?
   webhookUrl String?
   notifyNewNovels Boolean @default(false) // 신작 알림 수신 opt-in
+  previewBookmarkBody Boolean @default(false) // 북마크 새 회차 알림에 본문 미리보기 포함 (수신자 선택)
   createdAt DateTime   @default(now())
   novels    Novel[]
   comments  Comment[]

@@ -5,7 +5,7 @@ import { authErrorResponse } from "@/lib/apiError";
 import { sanitizeContent, countText, countImages } from "@/lib/sanitize";
 import { rateLimit } from "@/lib/ratelimit";
 import { MAX_CHARS, MAX_IMAGES_PER_CHAPTER } from "@/lib/constants";
-import { notifyNewChapter } from "@/lib/discordNotify";
+import { notifyChapterToBookmarkers } from "@/lib/notifyChapter";
 import { displayName } from "@/lib/displayName";
 import { invalidateNovels } from "@/lib/queries";
 import { extractR2Keys, deleteR2Keys } from "@/lib/r2";
@@ -123,25 +123,17 @@ export async function POST(
   });
   invalidateNovels(); // 회차수·최신순 변동 → 목록 갱신
 
-  // 디스코드 새 회차 알림: 북마크한 유저의 webhookUrl로 전송 (공개 회차만)
+  // 디스코드 새 회차 알림: 북마크한 유저에게 (공개 회차만).
+  // 본문 포함 여부는 수신자별 previewBookmarkBody 설정에 따름.
   if (!hidden) {
-    const bookmarkers = await prisma.bookmark.findMany({
-      where: { novelId: params.id, user: { webhookUrl: { not: null } } },
-      select: { user: { select: { webhookUrl: true } } },
-    });
-    const webhookUrls = bookmarkers
-      .map((b) => b.user.webhookUrl)
-      .filter(Boolean) as string[];
-
-    await notifyNewChapter({
-      webhookUrls,
-      novelTitle: novel.title,
+    await notifyChapterToBookmarkers({
       novelId: params.id,
+      novelTitle: novel.title,
       chapterNum: chapter.chapterNum,
       chapterTitle: title,
       authorName: displayName(novel.author), // 별명/서버닉 우선
       isAdult: novel.isAdult,
-      contentHtml: body?.notifyBody === false ? undefined : content, // 끄면 제목+링크만(스포 방지)
+      content,
     });
   }
 

@@ -36,7 +36,6 @@ export default function ChapterForm({
   const [editorKey, setEditorKey] = useState(0);
   const [customNum, setCustomNum] = useState("");
   const [hidden, setHidden] = useState(initialHidden);
-  const [notifyBody, setNotifyBody] = useState(true); // 디코 알림에 본문 포함 여부
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -148,7 +147,7 @@ export default function ChapterForm({
       const res = await fetch(url, {
         method: editing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, content, hidden, notifyBody, ...(customNum ? { chapterNum: Number(customNum) } : {}) }),
+        body: JSON.stringify({ title, content, hidden, ...(customNum ? { chapterNum: Number(customNum) } : {}) }),
       });
       if (!res.ok) throw new Error(await res.text());
       isDirtyRef.current = false;
@@ -170,17 +169,13 @@ export default function ChapterForm({
   const publishAndNotify = async () => {
     setErr(null);
     if (!title.trim()) return setErr("회차 제목을 입력하세요.");
-    if (!confirm(
-      notifyBody
-        ? "이 회차를 공개하고, 북마크한 사람에게 본문 포함 알림을 보냅니다. 진행할까요?"
-        : "이 회차를 공개하고, 북마크한 사람에게 제목+링크 알림을 보냅니다. 진행할까요?",
-    )) return;
+    if (!confirm("이 회차를 공개하고, 북마크한 사람에게 디코 알림을 보냅니다. 진행할까요?")) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/chapters/${chapterId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ publish: true, notifyBody, title, content }),
+        body: JSON.stringify({ publish: true, title, content }),
       });
       if (!res.ok) throw new Error(await res.text());
       isDirtyRef.current = false;
@@ -290,21 +285,6 @@ export default function ChapterForm({
         <span><strong>비공개</strong> — 나만 볼 수 있습니다. 회차 수정에서 공개로 바꿀 수 있습니다.</span>
       </label>
 
-      {/* 새 회차 공개 발행 시: 디코 알림에 본문 포함할지 (끄면 제목+링크만 → 스포 방지) */}
-      {!editing && !hidden && (
-        <label className="flex items-center gap-2 text-sm cursor-pointer">
-          <input
-            type="checkbox"
-            checked={notifyBody}
-            onChange={(e) => setNotifyBody(e.target.checked)}
-            className="w-4 h-4"
-          />
-          <span>
-            📢 디코 알림에 <strong>본문 포함</strong> — 체크 해제 시 제목+링크만 발송 (스포 방지)
-          </span>
-        </label>
-      )}
-
       {/* 비공개 회차 발행: 공개 전환 + 북마커 디코 알림 (수정 페이지 전용) */}
       {editing && initialHidden && (
         <div className="rounded-lg border border-indigo-300 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30 p-3 space-y-2">
@@ -312,15 +292,9 @@ export default function ChapterForm({
             🔒 <strong>비공개 회차</strong>입니다. 아래 버튼을 누르면 <strong>공개로 전환</strong>되고,{" "}
             이 소설을 <strong>북마크한 사람에게 디코 알림</strong>이 발송됩니다.
           </p>
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              checked={notifyBody}
-              onChange={(e) => setNotifyBody(e.target.checked)}
-              className="w-4 h-4"
-            />
-            <span>알림에 <strong>본문 포함</strong> — 해제 시 제목+링크만 (스포 방지)</span>
-          </label>
+          <p className="text-xs text-gray-400">
+            본문 미리보기 포함 여부는 받는 사람이 각자 프로필에서 설정합니다.
+          </p>
           <button
             onClick={publishAndNotify}
             disabled={busy}

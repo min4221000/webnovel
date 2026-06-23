@@ -12,6 +12,7 @@ export default function ProfilePage() {
   const [origin, setOrigin] = useState<string | null>(null);
   const [webhookUrl, setWebhookUrl] = useState("");
   const [notifyNewNovels, setNotifyNewNovels] = useState(false);
+  const [previewBookmarkBody, setPreviewBookmarkBody] = useState(false);
   const [adult, setAdult] = useState<boolean | null>(null);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
@@ -25,6 +26,7 @@ export default function ProfilePage() {
       setNickname(d.nickname ?? "");
       setWebhookUrl(d.webhookUrl ?? "");
       setNotifyNewNovels(d.notifyNewNovels ?? false);
+      setPreviewBookmarkBody(d.previewBookmarkBody ?? false);
       setAdult(d.adult ?? false);
     });
   }, [status, router]);
@@ -36,7 +38,7 @@ export default function ProfilePage() {
     const res = await fetch("/api/me", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nickname, webhookUrl, notifyNewNovels }),
+      body: JSON.stringify({ nickname, webhookUrl, notifyNewNovels, previewBookmarkBody }),
     });
     setSaving(false);
     if (res.ok) {
@@ -105,6 +107,27 @@ export default function ProfilePage() {
             웹후크 제거 (알림 끄기)
           </button>
         )}
+      </div>
+
+      <div className="space-y-2 border-t border-black/10 dark:border-white/15 pt-5">
+        <label className="flex items-start gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={previewBookmarkBody}
+            onChange={(e) => setPreviewBookmarkBody(e.target.checked)}
+            className="w-4 h-4 mt-0.5"
+          />
+          <span>
+            <strong>📖 북마크 새 회차 알림에 본문 미리보기 포함</strong>
+          </span>
+        </label>
+        <p className="text-xs text-gray-400 leading-relaxed pl-6">
+          켜면, 내가 북마크한 소설의 새 회차 알림에 <strong>본문 내용</strong>이 함께 옵니다 (디코 한도까지).
+          <br />
+          끄면 <strong>제목 + 바로가기 링크만</strong> 옵니다. <span className="text-amber-500">스포일러가 싫으면 꺼두세요.</span>
+          <br />
+          (기본값: 꺼짐)
+        </p>
       </div>
 
       <div className="space-y-2 border-t border-black/10 dark:border-white/15 pt-5">
