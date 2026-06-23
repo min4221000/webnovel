@@ -2,11 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { notifyNewChapter } from "@/lib/discordNotify";
 
 /**
- * 새 회차 알림을 북마커에게 발송.
- * 수신자별 previewBookmarkBody 설정에 따라 본문 포함/링크만 분기.
- * (본문 미리보기는 받는 사람이 프로필에서 켠 경우에만 — 기본 OFF)
+ * 새 회차 알림 발송 대상 = (이 소설을 북마크한 사람) ∪ (모든 새 회차 알림 켠 사람).
+ * 웹후크 등록자만, 19+ 회차는 성인 열람 켠 사람만. 한 유저는 1회만(자동 dedup).
+ * 본문 포함 여부는 수신자별 previewBookmarkBody 설정에 따라 분기.
  */
-export async function notifyChapterToBookmarkers(opts: {
+export async function notifyChapterToSubscribers(opts: {
   novelId: string;
   novelTitle: string;
   chapterNum: number;
@@ -15,15 +15,21 @@ export async function notifyChapterToBookmarkers(opts: {
   isAdult: boolean;
   content: string;
 }): Promise<void> {
-  const bookmarkers = await prisma.bookmark.findMany({
-    where: { novelId: opts.novelId, user: { webhookUrl: { not: null } } },
-    select: { user: { select: { webhookUrl: true, previewBookmarkBody: true } } },
+  const users = await prisma.user.findMany({
+    where: {
+      webhookUrl: { not: null },
+      ...(opts.isAdult ? { adult: true } : {}),
+      OR: [
+        { bookmarks: { some: { novelId: opts.novelId } } },
+        { notifyAllChapters: true },
+      ],
+    },
+    select: { webhookUrl: true, previewBookmarkBody: true },
   });
 
   const withBody: string[] = [];
   const linkOnly: string[] = [];
-  for (const b of bookmarkers) {
-    const u = b.user;
+  for (const u of users) {
     if (!u.webhookUrl) continue;
     (u.previewBookmarkBody ? withBody : linkOnly).push(u.webhookUrl);
   }

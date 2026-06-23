@@ -23,8 +23,9 @@ model User {
   adult     Boolean    @default(false)
   nickname  String?
   webhookUrl String?
-  notifyNewNovels Boolean @default(false) // 신작 알림 수신 opt-in
-  previewBookmarkBody Boolean @default(false) // 북마크 새 회차 알림에 본문 미리보기 포함 (수신자 선택)
+  notifyNewNovels Boolean @default(false) // 신작(새 소설) 알림 수신 opt-in
+  notifyAllChapters Boolean @default(false) // 모든 작품의 새 회차 알림 수신 opt-in (북마크 무관)
+  previewBookmarkBody Boolean @default(false) // 회차 알림에 본문 미리보기 포함 (수신자 선택)
   createdAt DateTime   @default(now())
   novels    Novel[]
   comments  Comment[]

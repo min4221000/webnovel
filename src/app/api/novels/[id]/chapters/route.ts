@@ -5,7 +5,7 @@ import { authErrorResponse } from "@/lib/apiError";
 import { sanitizeContent, countText, countImages } from "@/lib/sanitize";
 import { rateLimit } from "@/lib/ratelimit";
 import { MAX_CHARS, MAX_IMAGES_PER_CHAPTER } from "@/lib/constants";
-import { notifyChapterToBookmarkers } from "@/lib/notifyChapter";
+import { notifyChapterToSubscribers } from "@/lib/notifyChapter";
 import { displayName } from "@/lib/displayName";
 import { invalidateNovels } from "@/lib/queries";
 import { extractR2Keys, deleteR2Keys } from "@/lib/r2";
@@ -128,7 +128,7 @@ export async function POST(
   // best-effort: 알림 실패가 회차 저장(이미 성공)을 깨지 않도록 try/catch.
   if (!hidden) {
     try {
-      await notifyChapterToBookmarkers({
+      await notifyChapterToSubscribers({
         novelId: params.id,
         novelTitle: novel.title,
         chapterNum: chapter.chapterNum,

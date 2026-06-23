@@ -6,7 +6,7 @@ import { sanitizeContent, countText, countImages } from "@/lib/sanitize";
 import { MAX_CHARS, MAX_IMAGES_PER_CHAPTER } from "@/lib/constants";
 import { deleteR2Keys, removedKeys } from "@/lib/r2";
 import { invalidateNovels } from "@/lib/queries";
-import { notifyChapterToBookmarkers } from "@/lib/notifyChapter";
+import { notifyChapterToSubscribers } from "@/lib/notifyChapter";
 import { displayName } from "@/lib/displayName";
 
 export const runtime = "nodejs";
@@ -99,7 +99,7 @@ export async function PATCH(
   // best-effort: 알림 실패해도 공개 전환(이미 완료)은 성공 처리.
   if (publish) {
     try {
-      await notifyChapterToBookmarkers({
+      await notifyChapterToSubscribers({
         novelId: ch.novel.id,
         novelTitle: ch.novel.title,
         chapterNum: ch.chapterNum,
