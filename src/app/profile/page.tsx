@@ -118,6 +118,28 @@ export default function ProfilePage() {
         <label className="flex items-start gap-2 text-sm cursor-pointer">
           <input
             type="checkbox"
+            checked={notifyNewNovels && previewBookmarkBody}
+            onChange={(e) => {
+              setNotifyNewNovels(e.target.checked);
+              setPreviewBookmarkBody(e.target.checked);
+            }}
+            className="w-4 h-4 mt-0.5"
+          />
+          <span>
+            <strong>📢 전체 알림 켜기</strong>
+          </span>
+        </label>
+        <p className="text-xs text-gray-400 leading-relaxed pl-6">
+          한 번에 <strong>신작 알림 + 본문 미리보기</strong>를 모두 켭니다. 아래에서 개별로 다시 끌 수 있어요.
+          <br />
+          (북마크한 소설의 새 회차 알림은 ☆ 북마크 + 위 웹후크만 설정하면 자동으로 옵니다.)
+        </p>
+      </div>
+
+      <div className="space-y-2 border-t border-black/10 dark:border-white/15 pt-5">
+        <label className="flex items-start gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
             checked={previewBookmarkBody}
             onChange={(e) => setPreviewBookmarkBody(e.target.checked)}
             className="w-4 h-4 mt-0.5"
@@ -148,7 +170,7 @@ export default function ProfilePage() {
           </span>
         </label>
         <p className="text-xs text-gray-400 leading-relaxed pl-6">
-          켜면, 작가가 <strong>새 소설</strong>을 등록하고 &ldquo;신작 알림 보내기&rdquo;를 누를 때
+          켜면, 작가가 <strong>새 소설</strong>을 등록하면서 &ldquo;신작 알림 보내기&rdquo;를 체크해 저장할 때
           위 웹후크 채널로 <strong>새 소설 등록 알림</strong>이 갑니다.
           <br />
           (북마크 알림은 &ldquo;내가 북마크한 소설의 새 회차&rdquo;만 — 신작 알림은 별개입니다.)
