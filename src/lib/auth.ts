@@ -56,7 +56,7 @@ export const authOptions: NextAuthOptions = {
         const discordId = p.id;
         const discordName =
           p.global_name || p.username || (token.name as string) || "user";
-        const avatarUrl = (token.picture as string | undefined) ?? null;
+        const globalAvatarUrl = (token.picture as string | undefined) ?? null;
         // ADMIN_DISCORD_ID는 쉼표로 여러 명 지정 가능 (예: "id1,id2")
         const adminIds = (process.env.ADMIN_DISCORD_ID ?? "")
           .split(",")
@@ -64,8 +64,9 @@ export const authOptions: NextAuthOptions = {
           .filter(Boolean);
         const isAdmin = adminIds.includes(discordId);
 
-        // 서버 닉네임 가져오기 (DISCORD_GUILD_ID 설정 시; 쉼표 다중이면 첫 길드 기준)
+        // 서버 닉네임 + 서버 아바타(Nitro 한정) 가져오기 (DISCORD_GUILD_ID 설정 시; 쉼표 다중이면 첫 길드)
         let serverNick: string | null = null;
+        let serverAvatarUrl: string | null = null;
         const guildId = (process.env.DISCORD_GUILD_ID ?? "").split(",").map((s) => s.trim()).filter(Boolean)[0];
         if (guildId && account.access_token) {
           try {
@@ -76,11 +77,18 @@ export const authOptions: NextAuthOptions = {
             if (r.ok) {
               const m = await r.json();
               serverNick = (m.nick as string | null) || null;
+              const avatarHash = m.avatar as string | null;
+              if (avatarHash) {
+                const ext = avatarHash.startsWith("a_") ? "gif" : "png";
+                serverAvatarUrl = `https://cdn.discordapp.com/guilds/${guildId}/users/${discordId}/avatars/${avatarHash}.${ext}?size=128`;
+              }
             }
           } catch { /* ignore */ }
         }
 
         const autoName = serverNick || discordName;
+        // 서버 전용 아바타가 있으면 그것 사용, 없으면 글로벌 (Nitro 미사용/기본 아바타 시)
+        const avatarUrl = serverAvatarUrl || globalAvatarUrl;
 
         const user = await prisma.user.upsert({
           where: { discordId },
