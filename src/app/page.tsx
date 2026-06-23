@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getViewerAdult } from "@/lib/session";
+import { getViewerAdult, getCurrentUser } from "@/lib/session";
 import { listNovels } from "@/lib/queries";
 import { displayName } from "@/lib/displayName";
 import StatusBadge from "@/components/StatusBadge";
@@ -13,7 +13,7 @@ export default async function Home({
 }: {
   searchParams: { page?: string };
 }) {
-  const adult = await getViewerAdult();
+  const [adult, user] = await Promise.all([getViewerAdult(), getCurrentUser()]);
   const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
 
   const { novels, total } = await listNovels(adult, page, PAGE_SIZE);
@@ -21,6 +21,19 @@ export default async function Home({
 
   return (
     <div className="space-y-6">
+      {/* 미로그인: 검색 + 로그인 — 탑바 대신 여기에 표시 */}
+      {!user && (
+        <div className="flex items-center gap-3 justify-end">
+          <Link href="/search" className="text-sm text-gray-500 hover:underline">검색</Link>
+          <Link
+            href="/login"
+            className="text-sm px-3 py-1.5 rounded-md bg-[#5865F2] text-white hover:bg-[#4752c4]"
+          >
+            로그인
+          </Link>
+        </div>
+      )}
+
       <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-4 py-3 text-sm">
         📢 <strong>본 사이트는 글쓰기(웹소설 연재) 전용 커뮤니티입니다.</strong>{" "}
         잡담·홍보·분쟁성 글은 제재 대상입니다.{" "}

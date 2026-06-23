@@ -10,30 +10,70 @@ export default async function BookmarksPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/");
 
-  const bookmarks = await prisma.bookmark.findMany({
-    where: { userId: user.id },
-    orderBy: { updatedAt: "desc" },
-    select: {
-      lastReadChapter: true,
-      novel: {
-        select: {
-          id: true,
-          title: true,
-          coverImage: true,
-          isAdult: true,
-          deletedAt: true,
-          author: { select: { id: true, username: true, nickname: true } },
-          _count: { select: { chapters: { where: { deletedAt: null, hidden: false } } } },
+  const [bookmarks, follows] = await Promise.all([
+    prisma.bookmark.findMany({
+      where: { userId: user.id },
+      orderBy: { updatedAt: "desc" },
+      select: {
+        lastReadChapter: true,
+        novel: {
+          select: {
+            id: true,
+            title: true,
+            coverImage: true,
+            isAdult: true,
+            deletedAt: true,
+            author: { select: { id: true, username: true, nickname: true } },
+            _count: { select: { chapters: { where: { deletedAt: null, hidden: false } } } },
+          },
         },
       },
-    },
-  });
+    }),
+    prisma.follow.findMany({
+      where: { followerId: user.id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+            nickname: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    }),
+  ]);
 
   const active = bookmarks.filter((b) => !b.novel.deletedAt);
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold">북마크</h1>
+
+      {/* 팔로잉 작가 */}
+      {follows.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-sm font-bold text-gray-500">팔로잉 작가 ({follows.length})</h2>
+          <div className="flex flex-wrap gap-2">
+            {follows.map(({ author: a }) => (
+              <Link
+                key={a.id}
+                href={`/author/${a.id}`}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-indigo-200 dark:border-indigo-800 hover:border-indigo-400 transition-colors text-sm"
+              >
+                {a.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={a.avatarUrl} alt="" className="w-5 h-5 rounded-full" />
+                ) : (
+                  <span className="w-5 h-5 rounded-full bg-indigo-200 dark:bg-indigo-800 shrink-0" />
+                )}
+                <span className="truncate max-w-[120px]">{displayName(a)}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {active.length === 0 ? (
         <p className="text-sm text-gray-400 border border-dashed rounded-lg p-8 text-center">

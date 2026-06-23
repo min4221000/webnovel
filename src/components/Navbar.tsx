@@ -19,10 +19,10 @@ export default function Navbar() {
           <span className="sm:hidden">사니양 열람실</span>
         </Link>
 
-        {/* 데스크톱 전용 링크 */}
-        <Link href="/search" className="hidden sm:block text-sm text-gray-500 hover:underline">검색</Link>
+        {/* 데스크톱 전용 링크 — 로그인 후에만 */}
         {status !== "loading" && user && (
           <>
+            <Link href="/search" className="hidden sm:block text-sm text-gray-500 hover:underline">검색</Link>
             <Link href="/drafts" className="hidden sm:block text-sm text-gray-500 hover:underline">비밀글</Link>
             <Link href="/bookmarks" className="hidden sm:block text-sm text-gray-500 hover:underline">북마크</Link>
           </>
@@ -69,25 +69,7 @@ export default function Navbar() {
                 )}
               </button>
             </>
-          ) : (
-            <>
-              {/* 미로그인: 로그인 페이지로 이동 (직접 signIn 안 함 → 콜백 일관성) */}
-              <Link
-                href="/login"
-                className="text-sm px-3 py-1.5 rounded-md bg-[#5865F2] text-white hover:bg-[#4752c4]"
-              >
-                로그인
-              </Link>
-              {/* 모바일 검색 햄버거 */}
-              <button
-                onClick={() => setOpen((o) => !o)}
-                className="sm:hidden text-gray-500 text-xl px-1"
-                aria-label="메뉴"
-              >
-                ☰
-              </button>
-            </>
-          )}
+          ) : null}
         </div>
       </nav>
 
