@@ -141,7 +141,7 @@ export async function POST(
       chapterTitle: title,
       authorName: displayName(novel.author), // 별명/서버닉 우선
       isAdult: novel.isAdult,
-      contentHtml: content,
+      contentHtml: body?.notifyBody === false ? undefined : content, // 끄면 제목+링크만(스포 방지)
     });
   }
 
