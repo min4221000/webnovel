@@ -53,8 +53,8 @@ mark.wn-hl {
    글쓰기/읽기 상태가 동일한 폰트크기·줄높이·들여쓰기를 공유해
    자동 줄바꿈 위치가 비슷하게 유지되도록 한 곳에서 통제 */
 .wn-content {
-  font-size: 17px;
-  line-height: 1.9;
+  font-size: 14px;
+  line-height: 1.5;
   word-break: break-word;
   padding-left: 0.9rem;
   padding-right: 0.9rem;
@@ -65,7 +65,7 @@ mark.wn-hl {
 /* 빈 단락: ProseMirror(에디터)는 DOM에 <br> 추가 → 한 줄 높이 유지.
    독자 화면은 <p></p>가 높이 0 → 에디터와 시각 일치시키기 위해 min-height 보정 */
 .wn-content p:empty {
-  min-height: 1.9em;
+  min-height: 1.5em;
 }
 .wn-content h1 {
   font-size: 1.7em;
