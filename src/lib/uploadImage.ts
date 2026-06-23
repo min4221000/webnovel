@@ -1,16 +1,17 @@
 import imageCompression from "browser-image-compression";
-import { MAX_IMAGE_BYTES } from "./constants";
 
 /**
  * 클라이언트: 이미지 압축(webp/1920px/q80) 후 /api/upload 로 전송 → URL 반환.
  */
+const MAX_CLIENT_INPUT = 10 * 1024 * 1024; // 10MB 원본 상한
+
 export async function compressAndUpload(file: File): Promise<string> {
-  if (file.size > MAX_IMAGE_BYTES) {
-    throw new Error("이미지가 2MB를 초과합니다.");
+  if (file.size > MAX_CLIENT_INPUT) {
+    throw new Error("이미지가 10MB를 초과합니다.");
   }
 
   const compressed = await imageCompression(file, {
-    maxSizeMB: 1,
+    maxSizeMB: 2,
     maxWidthOrHeight: 1920,
     useWebWorker: true,
     fileType: "image/webp",

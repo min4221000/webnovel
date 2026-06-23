@@ -489,7 +489,7 @@ export default function Editor({ content = "", onChange }: Props) {
           ▶
         </Btn>
         <Btn
-          title={`이미지 (회차당 ${MAX_IMAGES_PER_CHAPTER}장)`}
+          title={`이미지 (회차당 ${MAX_IMAGES_PER_CHAPTER}장, 최대 10MB — 자동 압축)`}
           disabled={uploading || imgCount >= MAX_IMAGES_PER_CHAPTER}
           onClick={() => fileRef.current?.click()}
         >
@@ -549,7 +549,7 @@ export default function Editor({ content = "", onChange }: Props) {
 
       {/* 글자수 카운터 */}
       <div className="flex justify-between items-center px-3 py-1.5 border-t border-black/10 dark:border-white/15 text-xs text-gray-500">
-        <span>이미지 {imgCount}/{MAX_IMAGES_PER_CHAPTER}</span>
+        <span>이미지 {imgCount}/{MAX_IMAGES_PER_CHAPTER} (최대 10MB, 자동 압축)</span>
         <span className={over ? "text-red-500 font-semibold" : ""}>
           {textLen.toLocaleString()} / {MAX_CHARS.toLocaleString()}자
           {over && " — 초과! 저장 불가"}

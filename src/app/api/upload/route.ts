@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
     return new NextResponse("파일이 없습니다.", { status: 400 });
   }
   if (file.size > MAX_IMAGE_BYTES) {
-    return new NextResponse("이미지가 2MB를 초과합니다.", { status: 413 });
+    return new NextResponse("이미지가 5MB를 초과합니다.", { status: 413 });
   }
   if (!(ALLOWED_IMAGE_MIME as readonly string[]).includes(file.type)) {
     return new NextResponse("허용되지 않은 이미지 형식입니다.", { status: 415 });

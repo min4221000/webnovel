@@ -2,7 +2,7 @@
 
 export const MAX_CHARS = 100_000;
 export const MAX_IMAGES_PER_CHAPTER = 1;
-export const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2MB (QHD급)
+export const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB (압축 후 안전망)
 export const DAILY_UPLOAD_LIMIT = 30;
 
 export const ALLOWED_IMAGE_MIME = [
