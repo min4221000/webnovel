@@ -23,6 +23,7 @@ model User {
   adult     Boolean    @default(false)
   nickname  String?
   webhookUrl String?
+  notifyNewNovels Boolean @default(false) // 신작 알림 수신 opt-in
   createdAt DateTime   @default(now())
   novels    Novel[]
   comments  Comment[]
@@ -43,6 +44,7 @@ model Novel {
   hidden       Boolean                  @default(false)
   status       String                   @default("ongoing") // ongoing | completed | hiatus
   views        Int                      @default(0)
+  newNovelNotified Boolean              @default(false) // 신작 알림 1회 발송 여부(중복 방지)
   deletedAt    DateTime?
   createdAt    DateTime                 @default(now())
   updatedAt    DateTime                 @updatedAt

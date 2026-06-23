@@ -11,6 +11,7 @@ export default function ProfilePage() {
   const [nickname, setNickname] = useState("");
   const [origin, setOrigin] = useState<string | null>(null);
   const [webhookUrl, setWebhookUrl] = useState("");
+  const [notifyNewNovels, setNotifyNewNovels] = useState(false);
   const [adult, setAdult] = useState<boolean | null>(null);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
@@ -23,6 +24,7 @@ export default function ProfilePage() {
       setOrigin(d.nickname ?? null);
       setNickname(d.nickname ?? "");
       setWebhookUrl(d.webhookUrl ?? "");
+      setNotifyNewNovels(d.notifyNewNovels ?? false);
       setAdult(d.adult ?? false);
     });
   }, [status, router]);
@@ -34,7 +36,7 @@ export default function ProfilePage() {
     const res = await fetch("/api/me", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nickname, webhookUrl }),
+      body: JSON.stringify({ nickname, webhookUrl, notifyNewNovels }),
     });
     setSaving(false);
     if (res.ok) {
@@ -103,6 +105,29 @@ export default function ProfilePage() {
             웹후크 제거 (알림 끄기)
           </button>
         )}
+      </div>
+
+      <div className="space-y-2 border-t border-black/10 dark:border-white/15 pt-5">
+        <label className="flex items-start gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={notifyNewNovels}
+            onChange={(e) => setNotifyNewNovels(e.target.checked)}
+            className="w-4 h-4 mt-0.5"
+          />
+          <span>
+            <strong>📚 신작 알림 받기</strong>
+          </span>
+        </label>
+        <p className="text-xs text-gray-400 leading-relaxed pl-6">
+          켜면, 작가가 <strong>새 소설</strong>을 등록하고 &ldquo;신작 알림 보내기&rdquo;를 누를 때
+          위 웹후크 채널로 <strong>새 소설 등록 알림</strong>이 갑니다.
+          <br />
+          (북마크 알림은 &ldquo;내가 북마크한 소설의 새 회차&rdquo;만 — 신작 알림은 별개입니다.)
+          <br />
+          <span className="text-amber-500">⚠ 위 웹후크가 설정돼 있어야 알림이 옵니다.</span> 19+ 신작은
+          시크릿 플러스를 켠 경우에만 알림이 갑니다.
+        </p>
       </div>
 
       {adult !== null && (

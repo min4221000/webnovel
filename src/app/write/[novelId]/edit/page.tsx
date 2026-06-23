@@ -25,6 +25,7 @@ export default async function EditNovelPage({
       hidden: true,
       status: true,
       authorId: true,
+      newNovelNotified: true,
     },
   });
   if (!novel) notFound();
@@ -41,6 +42,7 @@ export default async function EditNovelPage({
         isAdult: novel.isAdult,
         hidden: novel.hidden,
         status: novel.status,
+        newNovelNotified: novel.newNovelNotified,
       }}
     />
   );

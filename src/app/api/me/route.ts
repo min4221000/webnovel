@@ -12,7 +12,7 @@ export async function GET() {
   try { user = await requireUser(); } catch (e) { return authErrorResponse(e); }
   const db = await prisma.user.findUnique({
     where: { id: user.id },
-    select: { username: true, nickname: true, avatarUrl: true, webhookUrl: true, adult: true },
+    select: { username: true, nickname: true, avatarUrl: true, webhookUrl: true, adult: true, notifyNewNovels: true },
   });
   return NextResponse.json(db);
 }
@@ -27,10 +27,14 @@ export async function PATCH(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}));
 
-  const data: { nickname?: string | null; webhookUrl?: string | null } = {};
+  const data: { nickname?: string | null; webhookUrl?: string | null; notifyNewNovels?: boolean } = {};
 
   if (typeof body.nickname === "string") {
     data.nickname = body.nickname.trim().slice(0, 30) || null;
+  }
+
+  if (typeof body.notifyNewNovels === "boolean") {
+    data.notifyNewNovels = body.notifyNewNovels;
   }
 
   if (typeof body.webhookUrl === "string") {
@@ -47,7 +51,7 @@ export async function PATCH(req: NextRequest) {
   const updated = await prisma.user.update({
     where: { id: user.id },
     data,
-    select: { nickname: true, webhookUrl: true },
+    select: { nickname: true, webhookUrl: true, notifyNewNovels: true },
   });
   return NextResponse.json({ ok: true, ...updated });
 }
