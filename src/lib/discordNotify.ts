@@ -19,16 +19,6 @@ function htmlToDiscordText(html: string): string {
     .trim();
 }
 
-// 글자수 제한 대응: 전체 본문 X → 문단 경계에서 자른 미리보기 + "계속은 사이트에서"
-function previewFor(html: string, max = 1200): string {
-  const text = htmlToDiscordText(html);
-  if (text.length <= max) return text;
-  const cut = text.slice(0, max);
-  const lastBreak = cut.lastIndexOf("\n\n");
-  const body = lastBreak > max * 0.5 ? cut.slice(0, lastBreak) : cut;
-  return body.trimEnd() + "\n\n…(계속은 사이트에서 ↓)";
-}
-
 export async function notifyNewChapter(opts: {
   webhookUrls: string[];
   novelTitle: string;
@@ -37,7 +27,7 @@ export async function notifyNewChapter(opts: {
   chapterTitle: string;
   authorName: string;
   isAdult: boolean;
-  contentHtml?: string; // 있으면 미리보기 첨부 (19+는 생략)
+  contentHtml?: string; // 있으면 본문 통째로 첨부 (Discord 한도까지)
 }): Promise<void> {
   const valid = opts.webhookUrls.filter((u) => WEBHOOK_RE.test(u));
   if (valid.length === 0) return;
@@ -45,15 +35,27 @@ export async function notifyNewChapter(opts: {
   const base = (process.env.NEXTAUTH_URL || "").replace(/\/$/, "");
   const link = base ? `${base}/novel/${opts.novelId}/chapter/${opts.chapterNum}` : undefined;
 
-  // 19+ 미리보기는 공개 채널 노출 위험 → 제목/링크만. 일반작은 본문 미리보기 첨부.
-  const preview = !opts.isAdult && opts.contentHtml ? previewFor(opts.contentHtml) : "";
+  // 본문 전체를 줄바꿈·문단간격 보존해 첨부.
+  // Discord embed 합산 한도 6000자 → 제목/푸터/링크 여유 빼고 본문 예산 ~5500.
+  // 초과분만 잘림(이건 Discord 구조적 한계 — 한 메시지엔 더 못 넣음).
+  const titleLine = `**${opts.chapterTitle}**`;
+  const linkLine = link ? `\n\n**[▶ ${opts.chapterNum}화 이어 읽기](${link})**` : "";
+  const budget = 5500 - titleLine.length - linkLine.length;
 
-  // embed description: 제목 + (미리보기) + 바로가기 링크. 마스킹 링크가 "버튼" 역할.
-  // (웹훅은 진짜 버튼 컴포넌트 불가 → 굵은 마스킹 링크가 차선)
+  let body = opts.contentHtml ? htmlToDiscordText(opts.contentHtml) : "";
+  let cut = false;
+  if (body.length > budget) {
+    const sliced = body.slice(0, budget);
+    const br = sliced.lastIndexOf("\n\n");
+    body = (br > budget * 0.5 ? sliced.slice(0, br) : sliced).trimEnd();
+    cut = true;
+  }
+
   const description =
-    `**${opts.chapterTitle}**` +
-    (preview ? `\n\n${preview}` : "") +
-    (link ? `\n\n**[▶ ${opts.chapterNum}화 바로 읽기](${link})**` : "");
+    titleLine +
+    (body ? `\n\n${body}` : "") +
+    (cut ? "\n\n…(이어서는 사이트에서 ↓)" : "") +
+    linkLine;
 
   const payload = JSON.stringify({
     content: `**${opts.novelTitle}** 새 회차가 올라왔습니다!`,
