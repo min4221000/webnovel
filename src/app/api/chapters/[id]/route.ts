@@ -33,7 +33,7 @@ async function loadChapterOwner(id: string) {
   });
 }
 
-// 회차 수정 (본인 또는 ADMIN)
+// 회차 수정 (본인만 — ADMIN은 재게시/삭제만, 수정 불가)
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } },
@@ -59,7 +59,7 @@ export async function PATCH(
   }
 
   if (ch.deletedAt) return authErrorResponse(new Error("NOT_FOUND"));
-  if (ch.novel.authorId !== user.id && user.role !== "ADMIN")
+  if (ch.novel.authorId !== user.id)
     return authErrorResponse(new Error("FORBIDDEN"));
 
   const title = (body?.title ?? "").toString().trim();

@@ -7,7 +7,7 @@ import { invalidateNovels } from "@/lib/queries";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// 소설 정보 수정 (본인 또는 ADMIN)
+// 소설 정보 수정 (본인만 — ADMIN도 남의 글 수정 불가)
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } },
@@ -25,7 +25,7 @@ export async function PATCH(
   });
   if (!novel || novel.deletedAt)
     return authErrorResponse(new Error("NOT_FOUND"));
-  if (novel.authorId !== user.id && user.role !== "ADMIN")
+  if (novel.authorId !== user.id)
     return authErrorResponse(new Error("FORBIDDEN"));
 
   const body = await req.json().catch(() => null);

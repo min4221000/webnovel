@@ -2,30 +2,46 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-// 전체 비공개 모드: REQUIRE_GUILD_MEMBER=1 이면 로그인 없이 어떤 페이지도 접근 불가.
-// 멤버 여부 검증은 로그인 시 signIn 콜백에서 처리 (비멤버는 로그인 자체가 거부됨).
+// 두 가지 게이트:
+// 1) MAINTENANCE_MODE=1 → ADMIN 외 모두 /maintenance 로 (배포/수리 시 사용)
+// 2) REQUIRE_GUILD_MEMBER=1 → 미로그인 시 /login 으로 (서버 멤버 전용)
 
-// 로그인 없이 접근 허용할 경로
 const PUBLIC_PATHS = ["/login", "/not-member"];
+const MAINTENANCE_ALLOW = ["/maintenance", "/login", "/not-member"];
 
 export async function middleware(req: NextRequest) {
-  if (process.env.REQUIRE_GUILD_MEMBER !== "1") return NextResponse.next();
-
   const { pathname } = req.nextUrl;
+  const maintenance = process.env.MAINTENANCE_MODE === "1";
+  const memberGate = process.env.REQUIRE_GUILD_MEMBER === "1";
 
-  // 공개 경로는 통과
-  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
-    return NextResponse.next();
-  }
+  if (!maintenance && !memberGate) return NextResponse.next();
 
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-  if (token) return NextResponse.next();
 
-  // 미인증 → 로그인 페이지로 (원래 가려던 경로 보존)
-  const url = req.nextUrl.clone();
-  url.pathname = "/login";
-  url.searchParams.set("callbackUrl", pathname);
-  return NextResponse.redirect(url);
+  // 점검 모드: ADMIN 만 통과, 나머지는 /maintenance 로
+  if (maintenance && token?.role !== "ADMIN") {
+    if (MAINTENANCE_ALLOW.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+      return NextResponse.next();
+    }
+    const url = req.nextUrl.clone();
+    url.pathname = "/maintenance";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
+  // 멤버 게이트
+  if (memberGate) {
+    if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+      return NextResponse.next();
+    }
+    if (token) return NextResponse.next();
+    const url = req.nextUrl.clone();
+    url.pathname = "/login";
+    url.searchParams.set("callbackUrl", pathname);
+    return NextResponse.redirect(url);
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {

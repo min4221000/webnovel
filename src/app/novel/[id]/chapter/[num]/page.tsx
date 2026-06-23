@@ -24,7 +24,9 @@ export default async function ChapterPage({
   });
   if (!novel) notFound();
 
-  const isOwner = !!user && (user.id === novel.authorId || user.role === "ADMIN");
+  const isAuthor = !!user && user.id === novel.authorId;
+  const canModerate = !!user && user.role === "ADMIN"; // 삭제만 가능, 수정 불가
+  const isOwner = isAuthor || canModerate; // 숨김 글 열람 등 표시 권한
 
   // 비공개 소설은 작가/어드민만
   if (novel.hidden && !isOwner) notFound();
@@ -98,21 +100,21 @@ export default async function ChapterPage({
             {new Date(chapter.createdAt).toLocaleString()}
           </p>
           <ReportButton targetType="chapter" targetId={chapter.id} />
-          {isOwner && (
-            <>
-              <Link
-                href={`/write/${novel.id}/chapter/${chapter.id}/edit`}
-                className="text-xs text-gray-400 hover:text-indigo-500"
-              >
-                ✎ 수정
-              </Link>
-              <DeleteButton
-                url={`/api/chapters/${chapter.id}`}
-                redirectTo={`/novel/${novel.id}`}
-                label="삭제"
-                confirmMsg="이 회차를 삭제할까요?"
-              />
-            </>
+          {isAuthor && (
+            <Link
+              href={`/write/${novel.id}/chapter/${chapter.id}/edit`}
+              className="text-xs text-gray-400 hover:text-indigo-500"
+            >
+              ✎ 수정
+            </Link>
+          )}
+          {(isAuthor || canModerate) && (
+            <DeleteButton
+              url={`/api/chapters/${chapter.id}`}
+              redirectTo={`/novel/${novel.id}`}
+              label={isAuthor ? "삭제" : "🛡 관리자 삭제"}
+              confirmMsg="이 회차를 삭제할까요?"
+            />
           )}
         </div>
       </div>

@@ -40,7 +40,9 @@ export default async function NovelPage({
 
   if (!novel) notFound();
 
-  const isOwner = !!user && (user.id === novel.author.id || user.role === "ADMIN");
+  const isAuthor = !!user && user.id === novel.author.id;
+  const canModerate = !!user && user.role === "ADMIN"; // 삭제만 가능, 수정/회차추가 불가
+  const isOwner = isAuthor || canModerate; // 숨김 글 열람 + 회차 목록 표시 권한
 
   const bookmark = user ? await prisma.bookmark.findUnique({
     where: { userId_novelId: { userId: user.id, novelId: params.id } },
@@ -132,21 +134,25 @@ export default async function NovelPage({
             </p>
           )}
 
-          {isOwner && (
+          {(isAuthor || canModerate) && (
             <div className="flex items-center gap-3 mt-3">
-              <Link
-                href={`/write/${novel.id}/chapter/new`}
-                className="text-sm px-3 py-1 rounded-md bg-indigo-600 text-white"
-              >
-                + 새 회차
-              </Link>
-              <Link href={`/write/${novel.id}/edit`} className="text-sm underline">
-                정보 수정
-              </Link>
+              {isAuthor && (
+                <>
+                  <Link
+                    href={`/write/${novel.id}/chapter/new`}
+                    className="text-sm px-3 py-1 rounded-md bg-indigo-600 text-white"
+                  >
+                    + 새 회차
+                  </Link>
+                  <Link href={`/write/${novel.id}/edit`} className="text-sm underline">
+                    정보 수정
+                  </Link>
+                </>
+              )}
               <DeleteButton
                 url={`/api/novels/${novel.id}`}
                 redirectTo="/"
-                label="소설 삭제"
+                label={isAuthor ? "소설 삭제" : "🛡 관리자 삭제"}
                 confirmMsg="이 소설을 삭제할까요? 복구가 필요하면 관리자에게 문의하세요."
                 className="text-sm text-gray-400 hover:text-red-500"
               />
@@ -179,14 +185,16 @@ export default async function NovelPage({
                     {new Date(c.createdAt).toLocaleDateString()}
                   </span>
                 </Link>
-                {isOwner && (
+                {(isAuthor || canModerate) && (
                   <span className="flex items-center gap-2 shrink-0">
-                    <Link
-                      href={`/write/${novel.id}/chapter/${c.id}/edit`}
-                      className="text-xs text-gray-400 hover:text-indigo-500"
-                    >
-                      수정
-                    </Link>
+                    {isAuthor && (
+                      <Link
+                        href={`/write/${novel.id}/chapter/${c.id}/edit`}
+                        className="text-xs text-gray-400 hover:text-indigo-500"
+                      >
+                        수정
+                      </Link>
+                    )}
                     <DeleteButton
                       url={`/api/chapters/${c.id}`}
                       confirmMsg="이 회차를 삭제할까요?"

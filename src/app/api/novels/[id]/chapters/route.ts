@@ -41,7 +41,8 @@ export async function POST(
   });
   if (!novel || novel.deletedAt)
     return authErrorResponse(new Error("NOT_FOUND"));
-  if (novel.authorId !== user.id && user.role !== "ADMIN")
+  // 회차 작성은 본인만 (ADMIN도 남의 소설에 회차 추가 불가)
+  if (novel.authorId !== user.id)
     return authErrorResponse(new Error("FORBIDDEN"));
 
   const body = await req.json().catch(() => null);
