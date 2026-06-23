@@ -187,10 +187,51 @@ export default function Editor({ content = "", onChange }: Props) {
     content,
     editorProps: {
       attributes: { class: "wn-content min-h-[420px] focus:outline-none" },
-      // 외부 붙여넣기 정리: MS Word/Google Docs/HWP/Discord/임의 사이트 서식 제거 → 우리 스타일 통일
+      // handlePaste: text/plain이 text/html보다 줄 구조 풍부하면 text 우선
+      // (Discord 등 일부 앱은 html에서 줄바꿈을 공백으로 평탄화해서 클립보드에 담음)
+      handlePaste: (view, event) => {
+        const cb = event.clipboardData;
+        if (!cb) return false;
+        const text = cb.getData("text/plain");
+        if (!text || !text.includes("\n")) return false;
+
+        const html = cb.getData("text/html") || "";
+        const textBreaks = (text.match(/\n/g) || []).length;
+        const htmlBreaks = (html.match(/<(br|\/p|\/div|\/h[1-6]|\/li)\b/gi) || []).length;
+        // html이 충분히 줄 구조를 가지면 기본 경로(transformPastedHTML)에 맡김
+        if (htmlBreaks >= textBreaks - 1 && html) return false;
+
+        event.preventDefault();
+        const schema = view.state.schema;
+        const lines = text.split(/\r?\n/);
+        const groups: string[][] = [];
+        let cur: string[] = [];
+        for (const line of lines) {
+          if (line.trim() === "") {
+            groups.push(cur);
+            cur = [];
+          } else {
+            cur.push(line);
+          }
+        }
+        groups.push(cur);
+
+        const nodes: PMNode[] = groups.map((g) => {
+          if (g.length === 0) return schema.nodes.paragraph.create();
+          const children: PMNode[] = [];
+          g.forEach((l, i) => {
+            if (i > 0 && schema.nodes.hardBreak) children.push(schema.nodes.hardBreak.create());
+            if (l) children.push(schema.text(l));
+          });
+          return schema.nodes.paragraph.create({}, children);
+        });
+        const slice = Slice.maxOpen(Fragment.from(nodes));
+        view.dispatch(view.state.tr.replaceSelection(slice).scrollIntoView());
+        return true;
+      },
+      // 외부 붙여넣기 정리 (위 handlePaste 미적용 시): MS Word/Google Docs/HWP/임의 사이트 서식 제거
       transformPastedHTML(html) {
         let out = html
-          // 주석·메타·스타일 블록 제거
           .replace(/<!--[\s\S]*?-->/g, "")
           .replace(/<\?xml[\s\S]*?\?>/g, "")
           .replace(/<o:p>[\s\S]*?<\/o:p>/gi, "")
@@ -198,50 +239,56 @@ export default function Editor({ content = "", onChange }: Props) {
           .replace(/<script[\s\S]*?<\/script>/gi, "")
           .replace(/<meta[^>]*>/gi, "")
           .replace(/<link[^>]*>/gi, "")
-          // 클래스·인라인 스타일·dir·lang 등 잡속성 제거 (우리 서식만 살림)
           .replace(/\s+class="[^"]*"/g, "")
           .replace(/\s+style="[^"]*"/g, "")
           .replace(/\s+dir="[^"]*"/g, "")
           .replace(/\s+lang="[^"]*"/g, "")
           .replace(/\s+id="[^"]*"/g, "")
           .replace(/\s+data-[\w-]+="[^"]*"/g, "")
-          // 블록 정규화: div/section/article → p
           .replace(/<(div|section|article)[^>]*>/gi, "<p>")
           .replace(/<\/(div|section|article)>/gi, "</p>")
-          // 빈 span/font 태그 제거 (스타일 다 떨어진 잔해)
           .replace(/<font[^>]*>/gi, "")
           .replace(/<\/font>/gi, "")
           .replace(/<span>([^<]*)<\/span>/g, "$1");
 
-        // 블록 구조 없는 평면 텍스트(Discord 메시지/메모장 등) → 원본 텍스트의 줄바꿈 살리기
-        // ProseMirror가 html 우선 파싱하는데 source가 \n만 있고 <br>/<p>가 없으면 줄바꿈이 공백으로 변환됨.
         const hasBlocks = /<(p|h[1-6]|li|blockquote|hr|table|br)\b/i.test(out);
         if (!hasBlocks) {
           const esc = (s: string) =>
             s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-          // 남아있는 인라인 태그 제거 후 순수 텍스트 추출
           const text = out.replace(/<[^>]+>/g, "");
-          const paragraphs = text.split(/\n{2,}/).filter((p) => p.trim());
-          if (paragraphs.length > 0) {
-            out = paragraphs
-              .map((p) => `<p>${p.split("\n").map(esc).join("<br>")}</p>`)
-              .join("");
+          const lines = text.split(/\r?\n/);
+          const groups: string[][] = [];
+          let cur: string[] = [];
+          for (const line of lines) {
+            if (line.trim() === "") { groups.push(cur); cur = []; }
+            else cur.push(line);
           }
+          groups.push(cur);
+          out = groups
+            .map((g) => g.length === 0 ? "<p></p>" : `<p>${g.map(esc).join("<br>")}</p>`)
+            .join("");
         }
         return out;
       },
-      // 순수 텍스트 붙여넣기 (text/plain 만 있는 경우 — 메모장/터미널 등):
-      // ProseMirror 기본은 \n → hard break 하나만 처리. \n\n → 새 단락으로 분리.
+      // 순수 텍스트 붙여넣기 (text/plain 만): 빈 줄 → 빈 단락 보존
       clipboardTextParser(text, $context) {
         const schema = $context.doc.type.schema;
-        const paragraphs = text.split(/\r?\n\r?\n+/);
-        const nodes: PMNode[] = paragraphs.map((p) => {
-          const lines = p.split(/\r?\n/);
+        const lines = text.split(/\r?\n/);
+        const groups: string[][] = [];
+        let cur: string[] = [];
+        for (const line of lines) {
+          if (line.trim() === "") { groups.push(cur); cur = []; }
+          else cur.push(line);
+        }
+        groups.push(cur);
+
+        const nodes: PMNode[] = groups.map((g) => {
+          if (g.length === 0) return schema.nodes.paragraph.create();
           const children: PMNode[] = [];
-          lines.forEach((line, i) => {
+          g.forEach((l, i) => {
             if (i > 0 && schema.nodes.hardBreak)
               children.push(schema.nodes.hardBreak.create());
-            if (line) children.push(schema.text(line));
+            if (l) children.push(schema.text(l));
           });
           return schema.nodes.paragraph.create({}, children);
         });
