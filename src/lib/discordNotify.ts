@@ -44,6 +44,7 @@ type Embed = {
   color: number;
   url?: string;
   image?: { url: string };
+  thumbnail?: { url: string };
   fields?: { name: string; value: string; inline: boolean }[];
   footer?: { text: string };
   timestamp?: string;
@@ -142,6 +143,7 @@ export async function notifyNewNovel(opts: {
   novelId: string;
   novelTitle: string;
   description?: string | null;
+  coverImage?: string | null;
   authorName: string;
   isAdult: boolean;
 }): Promise<void> {
@@ -164,6 +166,10 @@ export async function notifyNewNovel(opts: {
     timestamp: new Date().toISOString(),
   };
   if (link) embed.url = link;
+  // 커버 이미지 썸네일 (있으면). R2 퍼블릭 URL → Discord가 직접 로드, 용량 0.
+  if (opts.coverImage && /^https?:\/\//.test(opts.coverImage)) {
+    embed.thumbnail = { url: opts.coverImage };
+  }
 
   const body = JSON.stringify({ content: "📚 새 소설이 연재됐습니다!", embeds: [embed] });
   await Promise.allSettled(

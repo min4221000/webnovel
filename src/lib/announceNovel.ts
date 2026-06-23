@@ -14,6 +14,7 @@ export async function announceNewNovel(novelId: string): Promise<number | null> 
       id: true,
       title: true,
       description: true,
+      coverImage: true,
       isAdult: true,
       hidden: true,
       deletedAt: true,
@@ -42,6 +43,7 @@ export async function announceNewNovel(novelId: string): Promise<number | null> 
     novelId: novel.id,
     novelTitle: novel.title,
     description: novel.description,
+    coverImage: novel.coverImage,
     authorName: displayName(novel.author),
     isAdult: novel.isAdult,
   });
