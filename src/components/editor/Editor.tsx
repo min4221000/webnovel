@@ -199,32 +199,17 @@ export default function Editor({ content = "", onChange }: Props) {
         const textBreaks = (text.match(/\n/g) || []).length;
         const htmlBreaks = (html.match(/<(br|\/p|\/div|\/h[1-6]|\/li)\b/gi) || []).length;
         // html이 충분히 줄 구조를 가지면 기본 경로(transformPastedHTML)에 맡김
-        if (htmlBreaks >= textBreaks - 1 && html) return false;
+        if (htmlBreaks >= textBreaks && html) return false;
 
         event.preventDefault();
         const schema = view.state.schema;
+        // 각 줄 = 한 단락 (빈 줄도 빈 단락으로 살림). \n 하나당 단락 하나.
         const lines = text.split(/\r?\n/);
-        const groups: string[][] = [];
-        let cur: string[] = [];
-        for (const line of lines) {
-          if (line.trim() === "") {
-            groups.push(cur);
-            cur = [];
-          } else {
-            cur.push(line);
-          }
-        }
-        groups.push(cur);
-
-        const nodes: PMNode[] = groups.map((g) => {
-          if (g.length === 0) return schema.nodes.paragraph.create();
-          const children: PMNode[] = [];
-          g.forEach((l, i) => {
-            if (i > 0 && schema.nodes.hardBreak) children.push(schema.nodes.hardBreak.create());
-            if (l) children.push(schema.text(l));
-          });
-          return schema.nodes.paragraph.create({}, children);
-        });
+        const nodes: PMNode[] = lines.map((line) =>
+          line === ""
+            ? schema.nodes.paragraph.create()
+            : schema.nodes.paragraph.create({}, [schema.text(line)])
+        );
         const slice = Slice.maxOpen(Fragment.from(nodes));
         view.dispatch(view.state.tr.replaceSelection(slice).scrollIntoView());
         return true;
@@ -256,42 +241,22 @@ export default function Editor({ content = "", onChange }: Props) {
           const esc = (s: string) =>
             s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
           const text = out.replace(/<[^>]+>/g, "");
-          const lines = text.split(/\r?\n/);
-          const groups: string[][] = [];
-          let cur: string[] = [];
-          for (const line of lines) {
-            if (line.trim() === "") { groups.push(cur); cur = []; }
-            else cur.push(line);
-          }
-          groups.push(cur);
-          out = groups
-            .map((g) => g.length === 0 ? "<p></p>" : `<p>${g.map(esc).join("<br>")}</p>`)
+          // 각 줄 = 한 단락
+          out = text.split(/\r?\n/)
+            .map((l) => l === "" ? "<p></p>" : `<p>${esc(l)}</p>`)
             .join("");
         }
         return out;
       },
-      // 순수 텍스트 붙여넣기 (text/plain 만): 빈 줄 → 빈 단락 보존
+      // 순수 텍스트 붙여넣기 (text/plain 만): 각 줄 = 한 단락. 빈 줄 = 빈 단락.
       clipboardTextParser(text, $context) {
         const schema = $context.doc.type.schema;
         const lines = text.split(/\r?\n/);
-        const groups: string[][] = [];
-        let cur: string[] = [];
-        for (const line of lines) {
-          if (line.trim() === "") { groups.push(cur); cur = []; }
-          else cur.push(line);
-        }
-        groups.push(cur);
-
-        const nodes: PMNode[] = groups.map((g) => {
-          if (g.length === 0) return schema.nodes.paragraph.create();
-          const children: PMNode[] = [];
-          g.forEach((l, i) => {
-            if (i > 0 && schema.nodes.hardBreak)
-              children.push(schema.nodes.hardBreak.create());
-            if (l) children.push(schema.text(l));
-          });
-          return schema.nodes.paragraph.create({}, children);
-        });
+        const nodes: PMNode[] = lines.map((line) =>
+          line === ""
+            ? schema.nodes.paragraph.create()
+            : schema.nodes.paragraph.create({}, [schema.text(line)])
+        );
         return Slice.maxOpen(Fragment.from(nodes));
       },
     },
