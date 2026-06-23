@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { useEditor, EditorContent, type Editor as TiptapEditor } from "@tiptap/react";
+import { Fragment, Slice, type Node as PMNode } from "@tiptap/pm/model";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextStyle from "@tiptap/extension-text-style";
@@ -188,7 +189,7 @@ export default function Editor({ content = "", onChange }: Props) {
       attributes: { class: "wn-content min-h-[420px] focus:outline-none" },
       // 외부 붙여넣기 정리: MS Word/Google Docs/HWP/Discord/임의 사이트 서식 제거 → 우리 스타일 통일
       transformPastedHTML(html) {
-        return html
+        let out = html
           // 주석·메타·스타일 블록 제거
           .replace(/<!--[\s\S]*?-->/g, "")
           .replace(/<\?xml[\s\S]*?\?>/g, "")
@@ -211,6 +212,40 @@ export default function Editor({ content = "", onChange }: Props) {
           .replace(/<font[^>]*>/gi, "")
           .replace(/<\/font>/gi, "")
           .replace(/<span>([^<]*)<\/span>/g, "$1");
+
+        // 블록 구조 없는 평면 텍스트(Discord 메시지/메모장 등) → 원본 텍스트의 줄바꿈 살리기
+        // ProseMirror가 html 우선 파싱하는데 source가 \n만 있고 <br>/<p>가 없으면 줄바꿈이 공백으로 변환됨.
+        const hasBlocks = /<(p|h[1-6]|li|blockquote|hr|table|br)\b/i.test(out);
+        if (!hasBlocks) {
+          const esc = (s: string) =>
+            s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          // 남아있는 인라인 태그 제거 후 순수 텍스트 추출
+          const text = out.replace(/<[^>]+>/g, "");
+          const paragraphs = text.split(/\n{2,}/).filter((p) => p.trim());
+          if (paragraphs.length > 0) {
+            out = paragraphs
+              .map((p) => `<p>${p.split("\n").map(esc).join("<br>")}</p>`)
+              .join("");
+          }
+        }
+        return out;
+      },
+      // 순수 텍스트 붙여넣기 (text/plain 만 있는 경우 — 메모장/터미널 등):
+      // ProseMirror 기본은 \n → hard break 하나만 처리. \n\n → 새 단락으로 분리.
+      clipboardTextParser(text, $context) {
+        const schema = $context.doc.type.schema;
+        const paragraphs = text.split(/\r?\n\r?\n+/);
+        const nodes: PMNode[] = paragraphs.map((p) => {
+          const lines = p.split(/\r?\n/);
+          const children: PMNode[] = [];
+          lines.forEach((line, i) => {
+            if (i > 0 && schema.nodes.hardBreak)
+              children.push(schema.nodes.hardBreak.create());
+            if (line) children.push(schema.text(line));
+          });
+          return schema.nodes.paragraph.create({}, children);
+        });
+        return Slice.maxOpen(Fragment.from(nodes));
       },
     },
     onUpdate: ({ editor }) => sync(editor),
