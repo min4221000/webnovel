@@ -186,6 +186,32 @@ export default function Editor({ content = "", onChange }: Props) {
     content,
     editorProps: {
       attributes: { class: "wn-content min-h-[420px] focus:outline-none" },
+      // 외부 붙여넣기 정리: MS Word/Google Docs/HWP/Discord/임의 사이트 서식 제거 → 우리 스타일 통일
+      transformPastedHTML(html) {
+        return html
+          // 주석·메타·스타일 블록 제거
+          .replace(/<!--[\s\S]*?-->/g, "")
+          .replace(/<\?xml[\s\S]*?\?>/g, "")
+          .replace(/<o:p>[\s\S]*?<\/o:p>/gi, "")
+          .replace(/<style[\s\S]*?<\/style>/gi, "")
+          .replace(/<script[\s\S]*?<\/script>/gi, "")
+          .replace(/<meta[^>]*>/gi, "")
+          .replace(/<link[^>]*>/gi, "")
+          // 클래스·인라인 스타일·dir·lang 등 잡속성 제거 (우리 서식만 살림)
+          .replace(/\s+class="[^"]*"/g, "")
+          .replace(/\s+style="[^"]*"/g, "")
+          .replace(/\s+dir="[^"]*"/g, "")
+          .replace(/\s+lang="[^"]*"/g, "")
+          .replace(/\s+id="[^"]*"/g, "")
+          .replace(/\s+data-[\w-]+="[^"]*"/g, "")
+          // 블록 정규화: div/section/article → p
+          .replace(/<(div|section|article)[^>]*>/gi, "<p>")
+          .replace(/<\/(div|section|article)>/gi, "</p>")
+          // 빈 span/font 태그 제거 (스타일 다 떨어진 잔해)
+          .replace(/<font[^>]*>/gi, "")
+          .replace(/<\/font>/gi, "")
+          .replace(/<span>([^<]*)<\/span>/g, "$1");
+      },
     },
     onUpdate: ({ editor }) => sync(editor),
     onCreate: ({ editor }) => sync(editor),
@@ -271,21 +297,21 @@ export default function Editor({ content = "", onChange }: Props) {
             </option>
           ))}
         </select>
-        {/* 크기 */}
+        {/* 크기 (기본 17px — wn-content CSS) */}
         <select
           title="글자 크기"
           className="text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded px-1"
+          value={(editor.getAttributes("textStyle").fontSize as string | undefined)?.replace(/px$/, "") ?? ""}
           onChange={(e) =>
             e.target.value
               ? editor.chain().focus().setFontSize(`${e.target.value}px`).run()
               : editor.chain().focus().unsetFontSize().run()
           }
-          defaultValue=""
         >
-          <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">크기</option>
+          <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">기본 (17px)</option>
           {FONT_SIZES.map((s) => (
             <option key={s} value={s} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
-              {s}
+              {s}px
             </option>
           ))}
         </select>
@@ -343,7 +369,7 @@ export default function Editor({ content = "", onChange }: Props) {
         <Btn title="오른쪽" active={editor.isActive({ textAlign: "right" })} onClick={() => editor.chain().focus().setTextAlign("right").run()}>우</Btn>
         <Btn title="양쪽" active={editor.isActive({ textAlign: "justify" })} onClick={() => editor.chain().focus().setTextAlign("justify").run()}>양</Btn>
 
-        {/* 줄간격 */}
+        {/* 줄간격 (기본 1.9 — wn-content CSS) */}
         <select
           title="줄 간격"
           className="text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded px-1"
@@ -354,8 +380,8 @@ export default function Editor({ content = "", onChange }: Props) {
               : editor.chain().focus().unsetLineHeight().run()
           }
         >
-          <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">행간</option>
-          {[1.0, 1.5, 2.0, 2.5, 3.0].map((v) => (
+          <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">기본 (1.9)</option>
+          {[1.0, 1.3, 1.5, 1.7, 1.9, 2.2, 2.5, 3.0].map((v) => (
             <option key={v} value={String(v)} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
               {v.toFixed(1)}
             </option>
