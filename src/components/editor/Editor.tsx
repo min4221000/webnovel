@@ -203,10 +203,16 @@ export default function Editor({ content = "", onChange }: Props) {
         // html 경로는 빈 단락 표현이 source마다 달라(<p><br></p> / <p>&nbsp;</p> 등) 간격 어긋남.
         event.preventDefault();
         const schema = view.state.schema;
-        // 각 줄 = 한 단락 (빈 줄도 빈 단락으로 살림). \n 하나당 단락 하나.
-        const lines = text.split(/\r?\n/);
+        // 가짜 줄바꿈 표시: U+2028(LS), U+2029(PS) → \n. 앞뒤 빈 줄 제거(Google Docs trailing \n 흔함)
+        const normalized = text
+          .replace(/\r\n|\r|\u2028|\u2029/g, "\n")
+          .replace(/^\n+|\n+$/g, "");
+        // NBSP(\u00a0)·공백만 있는 줄은 "빈 줄"로 간주
+        const isBlank = (s: string) => s.replace(/[\u00a0\s]/g, "") === "";
+        // 각 줄 = 한 단락 (빈 줄/공백·NBSP만 있는 줄 = 빈 단락)
+        const lines = normalized.split("\n");
         const nodes: PMNode[] = lines.map((line) =>
-          line === ""
+          isBlank(line)
             ? schema.nodes.paragraph.create()
             : schema.nodes.paragraph.create({}, [schema.text(line)])
         );
