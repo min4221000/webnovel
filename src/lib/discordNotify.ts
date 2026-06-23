@@ -43,10 +43,18 @@ type Embed = {
   description: string;
   color: number;
   url?: string;
+  image?: { url: string };
   fields?: { name: string; value: string; inline: boolean }[];
   footer?: { text: string };
   timestamp?: string;
 };
+
+// 본문 HTML에서 첫 이미지 URL 추출 (Discord embed에 표시용). 절대 http(s) URL만.
+function firstImageUrl(html: string): string | undefined {
+  const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  const url = m?.[1];
+  return url && /^https?:\/\//.test(url) ? url : undefined;
+}
 type Message = { content?: string; embeds: Embed[] };
 
 const PART_SIZE = 4000; // embed description 한도 4096 여유
@@ -109,6 +117,10 @@ export async function notifyNewChapter(opts: {
     if (isFirst) msg.content = `**${opts.novelTitle}** 새 회차가 올라왔습니다!`;
     messages.push(msg);
   }
+
+  // 본문에 이미지 있으면 첫 메시지 embed에 표시 (본문 미리보기 켠 수신자만 — contentHtml 있을 때)
+  const imageUrl = opts.contentHtml ? firstImageUrl(opts.contentHtml) : undefined;
+  if (imageUrl && messages[0]) messages[0].embeds[0].image = { url: imageUrl };
 
   // 웹훅별로 순서 보장하며 전송(파트 순서 중요), 웹훅 간엔 병렬. rate limit 여유 딜레이.
   async function sendTo(url: string) {
