@@ -4,6 +4,7 @@ import { requireUser, getViewerAdult } from "@/lib/session";
 import { authErrorResponse } from "@/lib/apiError";
 import { rateLimit } from "@/lib/ratelimit";
 import { invalidateNovels } from "@/lib/queries";
+import { announceNewNovel } from "@/lib/announceNovel";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,6 +45,8 @@ export async function POST(req: NextRequest) {
   });
 
   if (!hidden) invalidateNovels();
+  // 신작 알림 체크 시 발송 (공개 + 미발송 조건은 헬퍼가 확인)
+  if (body?.announce === true) await announceNewNovel(novel.id);
   return NextResponse.json({ id: novel.id });
 }
 

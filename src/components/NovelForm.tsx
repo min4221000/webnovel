@@ -47,7 +47,8 @@ export default function NovelForm({ novelId, initial }: Props) {
   const [isAdult, setIsAdult] = useState<boolean>(initial?.isAdult ?? false);
   const [hidden, setHidden] = useState<boolean>(initial?.hidden ?? false);
   const [statusVal, setStatusVal] = useState<string>(initial?.status ?? "ongoing");
-  const [announced, setAnnounced] = useState<boolean>(initial?.newNovelNotified ?? false);
+  const alreadyAnnounced = initial?.newNovelNotified ?? false;
+  const [sendAlert, setSendAlert] = useState(false); // 신작 알림 보내기 (저장 시 발송)
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -117,7 +118,7 @@ export default function NovelForm({ novelId, initial }: Props) {
       const res = await fetch(url, {
         method: editing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description, coverImage, isAdult, hidden, status: statusVal, tags: selectedTags }),
+        body: JSON.stringify({ title, description, coverImage, isAdult, hidden, status: statusVal, tags: selectedTags, announce: sendAlert && !hidden }),
       });
       if (!res.ok) throw new Error(await res.text());
       if (editing) {
@@ -129,24 +130,6 @@ export default function NovelForm({ novelId, initial }: Props) {
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : "저장 실패");
-      setBusy(false);
-    }
-  };
-
-  // 신작 알림 발송 — "신작 알림 받기" 켠 이용자에게 1회 발송
-  const announce = async () => {
-    if (!confirm("'신작 알림 받기'를 켠 모든 이용자에게 이 소설 등록 알림을 보냅니다.\n1회만 가능합니다. 진행할까요?")) return;
-    setErr(null);
-    setBusy(true);
-    try {
-      const res = await fetch(`/api/novels/${novelId}/announce`, { method: "POST" });
-      if (!res.ok) throw new Error(await res.text());
-      const d = await res.json();
-      setAnnounced(true);
-      alert(`신작 알림을 ${d.sent}명에게 보냈습니다.`);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "발송 실패");
-    } finally {
       setBusy(false);
     }
   };
@@ -279,6 +262,27 @@ export default function NovelForm({ novelId, initial }: Props) {
             <strong>비공개</strong> — 나만 볼 수 있습니다. 나중에 수정에서 공개로 바꿀 수 있습니다.
           </span>
         </label>
+
+        {/* 신작 알림 — 비공개·시플처럼 체크하면 저장 시 발송. 이미 보냈으면 숨김. */}
+        {!alreadyAnnounced && (
+          <label className={`flex items-start gap-2 text-sm ${hidden ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}>
+            <input
+              type="checkbox"
+              checked={sendAlert && !hidden}
+              disabled={hidden}
+              onChange={(e) => setSendAlert(e.target.checked)}
+              className="w-4 h-4 mt-0.5"
+            />
+            <span>
+              <strong className="text-emerald-600">📚 신작 알림 보내기</strong> — 저장 시{" "}
+              &ldquo;신작 알림 받기&rdquo;를 켠 이용자에게 발송됩니다. <strong>1회만</strong> 가능.
+              {hidden && <span className="text-amber-500"> (공개 상태에서만)</span>}
+            </span>
+          </label>
+        )}
+        {alreadyAnnounced && (
+          <p className="text-xs text-gray-400">📚 이 소설의 신작 알림은 이미 발송되었습니다.</p>
+        )}
       </div>
 
       {err && <p className="text-sm text-red-500">{err}</p>}
@@ -290,37 +294,6 @@ export default function NovelForm({ novelId, initial }: Props) {
       >
         {busy ? "처리 중…" : editing ? "저장" : "등록하고 1화 쓰기 →"}
       </button>
-
-      {/* 신작 알림 — 수정(속성) 페이지에서만, 공개 상태일 때 1회 발송 */}
-      {editing && (
-        <div className="border-t pt-4 space-y-2">
-          {announced ? (
-            <p className="text-sm text-gray-400">📚 이 소설의 신작 알림을 이미 보냈습니다.</p>
-          ) : (
-            <>
-              <p className="text-sm">
-                📚 <strong>신작 알림 보내기</strong> — 누르면 <strong>&ldquo;신작 알림 받기&rdquo;를 켠 이용자</strong>의
-                Discord 채널로 이 소설 등록 알림이 발송됩니다.
-              </p>
-              <p className="text-xs text-gray-400 leading-relaxed">
-                · <strong>1회만</strong> 가능 (중복 발송 방지) · <strong>공개 상태</strong>에서만 발송 (비공개면 먼저 공개로 저장)
-                <br />
-                · 19+ 작품은 시크릿 플러스를 켠 이용자에게만 · 받는 사람이 프로필에서 신작 알림 + 웹후크를 설정해야 도착
-              </p>
-              <button
-                onClick={announce}
-                disabled={busy || hidden}
-                className="px-4 py-2 rounded-md bg-emerald-600 text-white text-sm disabled:opacity-50"
-              >
-                {busy ? "발송 중…" : "📚 신작 알림 보내기"}
-              </button>
-              {hidden && (
-                <p className="text-xs text-amber-500">⚠ 현재 비공개로 설정돼 있습니다. 공개로 저장한 뒤 발송하세요.</p>
-              )}
-            </>
-          )}
-        </div>
-      )}
     </div>
   );
 }
