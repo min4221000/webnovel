@@ -361,7 +361,7 @@ export default function Editor({ content = "", onChange }: Props) {
               : editor.chain().focus().unsetFontSize().run()
           }
         >
-          <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">기본 (14px)</option>
+          <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">(14px)</option>
           {FONT_SIZES.map((s) => (
             <option key={s} value={s} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
               {s}px
@@ -433,7 +433,7 @@ export default function Editor({ content = "", onChange }: Props) {
               : editor.chain().focus().unsetLineHeight().run()
           }
         >
-          <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">기본 (1.5)</option>
+          <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">(1.5)</option>
           {[1.0, 1.3, 1.5, 1.7, 1.9, 2.2, 2.5, 3.0].map((v) => (
             <option key={v} value={String(v)} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
               {v.toFixed(1)}

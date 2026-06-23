@@ -30,7 +30,7 @@ export const YOUTUBE_HOSTS = [
 ];
 
 export const FONT_FAMILIES: { label: string; value: string }[] = [
-  { label: "시스템 기본 (Windows: 맑은 고딕)", value: "" },
+  { label: "(맑은 고딕)", value: "" },
   { label: "맑은 고딕", value: "'Malgun Gothic', sans-serif" },
   { label: "바탕(명조)", value: "Batang, '바탕', serif" },
   { label: "굴림", value: "Gulim, '굴림', sans-serif" },
