@@ -125,16 +125,21 @@ export async function POST(
 
   // 디스코드 새 회차 알림: 북마크한 유저에게 (공개 회차만).
   // 본문 포함 여부는 수신자별 previewBookmarkBody 설정에 따름.
+  // best-effort: 알림 실패가 회차 저장(이미 성공)을 깨지 않도록 try/catch.
   if (!hidden) {
-    await notifyChapterToBookmarkers({
-      novelId: params.id,
-      novelTitle: novel.title,
-      chapterNum: chapter.chapterNum,
-      chapterTitle: title,
-      authorName: displayName(novel.author), // 별명/서버닉 우선
-      isAdult: novel.isAdult,
-      content,
-    });
+    try {
+      await notifyChapterToBookmarkers({
+        novelId: params.id,
+        novelTitle: novel.title,
+        chapterNum: chapter.chapterNum,
+        chapterTitle: title,
+        authorName: displayName(novel.author), // 별명/서버닉 우선
+        isAdult: novel.isAdult,
+        content,
+      });
+    } catch (e) {
+      console.error("새 회차 알림 실패:", e);
+    }
   }
 
   return NextResponse.json({ chapterNum: chapter.chapterNum, hidden });

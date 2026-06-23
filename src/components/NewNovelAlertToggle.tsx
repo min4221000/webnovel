@@ -13,18 +13,23 @@ export default function NewNovelAlertToggle({ initial }: { initial: boolean }) {
     setBusy(true);
     setMsg(null);
     const next = !on;
-    const res = await fetch("/api/me", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ notifyNewNovels: next }),
-    });
-    setBusy(false);
-    if (res.ok) {
-      setOn(next);
-      setMsg(next ? "신작 알림 켜짐 — 웹후크 설정돼 있어야 도착해요" : "신작 알림 꺼짐");
-      setTimeout(() => setMsg(null), 2500);
-    } else {
-      setMsg("설정 저장 실패");
+    try {
+      const res = await fetch("/api/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notifyNewNovels: next }),
+      });
+      if (res.ok) {
+        setOn(next);
+        setMsg(next ? "신작 알림 켜짐 — 웹후크 설정돼 있어야 도착해요" : "신작 알림 꺼짐");
+        setTimeout(() => setMsg(null), 2500);
+      } else {
+        setMsg("설정 저장 실패");
+      }
+    } catch {
+      setMsg("네트워크 오류 — 다시 시도하세요");
+    } finally {
+      setBusy(false);
     }
   };
 

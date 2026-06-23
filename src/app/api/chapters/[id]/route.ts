@@ -96,16 +96,21 @@ export async function PATCH(
   invalidateNovels(); // hidden 토글 시 회차수 변동 → 목록 갱신
 
   // 발행 요청이면 북마커에게 디코 알림 (본문 포함 여부는 수신자별 설정)
+  // best-effort: 알림 실패해도 공개 전환(이미 완료)은 성공 처리.
   if (publish) {
-    await notifyChapterToBookmarkers({
-      novelId: ch.novel.id,
-      novelTitle: ch.novel.title,
-      chapterNum: ch.chapterNum,
-      chapterTitle: title,
-      authorName: displayName(ch.novel.author),
-      isAdult: ch.novel.isAdult,
-      content,
-    });
+    try {
+      await notifyChapterToBookmarkers({
+        novelId: ch.novel.id,
+        novelTitle: ch.novel.title,
+        chapterNum: ch.chapterNum,
+        chapterTitle: title,
+        authorName: displayName(ch.novel.author),
+        isAdult: ch.novel.isAdult,
+        content,
+      });
+    } catch (e) {
+      console.error("발행 알림 실패:", e);
+    }
     return NextResponse.json({ ok: true, published: true });
   }
   return NextResponse.json({ ok: true });

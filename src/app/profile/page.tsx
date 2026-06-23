@@ -35,19 +35,24 @@ export default function ProfilePage() {
     setSaving(true);
     setMsg("");
     setErr("");
-    const res = await fetch("/api/me", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nickname, webhookUrl, notifyNewNovels, previewBookmarkBody }),
-    });
-    setSaving(false);
-    if (res.ok) {
-      const d = await res.json();
-      setOrigin(d.nickname);
-      setWebhookUrl(d.webhookUrl ?? "");
-      setMsg("저장됨. 모든 작품·댓글에 즉시 반영됩니다 (본인 네비바 표시는 다음 로그인 후).");
-    } else {
-      setErr(await res.text().catch(() => "저장 실패"));
+    try {
+      const res = await fetch("/api/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nickname, webhookUrl, notifyNewNovels, previewBookmarkBody }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setOrigin(d.nickname);
+        setWebhookUrl(d.webhookUrl ?? "");
+        setMsg("저장됨. 모든 작품·댓글에 즉시 반영됩니다 (본인 네비바 표시는 다음 로그인 후).");
+      } else {
+        setErr(await res.text().catch(() => "저장 실패"));
+      }
+    } catch {
+      setErr("네트워크 오류 — 다시 시도하세요");
+    } finally {
+      setSaving(false);
     }
   };
 

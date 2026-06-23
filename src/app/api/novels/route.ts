@@ -45,8 +45,15 @@ export async function POST(req: NextRequest) {
   });
 
   if (!hidden) invalidateNovels();
-  // 신작 알림 체크 시 발송 (공개 + 미발송 조건은 헬퍼가 확인)
-  if (body?.announce === true) await announceNewNovel(novel.id);
+  // 신작 알림 체크 시 발송 (공개 + 미발송 조건은 헬퍼가 확인).
+  // best-effort: 알림 실패해도 소설 등록(이미 성공)은 깨지지 않도록.
+  if (body?.announce === true) {
+    try {
+      await announceNewNovel(novel.id);
+    } catch (e) {
+      console.error("신작 알림 실패:", e);
+    }
+  }
   return NextResponse.json({ id: novel.id });
 }
 

@@ -51,9 +51,16 @@ export async function PATCH(
     data: { title, description, coverImage, isAdult, hidden, status, tags },
   });
   invalidateNovels();
-  // 신작 알림 체크 시 발송 (공개+미발송 조건은 헬퍼가 확인 — 저장과 동시에 발송)
+  // 신작 알림 체크 시 발송 (공개+미발송 조건은 헬퍼가 확인 — 저장과 동시에 발송).
+  // best-effort: 알림 실패해도 저장(이미 완료)은 성공 처리.
   let announced: number | null = null;
-  if (body?.announce === true) announced = await announceNewNovel(params.id);
+  if (body?.announce === true) {
+    try {
+      announced = await announceNewNovel(params.id);
+    } catch (e) {
+      console.error("신작 알림 실패:", e);
+    }
+  }
   return NextResponse.json({ ok: true, announced });
 }
 
