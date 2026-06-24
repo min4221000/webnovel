@@ -489,13 +489,13 @@ export default function Editor({ content = "", onChange }: Props) {
           ▶
         </Btn>
         <Btn
-          title={`이미지 (회차당 ${MAX_IMAGES_PER_CHAPTER}장, 최대 15MB — 자동 압축)`}
+          title={`이미지 (회차당 ${MAX_IMAGES_PER_CHAPTER}장, 최대 15MB — JPG/PNG/WebP, 자동 압축)`}
           disabled={uploading || imgCount >= MAX_IMAGES_PER_CHAPTER}
           onClick={() => fileRef.current?.click()}
         >
           {uploading ? "⏳" : "🖼"}
         </Btn>
-        <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPickImage} />
+        <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={onPickImage} />
 
         <Divider />
         <Btn title="실행취소" disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()}>↶</Btn>
@@ -549,7 +549,7 @@ export default function Editor({ content = "", onChange }: Props) {
 
       {/* 글자수 카운터 */}
       <div className="flex justify-between items-center px-3 py-1.5 border-t border-black/10 dark:border-white/15 text-xs text-gray-500">
-        <span>이미지 {imgCount}/{MAX_IMAGES_PER_CHAPTER} (최대 15MB, 자동 압축)</span>
+        <span>이미지 {imgCount}/{MAX_IMAGES_PER_CHAPTER} (JPG/PNG/WebP, 최대 15MB, 자동 압축)</span>
         <span className={over ? "text-red-500 font-semibold" : ""}>
           {textLen.toLocaleString()} / {MAX_CHARS.toLocaleString()}자
           {over && " — 초과! 저장 불가"}

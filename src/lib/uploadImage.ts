@@ -9,6 +9,9 @@ export async function compressAndUpload(file: File): Promise<string> {
   if (file.size > MAX_CLIENT_INPUT) {
     throw new Error("이미지가 15MB를 초과합니다.");
   }
+  if (file.type === "image/gif") {
+    throw new Error("GIF는 지원하지 않습니다. (JPG/PNG/WebP만 가능)");
+  }
 
   const compressed = await imageCompression(file, {
     maxSizeMB: 2,

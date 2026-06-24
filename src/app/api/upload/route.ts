@@ -18,7 +18,6 @@ export const runtime = "nodejs";
 const MAGIC: { mime: string; check: (b: Buffer) => boolean }[] = [
   { mime: "image/jpeg", check: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
   { mime: "image/png", check: (b) => b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47 },
-  { mime: "image/gif", check: (b) => b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 },
   {
     mime: "image/webp",
     check: (b) =>

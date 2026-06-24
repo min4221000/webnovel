@@ -221,7 +221,7 @@ export default function NovelForm({ novelId, initial }: Props) {
           <br />업로드 시 자동으로 1920px 이하 / WebP 변환됩니다.
         </p>
         <div className="flex items-center gap-3">
-          <input type="file" accept="image/*" onChange={onCover} className="text-sm" />
+          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onCover} className="text-sm" />
           {coverImage && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={coverImage} alt="" className="h-20 rounded border" />

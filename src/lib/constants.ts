@@ -5,17 +5,16 @@ export const MAX_IMAGES_PER_CHAPTER = 1;
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB (압축 후 안전망)
 export const DAILY_UPLOAD_LIMIT = 30;
 
+// GIF 제외: 클라 압축이 webp로 강제 변환 → 애니메이션 정지됨. 혼란 방지 위해 차단.
 export const ALLOWED_IMAGE_MIME = [
   "image/jpeg",
   "image/png",
-  "image/gif",
   "image/webp",
 ] as const;
 
 export const MIME_TO_EXT: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
-  "image/gif": "gif",
   "image/webp": "webp",
 };
 
