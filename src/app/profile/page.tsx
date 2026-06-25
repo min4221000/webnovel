@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import AdultToggle from "@/components/AdultToggle";
+import { apiFetch } from "@/lib/apiFetch";
 
 // 알림 토글 한 줄 (카드형)
 function ToggleRow({
@@ -66,21 +67,17 @@ export default function ProfilePage() {
     setMsg("");
     setErr("");
     try {
-      const res = await fetch("/api/me", {
+      const res = await apiFetch("/api/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nickname, webhookUrl, notifyAllChapters, previewBookmarkBody }),
       });
-      if (res.ok) {
-        const d = await res.json();
-        setOrigin(d.nickname);
-        setWebhookUrl(d.webhookUrl ?? "");
-        setMsg("저장됨. 모든 작품·댓글에 즉시 반영됩니다 (본인 네비바 표시는 다음 로그인 후).");
-      } else {
-        setErr(await res.text().catch(() => "저장 실패"));
-      }
-    } catch {
-      setErr("네트워크 오류 — 다시 시도하세요");
+      const d = await res.json();
+      setOrigin(d.nickname);
+      setWebhookUrl(d.webhookUrl ?? "");
+      setMsg("저장됨. 모든 작품·댓글에 즉시 반영됩니다 (본인 네비바 표시는 다음 로그인 후).");
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "저장 실패");
     } finally {
       setSaving(false);
     }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/apiFetch";
 
 export default function DeleteButton({
   url,
@@ -22,12 +23,12 @@ export default function DeleteButton({
   const onClick = async () => {
     if (!confirm(confirmMsg)) return;
     setBusy(true);
-    const res = await fetch(url, { method: "DELETE" });
-    if (res.ok) {
+    try {
+      await apiFetch(url, { method: "DELETE" });
       if (redirectTo) router.push(redirectTo);
       router.refresh();
-    } else {
-      alert(await res.text());
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "삭제 실패");
       setBusy(false);
     }
   };

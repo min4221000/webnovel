@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSession, signIn } from "next-auth/react";
+import { apiFetch } from "@/lib/apiFetch";
 
 export default function ReportButton({
   targetType,
@@ -22,16 +23,16 @@ export default function ReportButton({
     }
     const reason = window.prompt("신고 사유를 입력하세요. (도배/욕설/저작권/기타)");
     if (!reason || !reason.trim()) return;
-    const res = await fetch("/api/reports", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ targetType, targetId, reason }),
-    });
-    if (res.ok) {
+    try {
+      await apiFetch("/api/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetType, targetId, reason }),
+      });
       setDone(true);
       alert("신고가 접수되었습니다. 관리자가 검토합니다.");
-    } else {
-      alert(await res.text());
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "신고 실패");
     }
   };
 

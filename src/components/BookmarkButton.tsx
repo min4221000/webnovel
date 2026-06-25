@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { apiFetch } from "@/lib/apiFetch";
 
 type Props = {
   novelId: string;
@@ -15,17 +16,20 @@ export default function BookmarkButton({ novelId, initialBookmarked }: Props) {
   const toggle = async () => {
     if (busy) return;
     setBusy(true);
-    const res = await fetch("/api/bookmarks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ novelId }),
-    });
-    setBusy(false);
-    if (res.ok) {
+    try {
+      const res = await apiFetch("/api/bookmarks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ novelId }),
+      });
       const data = await res.json();
       setBookmarked(data.bookmarked);
       setPop(true);
       setTimeout(() => setPop(false), 1200);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "북마크 실패");
+    } finally {
+      setBusy(false);
     }
   };
 

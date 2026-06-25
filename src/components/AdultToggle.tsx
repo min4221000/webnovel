@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/apiFetch";
 
 export default function AdultToggle({ initial }: { initial: boolean }) {
   const router = useRouter();
@@ -13,17 +14,18 @@ export default function AdultToggle({ initial }: { initial: boolean }) {
       if (!confirm("본인은 만 19세 이상이며, 🔞시크릿 플러스 콘텐츠 열람에 동의합니다.")) return;
     }
     setBusy(true);
-    const res = await fetch("/api/me/adult", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ adult: next }),
-    });
-    setBusy(false);
-    if (res.ok) {
+    try {
+      await apiFetch("/api/me/adult", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adult: next }),
+      });
       setAdult(next);
       router.refresh();
-    } else {
-      alert(await res.text());
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "변경 실패");
+    } finally {
+      setBusy(false);
     }
   };
 

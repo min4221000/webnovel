@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { apiFetch } from "@/lib/apiFetch";
 
 /** 작가 팔로우 토글 — 팔로우하면 그 작가의 새 회차가 내 웹후크로 알림 (작가 페이지용) */
 export default function FollowButton({
@@ -19,21 +20,17 @@ export default function FollowButton({
     setBusy(true);
     setMsg(null);
     try {
-      const res = await fetch("/api/follow", {
+      const res = await apiFetch("/api/follow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ authorId }),
       });
-      if (res.ok) {
-        const d = await res.json();
-        setFollowing(d.following);
-        setMsg(d.following ? "팔로우 — 새 회차 알림이 옵니다 (웹후크 설정 시)" : "팔로우 해제");
-        setTimeout(() => setMsg(null), 2500);
-      } else {
-        setMsg(await res.text().catch(() => "실패"));
-      }
-    } catch {
-      setMsg("네트워크 오류 — 다시 시도하세요");
+      const d = await res.json();
+      setFollowing(d.following);
+      setMsg(d.following ? "팔로우 — 새 회차 알림이 옵니다 (웹후크 설정 시)" : "팔로우 해제");
+      setTimeout(() => setMsg(null), 2500);
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "실패");
     } finally {
       setBusy(false);
     }
