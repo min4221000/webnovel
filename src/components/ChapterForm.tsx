@@ -172,7 +172,7 @@ export default function ChapterForm({
     if (!confirm("이 회차를 공개하고, 북마크한 사람에게 디코 알림을 보냅니다. 진행할까요?")) return;
     setBusy(true);
     try {
-      const res = await apiFetch(`/api/chapters/${chapterId}`, {
+      await apiFetch(`/api/chapters/${chapterId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ publish: true, title, content }),
