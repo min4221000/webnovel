@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export const dynamic = "force-static";
 
 export default function MaintenancePage() {
@@ -10,9 +12,12 @@ export default function MaintenancePage() {
         <br />
         잠시 후 다시 방문해 주세요.
       </p>
-      <p className="text-xs text-gray-400">
-        관리자는 이 페이지 너머도 그대로 이용할 수 있습니다.
-      </p>
+      <Link
+        href="/login"
+        className="inline-block text-xs text-gray-400 hover:text-indigo-500 underline"
+      >
+        관리자 로그인
+      </Link>
     </div>
   );
 }
