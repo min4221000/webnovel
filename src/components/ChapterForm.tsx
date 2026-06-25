@@ -6,6 +6,7 @@ import { useSession, signIn } from "next-auth/react";
 import Editor from "@/components/editor/Editor";
 import ChapterReader from "@/components/ChapterReader";
 import { MAX_CHARS, MAX_IMAGES_PER_CHAPTER } from "@/lib/constants";
+import { apiFetch } from "@/lib/apiFetch";
 
 type Props = {
   novelId: string;
@@ -144,12 +145,11 @@ export default function ChapterForm({
     setBusy(true);
     try {
       const url = editing ? `/api/chapters/${chapterId}` : `/api/novels/${novelId}/chapters`;
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method: editing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, content, hidden, ...(customNum ? { chapterNum: Number(customNum) } : {}) }),
       });
-      if (!res.ok) throw new Error(await res.text());
       isDirtyRef.current = false;
       localStorage.removeItem(draftKey);
       if (editing) {
@@ -172,12 +172,11 @@ export default function ChapterForm({
     if (!confirm("이 회차를 공개하고, 북마크한 사람에게 디코 알림을 보냅니다. 진행할까요?")) return;
     setBusy(true);
     try {
-      const res = await fetch(`/api/chapters/${chapterId}`, {
+      const res = await apiFetch(`/api/chapters/${chapterId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ publish: true, title, content }),
       });
-      if (!res.ok) throw new Error(await res.text());
       isDirtyRef.current = false;
       localStorage.removeItem(draftKey);
       router.push(`/novel/${novelId}/chapter/${redirectNum}`);

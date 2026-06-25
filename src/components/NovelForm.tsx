@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
 import { compressAndUpload } from "@/lib/uploadImage";
+import { apiFetch } from "@/lib/apiFetch";
 
 const TAG_GROUPS = [
   ["사니", "나모", "키위", "학부생", "손님", "주인공"],
@@ -112,12 +113,11 @@ export default function NovelForm({ novelId, initial }: Props) {
     setBusy(true);
     try {
       const url = editing ? `/api/novels/${novelId}` : "/api/novels";
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method: editing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, description, coverImage, isAdult, hidden, status: statusVal, tags: selectedTags }),
       });
-      if (!res.ok) throw new Error(await res.text());
       if (editing) {
         router.push(`/novel/${novelId}`);
         router.refresh();

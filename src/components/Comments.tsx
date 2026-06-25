@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useSession, signIn } from "next-auth/react";
 import ReportButton from "./ReportButton";
 import { displayName } from "@/lib/displayName";
+import { apiFetch } from "@/lib/apiFetch";
 
 type C = {
   id: string;
@@ -43,21 +44,28 @@ export default function Comments({ chapterId }: { chapterId: string }) {
     if (!me) { signIn("discord"); return; }
     if (!content.trim()) return;
     setBusy(true);
-    const res = await fetch(`/api/chapters/${chapterId}/comments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content, parentId }),
-    });
-    setBusy(false);
-    if (res.ok) { setText(""); setReplyText(""); setReplyTo(null); load(); }
-    else alert(await res.text());
+    try {
+      await apiFetch(`/api/chapters/${chapterId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, parentId }),
+      });
+      setText(""); setReplyText(""); setReplyTo(null); load();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "댓글 등록 실패");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const del = async (id: string) => {
     if (!confirm("댓글을 삭제할까요?")) return;
-    const res = await fetch(`/api/comments/${id}`, { method: "DELETE" });
-    if (res.ok) load();
-    else alert(await res.text());
+    try {
+      await apiFetch(`/api/comments/${id}`, { method: "DELETE" });
+      load();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "삭제 실패");
+    }
   };
 
   const tops = list.filter((c) => !c.parentId);
