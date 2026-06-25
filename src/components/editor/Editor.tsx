@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { useEditor, EditorContent, type Editor as TiptapEditor } from "@tiptap/react";
 import { Fragment, Slice, type Node as PMNode } from "@tiptap/pm/model";
 import StarterKit from "@tiptap/starter-kit";
+import HardBreak from "@tiptap/extension-hard-break";
 import Underline from "@tiptap/extension-underline";
 import TextStyle from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
@@ -162,7 +163,19 @@ export default function Editor({ content = "", onChange }: Props) {
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
-      StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
+      // hardBreak는 StarterKit 기본 키매핑(Shift+Enter)을 빼고 아래 커스텀으로 대체
+      StarterKit.configure({ heading: { levels: [1, 2, 3] }, hardBreak: false }),
+      // Enter = <br> (정확한 줄 수 보장), Ctrl/Cmd+Enter = 새 문단 분리
+      // ProseMirror가 연속 빈 paragraph를 1개로 합쳐 줄 수 못 맞추는 문제 해결
+      HardBreak.extend({
+        addKeyboardShortcuts() {
+          return {
+            Enter: () => this.editor.commands.setHardBreak(),
+            "Shift-Enter": () => this.editor.commands.setHardBreak(),
+            "Mod-Enter": () => this.editor.commands.splitBlock(),
+          };
+        },
+      }),
       Underline,
       TextStyle,
       Color,
