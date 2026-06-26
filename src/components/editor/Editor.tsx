@@ -469,7 +469,7 @@ export default function Editor({ content = "", onChange }: Props) {
           title="서식 제거 (선택 영역의 모든 서식 초기화)"
           onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}
         >
-          <span className="line-through opacity-70">서식</span>
+          <span className="line-through opacity-70">서</span>
         </Btn>
 
         <Divider />
