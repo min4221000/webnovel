@@ -61,21 +61,25 @@ const PALETTE = [
   "#004488", "#000088", "#440088", "#880044",
 ];
 
-function ColorPalette({
+// 한 칼럼(배경색 또는 글자색): 초기화 링크 + 팔레트 그리드 + 커스텀 색상 입력
+function ColorColumn({
+  title,
+  resetLabel,
   onSelect,
   onReset,
-  resetLabel,
 }: {
+  title: string;
+  resetLabel: string;
   onSelect: (color: string) => void;
   onReset: () => void;
-  resetLabel: string;
 }) {
   return (
-    <div className="absolute top-full left-0 mt-1 p-2 bg-white dark:bg-gray-800 border rounded-lg shadow-xl z-50 w-48">
+    <div className="w-44">
+      <p className="text-xs font-semibold text-center mb-1">{title}</p>
       <button
         type="button"
         onClick={onReset}
-        className="text-xs text-gray-500 hover:underline mb-1.5 block"
+        className="text-xs text-gray-500 hover:underline block w-full text-center mb-1.5"
       >
         {resetLabel}
       </button>
@@ -90,6 +94,34 @@ function ColorPalette({
           />
         ))}
       </div>
+      <label className="text-xs text-gray-500 hover:underline mt-1.5 block text-center cursor-pointer">
+        다른 색상 선택
+        <input
+          type="color"
+          className="sr-only"
+          onChange={(e) => onSelect(e.target.value)}
+        />
+      </label>
+    </div>
+  );
+}
+
+// 통합 색상 패널 (디시 스타일: 배경색 | 글자색 두 칼럼)
+function ColorPanel({
+  onSelectBg,
+  onResetBg,
+  onSelectText,
+  onResetText,
+}: {
+  onSelectBg: (c: string) => void;
+  onResetBg: () => void;
+  onSelectText: (c: string) => void;
+  onResetText: () => void;
+}) {
+  return (
+    <div className="absolute top-full left-0 mt-1 p-3 bg-white dark:bg-gray-800 border rounded-lg shadow-xl z-50 flex gap-4">
+      <ColorColumn title="배경색" resetLabel="투명으로 설정" onSelect={onSelectBg} onReset={onResetBg} />
+      <ColorColumn title="글자색" resetLabel="검은색으로 설정" onSelect={onSelectText} onReset={onResetText} />
     </div>
   );
 }
@@ -145,8 +177,7 @@ export default function Editor({ content = "", onChange }: Props) {
   const [imgCount, setImgCount] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [hlColor, setHlColor] = useState("#ffe58a");
-  const [showTextColor, setShowTextColor] = useState(false);
-  const [showBgColor, setShowBgColor] = useState(false);
+  const [showColor, setShowColor] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const sync = useCallback(
@@ -388,38 +419,40 @@ export default function Editor({ content = "", onChange }: Props) {
           <s>가</s>
         </Btn>
 
-        {/* 글자색 */}
+        {/* 색상 (글자색 + 배경색 통합) */}
         <span className="relative">
           <Btn
-            title="글자색"
-            onClick={() => { setShowTextColor(!showTextColor); setShowBgColor(false); }}
+            title="글자색 · 배경색"
+            active={showColor}
+            onClick={() => setShowColor((v) => !v)}
           >
-            <span style={{ color: editor.getAttributes("textStyle").color || undefined }}>색</span>
+            <span
+              className="px-0.5 rounded"
+              style={{ color: editor.getAttributes("textStyle").color || undefined, background: hlColor }}
+            >
+              색
+            </span>
           </Btn>
-          {showTextColor && (
-            <ColorPalette
-              resetLabel="기본 글자색으로"
-              onReset={() => { editor.chain().focus().unsetColor().run(); setShowTextColor(false); }}
-              onSelect={(c) => { editor.chain().focus().setColor(c).run(); setShowTextColor(false); }}
-            />
+          {showColor && (
+            <>
+              {/* 외부 클릭 시 닫기 */}
+              <span className="fixed inset-0 z-40" onClick={() => setShowColor(false)} />
+              <ColorPanel
+                onSelectText={(c) => { editor.chain().focus().setColor(c).run(); setShowColor(false); }}
+                onResetText={() => { editor.chain().focus().unsetColor().run(); setShowColor(false); }}
+                onSelectBg={(c) => { setHlColor(c); editor.chain().focus().setHighlight({ color: c }).run(); setShowColor(false); }}
+                onResetBg={() => { editor.chain().focus().unsetHighlight().run(); setShowColor(false); }}
+              />
+            </>
           )}
         </span>
-        {/* 배경색(형광) */}
-        <span className="relative">
-          <Btn
-            title="형광펜"
-            onClick={() => { setShowBgColor(!showBgColor); setShowTextColor(false); }}
-          >
-            <span className="px-0.5 rounded" style={{ background: hlColor }}>밑</span>
-          </Btn>
-          {showBgColor && (
-            <ColorPalette
-              resetLabel="형광 제거"
-              onReset={() => { editor.chain().focus().unsetHighlight().run(); setShowBgColor(false); }}
-              onSelect={(c) => { setHlColor(c); editor.chain().focus().setHighlight({ color: c }).run(); setShowBgColor(false); }}
-            />
-          )}
-        </span>
+        {/* 서식 제거 — 선택 영역의 글꼴/색/크기/굵게 등 모두 초기화 */}
+        <Btn
+          title="서식 제거 (선택 영역의 모든 서식 초기화)"
+          onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}
+        >
+          <span className="line-through opacity-70">서식</span>
+        </Btn>
 
         <Divider />
         <Btn title="왼쪽" active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()}>좌</Btn>
