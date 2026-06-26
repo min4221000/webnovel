@@ -75,7 +75,7 @@ export default function AdminDashboard() {
 
   const loadReports = useCallback(async () => {
     setLoading(true);
-    const res = await fetch(`/api/admin/reports?status=${status}`);
+    const res = await fetch(`/api/admin/reports?status=${status}`, { cache: "no-store" });
     if (res.ok) {
       const d = (await res.json()) as { reports: Report[] };
       setReports(d.reports);
@@ -89,7 +89,7 @@ export default function AdminDashboard() {
 
   const loadUsers = async (q?: string) => {
     setUserLoading(true);
-    const res = await fetch(`/api/admin/users?q=${encodeURIComponent(q || "")}`);
+    const res = await fetch(`/api/admin/users?q=${encodeURIComponent(q || "")}`, { cache: "no-store" });
     if (res.ok) {
       const d = await res.json();
       setUsers(d.users);
@@ -175,7 +175,7 @@ export default function AdminDashboard() {
 
   const loadDeleted = async () => {
     setRestoreLoading(true);
-    const res = await fetch("/api/admin/restore");
+    const res = await fetch("/api/admin/restore", { cache: "no-store" });
     if (res.ok) {
       const d = await res.json();
       setDeletedNovels(d.novels);
@@ -190,7 +190,7 @@ export default function AdminDashboard() {
 
   const loadConfig = async () => {
     setConfigLoading(true);
-    const res = await fetch("/api/admin/config");
+    const res = await fetch("/api/admin/config", { cache: "no-store" });
     if (res.ok) {
       const d = await res.json();
       setGlobalWebhook(d.globalWebhookUrl ?? "");
