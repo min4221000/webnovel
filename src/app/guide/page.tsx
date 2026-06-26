@@ -173,8 +173,8 @@ export default function GuidePage() {
             꾸민 서식이 그대로 유지됩니다.
           </p>
           <p>
-            <strong>높이 조절</strong> — 글쓰기 칸이 좁으면, 에디터 맨 아래 가운데의 <strong>회색 바를 위아래로 끌어</strong>
-            글 쓰는 영역을 원하는 만큼 넓히거나 줄일 수 있습니다.
+            <strong>높이 조절</strong> — 글쓰기 칸이 좁으면, 에디터 맨 아래 가운데의 <strong>회색 바를 위아래로 끌어서</strong> 글
+            쓰는 영역을 원하는 만큼 넓히거나 줄일 수 있습니다.
           </p>
         </Feature>
 
@@ -191,7 +191,7 @@ export default function GuidePage() {
           </p>
           <p className="text-gray-500">
             <strong>임시저장</strong>은 지금 쓰는 브라우저에만 잠깐 저장하는 기능이라(서버 저장 아님) 다른 기기·브라우저에서는 보이지 않습니다.
-            확실히 남기려면 <strong>저장</strong>이나 <strong>공개</strong>를 눌러주세요. 알림에 본문 미리보기를 넣을지는
+            확실히 남기려면 <strong>비공개 저장</strong>이나 <strong>공개</strong>를 눌러주세요. 알림에 본문 미리보기를 넣을지는
             글쓴이가 아니라 <strong>알림을 받는 사람</strong>이 각자 프로필에서 정합니다.
           </p>
         </Feature>
