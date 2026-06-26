@@ -167,30 +167,53 @@ export default function GuidePage() {
           ]}
         >
           <p>글꼴·크기·굵게/색·<strong>정렬·줄 간격</strong>(줄마다 따로)·목록·인용·링크·유튜브·이미지·특수문자를 지원합니다.</p>
-          <p><strong>Enter</strong>로 줄바꿈(두 번이면 한 줄 띄움). 외부 글은 서식 정리, 에디터 안 복붙은 서식 유지. 하단 회색 바로 높이 조절.</p>
+          <p>
+            <strong>붙여넣기</strong> — 디스코드·워드·메모장 등 <strong>다른 곳에서 복사해 붙여넣으면</strong> 색·글꼴 같은
+            지저분한 서식은 자동으로 정리되고 글 내용과 줄바꿈만 깔끔하게 들어옵니다. 반대로 <strong>에디터 안에서 복사·붙여넣기</strong>하면
+            꾸민 서식이 그대로 유지됩니다.
+          </p>
+          <p>
+            <strong>높이 조절</strong> — 글쓰기 칸이 좁으면, 에디터 맨 아래 가운데의 <strong>회색 바를 위아래로 끌어</strong>
+            글 쓰는 영역을 원하는 만큼 넓히거나 줄일 수 있습니다.
+          </p>
         </Feature>
 
         <Feature
           title="3. 비공개로 쓰고, 완성되면 공개 + 알림"
           images={[{ src: "/guide/chapter-edit.webp", alt: "회차 수정 — 공개 + 알림" }]}
         >
-          <p><strong>비공개</strong>로 저장하면 나만 볼 수 있고, 회차 수정에서 <strong>&ldquo;공개 + 알림 받기&rdquo;</strong>를 누르면 공개 전환 + <strong>북마크한 사람에게 Discord 알림</strong>이 발송됩니다.</p>
-          <p className="text-gray-500">임시저장은 이 브라우저에만 저장됩니다(서버 저장 아님). 본문 미리보기 포함 여부는 받는 사람이 각자 정합니다.</p>
+          <p>
+            <strong>비공개</strong>로 저장하면 다른 사람에게는 보이지 않고 나만 볼 수 있습니다. 초고를 천천히 다듬을 때 좋습니다.
+          </p>
+          <p>
+            글을 다 완성한 뒤 회차 수정 화면에서 <strong>&ldquo;공개 + 알림 받기&rdquo;</strong>를 누르면, 그 회차가 모두에게 공개되고
+            동시에 이 작품을 <strong>북마크한 사람들에게 Discord로 새 회차 알림</strong>이 자동 발송됩니다.
+          </p>
+          <p className="text-gray-500">
+            <strong>임시저장</strong>은 지금 쓰는 브라우저에만 잠깐 저장하는 기능이라(서버 저장 아님) 다른 기기·브라우저에서는 보이지 않습니다.
+            확실히 남기려면 <strong>저장</strong>이나 <strong>공개</strong>를 눌러주세요. 알림에 본문 미리보기를 넣을지는
+            글쓴이가 아니라 <strong>알림을 받는 사람</strong>이 각자 프로필에서 정합니다.
+          </p>
         </Feature>
 
         <div className="space-y-2">
           <h3 className="font-semibold text-sm">4. 작품 · 회차 관리</h3>
           <ul className="list-disc pl-5 space-y-1.5 text-sm text-gray-600 dark:text-gray-300">
-            <Step>작품 페이지에서 <strong>정보 수정 · 소설 삭제 · + 새 회차</strong>.</Step>
+            <Step>작품 페이지에서 <strong>정보 수정 · 소설 삭제 · 새 회차</strong>.</Step>
             <Step>각 회차는 <strong>회차 수정</strong>에서 제목·본문·회차 번호를 고칠 수 있습니다.</Step>
           </ul>
         </div>
       </section>
 
-      <p className="text-sm text-gray-500 border-t border-black/10 dark:border-white/10 pt-4 leading-relaxed">
-        자세한 운영 규정은 <a href="/rules" className="underline">이용규정</a>을 확인하세요.
-        문의·개선 제안은 Discord <strong className="font-mono">_cornbutter</strong>로 DM 부탁드립니다.
-      </p>
+      <div className="border-t border-black/10 dark:border-white/10 pt-5 space-y-3">
+        <div className="rounded-lg border border-indigo-300 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 leading-relaxed">
+          📌 글을 올리기 전에 <a href="/rules" className="underline font-semibold">이용규정</a>을 꼭 한 번 읽어주세요.
+          모두가 기분 좋게 이용할 수 있도록 부탁드립니다.
+        </div>
+        <p className="text-sm text-gray-500 leading-relaxed">
+          문의·개선 제안은 Discord <strong className="font-mono">_cornbutter</strong>로 DM 부탁드립니다.
+        </p>
+      </div>
     </div>
   );
 }
