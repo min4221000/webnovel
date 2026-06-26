@@ -23,7 +23,7 @@ type Report = {
 };
 
 type StatusFilter = "pending" | "resolved" | "rejected";
-type Tab = "reports" | "users" | "restore";
+type Tab = "reports" | "users" | "restore" | "config";
 
 type DeletedNovel = {
   id: string;
@@ -67,6 +67,11 @@ export default function AdminDashboard() {
   const [deletedNovels, setDeletedNovels] = useState<DeletedNovel[]>([]);
   const [deletedChapters, setDeletedChapters] = useState<DeletedChapter[]>([]);
   const [restoreLoading, setRestoreLoading] = useState(false);
+
+  // 설정 탭
+  const [globalWebhook, setGlobalWebhook] = useState("");
+  const [configLoading, setConfigLoading] = useState(false);
+  const [configMsg, setConfigMsg] = useState("");
 
   const loadReports = useCallback(async () => {
     setLoading(true);
@@ -183,6 +188,29 @@ export default function AdminDashboard() {
     if (tab === "restore") loadDeleted();
   }, [tab]);
 
+  const loadConfig = async () => {
+    setConfigLoading(true);
+    const res = await fetch("/api/admin/config");
+    if (res.ok) {
+      const d = await res.json();
+      setGlobalWebhook(d.globalWebhookUrl ?? "");
+    }
+    setConfigLoading(false);
+  };
+  const saveConfig = async () => {
+    setConfigMsg("");
+    const res = await fetch("/api/admin/config", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ globalWebhookUrl: globalWebhook }),
+    });
+    if (res.ok) setConfigMsg("저장됨");
+    else setConfigMsg(await res.text());
+  };
+  useEffect(() => {
+    if (tab === "config") loadConfig();
+  }, [tab]);
+
   const restoreItem = async (type: "novel" | "chapter", id: string) => {
     if (!confirm("이 항목을 복구할까요?")) return;
     setBusy(id);
@@ -225,6 +253,12 @@ export default function AdminDashboard() {
           className={`px-4 py-2 text-sm -mb-px border-b-2 ${tab === "restore" ? "border-indigo-600 font-semibold" : "border-transparent text-gray-500"}`}
         >
           삭제 복구
+        </button>
+        <button
+          onClick={() => setTab("config")}
+          className={`px-4 py-2 text-sm -mb-px border-b-2 ${tab === "config" ? "border-indigo-600 font-semibold" : "border-transparent text-gray-500"}`}
+        >
+          설정
         </button>
       </div>
 
@@ -491,6 +525,41 @@ export default function AdminDashboard() {
             </div>
           )}
         </>
+      )}
+
+      {/* ─── 설정 탭 ─── */}
+      {tab === "config" && (
+        <div className="space-y-4">
+          {configLoading ? (
+            <p className="text-sm text-gray-400">로딩 중…</p>
+          ) : (
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-sm font-medium block">전체 알림 웹후크</label>
+                <input
+                  value={globalWebhook}
+                  onChange={(e) => { setGlobalWebhook(e.target.value); setConfigMsg(""); }}
+                  placeholder="https://discord.com/api/webhooks/...?thread_id=..."
+                  className="w-full border rounded-md px-3 py-2 bg-transparent text-sm"
+                />
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  새 회차가 올라오면 이 웹후크로도 알림이 발송됩니다. (개인 웹후크와 별도)
+                  <br />포럼 채널의 특정 토론에 보내려면 URL 뒤에 <strong>?thread_id=스레드ID</strong>를 붙이세요.
+                  <br />비워두면 전체 알림을 보내지 않습니다.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={saveConfig}
+                  className="px-4 py-2 rounded-md bg-indigo-600 text-white text-sm"
+                >
+                  저장
+                </button>
+                {configMsg && <span className="text-sm text-green-600">{configMsg}</span>}
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

@@ -141,3 +141,9 @@ model Upload {
 
   @@index([userId, createdAt])
 }
+
+// 사이트 전역 설정 (싱글 로우: id="main")
+model SiteConfig {
+  id                 String  @id @default("main")
+  globalWebhookUrl   String? // 전체 알림용 Discord 웹후크 (포럼 thread_id 포함 가능)
+}

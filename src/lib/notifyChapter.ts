@@ -47,12 +47,19 @@ export async function notifyChapterToSubscribers(opts: {
     isAdult: opts.isAdult,
   };
 
+  // 전체 알림 웹후크 (관리자가 설정한 공식 디코 채널/토론)
+  const config = await prisma.siteConfig.findUnique({ where: { id: "main" }, select: { globalWebhookUrl: true } });
+  const globalUrl = config?.globalWebhookUrl;
+
   await Promise.all([
     withBody.length
       ? notifyNewChapter({ ...common, webhookUrls: withBody, contentHtml: opts.content })
       : Promise.resolve(),
     linkOnly.length
       ? notifyNewChapter({ ...common, webhookUrls: linkOnly, contentHtml: undefined })
+      : Promise.resolve(),
+    globalUrl
+      ? notifyNewChapter({ ...common, webhookUrls: [globalUrl], contentHtml: opts.content })
       : Promise.resolve(),
   ]);
 }
