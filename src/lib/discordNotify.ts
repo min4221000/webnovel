@@ -89,6 +89,10 @@ export async function notifyNewChapter(opts: {
   const linkLine = link
     ? `\n\n**[▶ ${opts.chapterNum}화 ${parts.length > 1 ? "전체 보기" : "바로 읽기"}](${link})**`
     : "";
+  // 전체 공지(hideChapterTitle)에서 19+ 회차는 열람 안내 추가 — 안 켠 사람은 링크 눌러도 안 보임
+  const adultNotice = opts.isAdult && opts.hideChapterTitle
+    ? `\n\n🔞 시크릿 플러스 콘텐츠입니다. 보려면 프로필 → 시크릿 플러스를 켜주세요.`
+    : "";
 
   // 메시지(=POST) 배열. 본문이 길면 여러 메시지로 "이어서" 연속 전송.
   // 작가/푸터/링크는 마지막 메시지에만 (글 끝에 표시).
@@ -101,7 +105,7 @@ export async function notifyNewChapter(opts: {
 
     let desc = isFirst && !opts.hideChapterTitle ? `**${opts.chapterTitle}**\n\n` : "";
     desc += chunk;
-    if (isLast) desc += (truncated ? "\n\n…(이어서는 사이트에서 ↓)" : "") + linkLine;
+    if (isLast) desc += (truncated ? "\n\n…(이어서는 사이트에서 ↓)" : "") + adultNotice + linkLine;
 
     const embed: Embed = {
       title: isFirst ? headerTitle : `${headerTitle} (이어서 ${idx + 1}/${total})`,
