@@ -19,6 +19,9 @@ export default function Navbar() {
           <span className="sm:hidden">사니양 열람실</span>
         </Link>
 
+        {/* 가이드 — 로그인 여부 무관 항상 표시 */}
+        <Link href="/guide" className="hidden sm:block text-sm text-gray-500 hover:underline">가이드</Link>
+
         {/* 데스크톱 전용 링크 — 로그인 후에만 */}
         {status !== "loading" && user && (
           <>
@@ -76,6 +79,7 @@ export default function Navbar() {
       {/* 모바일 드롭다운 메뉴 */}
       {open && (
         <div className="sm:hidden border-t border-black/10 bg-[var(--background)] px-4 py-3 space-y-3">
+          <Link href="/guide" className="block text-sm text-gray-700 dark:text-gray-300 py-1" onClick={close}>📖 가이드</Link>
           <Link href="/search" className="block text-sm text-gray-700 dark:text-gray-300 py-1" onClick={close}>🔍 검색</Link>
           {user && (
             <>
