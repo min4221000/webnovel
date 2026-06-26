@@ -178,6 +178,7 @@ export default function Editor({ content = "", onChange }: Props) {
   const [uploading, setUploading] = useState(false);
   const [hlColor, setHlColor] = useState("#ffe58a");
   const [showColor, setShowColor] = useState(false);
+  const [bodyHeight, setBodyHeight] = useState(440); // 본문 영역 높이(px) — 하단 그립으로 조절
   const fileRef = useRef<HTMLInputElement>(null);
 
   const sync = useCallback(
@@ -353,6 +354,22 @@ export default function Editor({ content = "", onChange }: Props) {
     e.target.value = "";
     if (!file) return;
     uploadFile(file);
+  };
+
+  // 하단 그립 드래그 → 본문 영역 높이 조절 (마우스·터치 모두 pointer 이벤트)
+  const onResizeStart = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startH = bodyHeight;
+    const onMove = (ev: PointerEvent) => {
+      setBodyHeight(Math.min(2000, Math.max(200, startH + ev.clientY - startY)));
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
   };
 
   if (!editor) {
@@ -577,13 +594,23 @@ export default function Editor({ content = "", onChange }: Props) {
         </div>
       )}
 
-      {/* 본문 — 고정 높이 + 내부 스크롤 + 드래그드롭 */}
+      {/* 본문 — 조절 가능한 높이 + 내부 스크롤 + 드래그드롭 */}
       <div
-        className="py-2 max-h-[60vh] overflow-y-auto"
+        className="py-2 overflow-y-auto"
+        style={{ height: bodyHeight }}
         onDrop={onDropImage}
         onDragOver={(e) => { if (e.dataTransfer.types.includes("Files")) e.preventDefault(); }}
       >
         <EditorContent editor={editor} />
+      </div>
+
+      {/* 높이 조절 그립 (디시 스타일) — 드래그하여 본문 영역 크기 조절 */}
+      <div
+        onPointerDown={onResizeStart}
+        title="드래그하여 글쓰기 영역 높이 조절"
+        className="flex items-center justify-center h-3.5 cursor-ns-resize select-none touch-none border-t border-black/10 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.05] hover:bg-black/[0.08] dark:hover:bg-white/[0.1] transition-colors"
+      >
+        <span className="w-8 h-1 rounded-full bg-black/25 dark:bg-white/30" />
       </div>
 
       {/* 글자수 카운터 */}
