@@ -38,9 +38,9 @@ function Feature({
 }
 
 const TOC = [
-  { id: "reader", label: "🙂 처음 오셨나요? (기본)" },
-  { id: "webhook", label: "🔔 알림(웹후크) 설정법" },
-  { id: "writer", label: "✍️ 글 쓰는 분들께" },
+  { id: "reader", label: "처음 오셨나요? (기본)" },
+  { id: "webhook", label: "알림(웹후크) 설정법" },
+  { id: "writer", label: "글 쓰는 분들께" },
 ];
 
 export default function GuidePage() {
@@ -70,7 +70,7 @@ export default function GuidePage() {
 
       {/* ───────── PART A: 독자 기본 ───────── */}
       <section className="space-y-6">
-        <SectionTitle id="reader">🙂 처음 오셨나요? — 기본 사용법</SectionTitle>
+        <SectionTitle id="reader">처음 오셨나요? — 기본 사용법</SectionTitle>
 
         <Feature
           title="1. Discord로 로그인"
@@ -109,13 +109,13 @@ export default function GuidePage() {
           title="4. 신고"
           images={[{ src: "/guide/report.webp", alt: "신고 버튼" }]}
         >
-          <p>부적절한 글·댓글은 <strong>🚩 신고</strong> 버튼으로 접수할 수 있습니다. 관리자가 검토 후 처리합니다.</p>
+          <p>부적절한 글·댓글은 <strong>신고</strong> 버튼으로 접수할 수 있습니다. 관리자가 검토 후 처리합니다.</p>
         </Feature>
       </section>
 
       {/* ───────── PART B: 웹후크 설정 ───────── */}
       <section className="space-y-6">
-        <SectionTitle id="webhook">🔔 알림(웹후크) 설정법</SectionTitle>
+        <SectionTitle id="webhook">알림(웹후크) 설정법</SectionTitle>
         <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
           알림은 <strong>내 Discord 채널로 직접</strong> 옵니다. 한 번만 설정해두면 북마크·팔로우한 작품의 새 회차가 그 채널로 전달됩니다.
         </p>
@@ -149,14 +149,14 @@ export default function GuidePage() {
 
       {/* ───────── PART C: 작가 ───────── */}
       <section className="space-y-6">
-        <SectionTitle id="writer">✍️ 글 쓰는 분들께</SectionTitle>
+        <SectionTitle id="writer">글 쓰는 분들께</SectionTitle>
 
         <Feature
           title="1. 작품 등록"
           images={[{ src: "/guide/write-novel.webp", alt: "새 소설 등록 화면" }]}
         >
           <p>오른쪽 위 <strong>글쓰기 → 새 소설 등록</strong>. 제목·설명·태그·연재 상태를 정합니다.</p>
-          <p><strong>커버 이미지</strong>는 권장 300×400px(세로 3:4), 자동 WebP 압축. <strong>🔞 시크릿 플러스</strong>·<strong>비공개</strong> 옵션도 여기서.</p>
+          <p><strong>커버 이미지</strong>는 권장 300×400px(세로 3:4), 자동 WebP 압축. <strong>시크릿 플러스</strong>·<strong>비공개</strong> 옵션도 여기서.</p>
         </Feature>
 
         <Feature
@@ -207,7 +207,7 @@ export default function GuidePage() {
 
       <div className="border-t border-black/10 dark:border-white/10 pt-5 space-y-3">
         <div className="rounded-lg border border-indigo-300 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 leading-relaxed">
-          📌 글을 올리기 전에 <a href="/rules" className="underline font-semibold">이용규정</a>을 꼭 한 번 읽어주세요.
+          가이드를 다 읽으신 후 <a href="/rules" className="underline font-semibold">이용규정</a>도 꼭 한 번 읽어주세요.
           모두가 기분 좋게 이용할 수 있도록 부탁드립니다.
         </div>
         <p className="text-sm text-gray-500 leading-relaxed">
