@@ -182,7 +182,8 @@ export default function GuidePage() {
             <p><strong>Enter</strong>로 줄을 바꿉니다. 한 번이면 다음 줄, 두 번이면 한 줄 띄움. 줄마다 정렬·줄 간격을 따로 줄 수 있어요.</p>
             <p><strong>외부(Discord·워드)</strong>에서 붙여넣으면 서식을 정리해 줄 구조만 살리고, <strong>에디터 안에서 복사·붙여넣기</strong>하면 서식이 그대로 유지됩니다.</p>
           </div>
-          <Shot src="/guide/editor.webp" alt="회차 작성 에디터" caption="에디터 — 서식 · 색 · 정렬 · 줄 간격 · 이미지" />
+          <Shot src="/guide/editor1.webp" alt="회차 작성 에디터 — 시연" caption="에디터로 꾸민 예시 (서식 · 색 · 정렬 · 행간 · 목록 · 이미지)" />
+          <Shot src="/guide/editor2.webp" alt="회차 작성 에디터 — 툴바" caption="에디터 툴바 — 서식 · 색 · 정렬 · 줄 간격 · 이미지" />
         </div>
 
         {/* 비공개 → 공개 알림 */}
