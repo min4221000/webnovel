@@ -1,6 +1,7 @@
 "use client";
 
 import { Extension } from "@tiptap/core";
+import type { Transaction, EditorState } from "@tiptap/pm/state";
 import Image from "@tiptap/extension-image";
 import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
@@ -20,12 +21,14 @@ declare module "@tiptap/core" {
   }
 }
 
+const LINE_HEIGHT_TYPES = ["paragraph", "heading"];
+
 export const LineHeight = Extension.create({
   name: "lineHeight",
   addGlobalAttributes() {
     return [
       {
-        types: ["paragraph", "heading"],
+        types: LINE_HEIGHT_TYPES,
         attributes: {
           lineHeight: {
             default: null,
@@ -38,17 +41,24 @@ export const LineHeight = Extension.create({
     ];
   },
   addCommands() {
+    // 선택 범위(from~to) 안의 paragraph/heading 각각을 한 트랜잭션에서 개별 갱신.
+    // 커서만 있으면 그 문단 1개, 드래그하면 걸친 문단들만. 다른 문단엔 영향 없음.
+    const applyLineHeight =
+      (height: string | null) =>
+      ({ tr, state, dispatch }: { tr: Transaction; state: EditorState; dispatch?: (tr: Transaction) => void }) => {
+        const { from, to } = state.selection;
+        let changed = false;
+        state.doc.nodesBetween(from, to, (node, pos) => {
+          if (!LINE_HEIGHT_TYPES.includes(node.type.name)) return;
+          tr.setNodeMarkup(pos, undefined, { ...node.attrs, lineHeight: height });
+          changed = true;
+        });
+        if (changed && dispatch) dispatch(tr);
+        return changed;
+      };
     return {
-      setLineHeight:
-        (height) =>
-        ({ commands }) =>
-          commands.updateAttributes("paragraph", { lineHeight: height }) &&
-          commands.updateAttributes("heading", { lineHeight: height }),
-      unsetLineHeight:
-        () =>
-        ({ commands }) =>
-          commands.updateAttributes("paragraph", { lineHeight: null }) &&
-          commands.updateAttributes("heading", { lineHeight: null }),
+      setLineHeight: (height) => applyLineHeight(height),
+      unsetLineHeight: () => applyLineHeight(null),
     };
   },
 });
