@@ -21,6 +21,20 @@ declare module "@tiptap/core" {
   }
 }
 
+// Shift+Enter도 새 문단(splitBlock)으로 — 키보드로는 hardBreak(<br>)를 만들지 않는다.
+// 이유: 정렬·줄간격은 문단(블록) 단위 속성이라, 한 문단에 <br>로 여러 줄이 들어가면
+// 한 줄만 선택해도 문단 전체가 정렬돼 버린다. 모든 줄을 개별 문단으로 두면 줄별 정렬이 정확.
+// (hardBreak 노드 자체는 StarterKit에 남겨둬서 기존 저장글의 <br>는 그대로 파싱됨)
+export const ShiftEnterSplit = Extension.create({
+  name: "shiftEnterSplit",
+  priority: 1000, // StarterKit hardBreak의 Shift-Enter 기본 바인딩보다 먼저
+  addKeyboardShortcuts() {
+    return {
+      "Shift-Enter": () => this.editor.commands.splitBlock(),
+    };
+  },
+});
+
 const LINE_HEIGHT_TYPES = ["paragraph", "heading"];
 
 export const LineHeight = Extension.create({

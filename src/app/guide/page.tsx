@@ -143,7 +143,7 @@ export default function GuidePage() {
         </ul>
         <div className="rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 p-3 text-sm text-gray-700 dark:text-gray-200 space-y-1.5 leading-relaxed">
           <p className="font-medium">✍️ 줄바꿈 · 붙여넣기 팁</p>
-          <p><strong>Enter</strong> = 새 문단, <strong>Shift+Enter</strong> = 같은 문단 안에서 줄만 바꿈. Enter를 두 번 누르면 간격이 두 배가 됩니다.</p>
+          <p><strong>Enter</strong>로 줄을 바꿉니다. 한 번 누르면 다음 줄, 두 번 누르면 한 줄을 띄웁니다. 줄마다 <strong>정렬·줄 간격을 따로</strong> 줄 수 있어요.</p>
           <p><strong>외부(Discord·워드·메모장)</strong>에서 붙여넣으면 서식을 정리해 줄 구조만 살립니다. <strong>에디터 안에서 복사·붙여넣기</strong>하면 색·크기 등 서식이 그대로 유지됩니다.</p>
         </div>
         <p className="text-xs text-gray-500">

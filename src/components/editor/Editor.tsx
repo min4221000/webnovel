@@ -17,7 +17,7 @@ import TableRow from "@tiptap/extension-table-row";
 import TableHeader from "@tiptap/extension-table-header";
 import TableCell from "@tiptap/extension-table-cell";
 
-import { FontSize, LineHeight, ResizableImage } from "./extensions";
+import { FontSize, LineHeight, ResizableImage, ShiftEnterSplit } from "./extensions";
 import { WnEffect } from "./effectExtension";
 import { compressAndUpload } from "@/lib/uploadImage";
 import {
@@ -197,6 +197,7 @@ export default function Editor({ content = "", onChange }: Props) {
       // 정렬/행간은 paragraph(블록) 속성이라, 문단을 나눠야 선택 영역에만 적용됨.
       // 빈 줄 렌더링은 globals.css의 .wn-content p { min-height } 로 보장.
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
+      ShiftEnterSplit,
       Underline,
       TextStyle,
       Color,
