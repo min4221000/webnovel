@@ -4,7 +4,6 @@ import { useCallback, useRef, useState } from "react";
 import { useEditor, EditorContent, type Editor as TiptapEditor } from "@tiptap/react";
 import { Fragment, Slice, type Node as PMNode } from "@tiptap/pm/model";
 import StarterKit from "@tiptap/starter-kit";
-import HardBreak from "@tiptap/extension-hard-break";
 import Underline from "@tiptap/extension-underline";
 import TextStyle from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
@@ -163,19 +162,10 @@ export default function Editor({ content = "", onChange }: Props) {
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
-      // hardBreak는 StarterKit 기본 키매핑(Shift+Enter)을 빼고 아래 커스텀으로 대체
-      StarterKit.configure({ heading: { levels: [1, 2, 3] }, hardBreak: false }),
-      // Enter = <br> (정확한 줄 수 보장), Ctrl/Cmd+Enter = 새 문단 분리
-      // ProseMirror가 연속 빈 paragraph를 1개로 합쳐 줄 수 못 맞추는 문제 해결
-      HardBreak.extend({
-        addKeyboardShortcuts() {
-          return {
-            Enter: () => this.editor.commands.setHardBreak(),
-            "Shift-Enter": () => this.editor.commands.setHardBreak(),
-            "Mod-Enter": () => this.editor.commands.splitBlock(),
-          };
-        },
-      }),
+      // Enter = 새 문단(splitBlock), Shift+Enter = 문단 내 줄바꿈(<br>) — StarterKit 기본값
+      // 정렬/행간은 paragraph(블록) 속성이라, 문단을 나눠야 선택 영역에만 적용됨.
+      // 빈 줄 렌더링은 globals.css의 .wn-content p { min-height } 로 보장.
+      StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
       Underline,
       TextStyle,
       Color,
@@ -235,6 +225,8 @@ export default function Editor({ content = "", onChange }: Props) {
       },
       // 외부 붙여넣기 정리 (위 handlePaste 미적용 시): MS Word/Google Docs/HWP/임의 사이트 서식 제거
       transformPastedHTML(html) {
+        // 에디터 내부 복붙(data-pm-slice 마커)은 ProseMirror가 직렬화한 원본 → 서식 그대로 보존
+        if (html.includes("data-pm-slice")) return html;
         let out = html
           .replace(/<!--[\s\S]*?-->/g, "")
           .replace(/<\?xml[\s\S]*?\?>/g, "")
