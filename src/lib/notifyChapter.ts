@@ -59,7 +59,7 @@ export async function notifyChapterToSubscribers(opts: {
       ? notifyNewChapter({ ...common, webhookUrls: linkOnly, contentHtml: undefined })
       : Promise.resolve(),
     globalUrl
-      ? notifyNewChapter({ ...common, webhookUrls: [globalUrl], contentHtml: opts.content })
+      ? notifyNewChapter({ ...common, webhookUrls: [globalUrl], contentHtml: undefined, hideChapterTitle: true })
       : Promise.resolve(),
   ]);
 }

@@ -70,6 +70,7 @@ export async function notifyNewChapter(opts: {
   authorName: string; // 별명/서버닉 우선 (호출부에서 displayName 처리)
   isAdult: boolean;
   contentHtml?: string;
+  hideChapterTitle?: boolean; // 회차 제목 숨김 (전체 공지용 — 스포 방지)
 }): Promise<void> {
   const valid = opts.webhookUrls.filter((u) => WEBHOOK_RE.test(u));
   if (valid.length === 0) return;
@@ -98,7 +99,7 @@ export async function notifyNewChapter(opts: {
     const isLast = idx === total - 1;
     const chunk = parts[idx] ?? "";
 
-    let desc = isFirst ? `**${opts.chapterTitle}**\n\n` : "";
+    let desc = isFirst && !opts.hideChapterTitle ? `**${opts.chapterTitle}**\n\n` : "";
     desc += chunk;
     if (isLast) desc += (truncated ? "\n\n…(이어서는 사이트에서 ↓)" : "") + linkLine;
 
