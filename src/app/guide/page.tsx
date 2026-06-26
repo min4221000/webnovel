@@ -1,7 +1,6 @@
 export const metadata = { title: "이용 가이드 — 사니양 연구 보고서 열람실" };
 
-// 스크린샷 한 장 + 설명. 이미지는 /public/guide/ 안에 webp로 넣으면 표시됨.
-// (npm run guide:img 으로 public/guide/_raw 의 원본을 압축 webp로 변환)
+// 스크린샷 한 장 + 설명. 이미지는 /public/guide/ 안에 png로 넣으면 표시됨.
 // 파일이 아직 없으면 alt 텍스트만 보이고 레이아웃은 유지됨.
 function Shot({ src, alt, caption }: { src: string; alt: string; caption?: string }) {
   return (
@@ -71,8 +70,8 @@ export default function GuidePage() {
             본 열람실은 <strong>지정된 Discord 서버 멤버 전용</strong>입니다. 첫 화면의{" "}
             <strong>&ldquo;Discord로 로그인&rdquo;</strong> → 권한 안내에서 <strong>&ldquo;승인&rdquo;</strong>을 누르면 입장됩니다.
           </p>
-          <Shot src="/guide/login.webp" alt="Discord 로그인 화면" caption="첫 화면 — Discord로 로그인" />
-          <Shot src="/guide/oauth.webp" alt="Discord 권한 승인 화면" caption="권한 안내에서 '승인'" />
+          <Shot src="/guide/login.png" alt="Discord 로그인 화면" caption="첫 화면 — Discord로 로그인" />
+          <Shot src="/guide/oauth.png" alt="Discord 권한 승인 화면" caption="권한 안내에서 '승인'" />
         </div>
 
         {/* 읽기 */}
@@ -82,7 +81,7 @@ export default function GuidePage() {
             목록에서 작품을 고르면 작품 페이지로 들어갑니다. 회차를 누르면 본문을 읽을 수 있고,
             어디까지 읽었는지 <strong>&ldquo;N화까지 읽음&rdquo;</strong>으로 표시됩니다.
           </p>
-          <Shot src="/guide/bookmark-star.webp" alt="작품 페이지 — 별(북마크) 버튼" caption="작품 페이지 — 오른쪽 위 ★로 북마크" />
+          <Shot src="/guide/bookmark-star.png" alt="작품 페이지 — 별(북마크) 버튼" caption="작품 페이지 — 오른쪽 위 ★로 북마크" />
         </div>
 
         {/* 북마크/팔로우 */}
@@ -93,8 +92,8 @@ export default function GuidePage() {
             <Step><strong>+ 팔로우</strong> (작가 페이지) — 그 작가의 <strong>모든 작품</strong> 새 회차 알림을 받습니다.</Step>
             <Step>상단 <strong>북마크</strong> 메뉴에서 북마크한 작품과 읽은 진도를 한눈에 볼 수 있습니다.</Step>
           </ul>
-          <Shot src="/guide/follow.webp" alt="작가 팔로우 버튼" caption="작가 페이지 — + 팔로우" />
-          <Shot src="/guide/bookmarks-page.webp" alt="북마크 목록 페이지" caption="북마크 메뉴 — 모아보기 + 읽은 진도" />
+          <Shot src="/guide/follow.png" alt="작가 팔로우 버튼" caption="작가 페이지 — + 팔로우" />
+          <Shot src="/guide/bookmarks-page.png" alt="북마크 목록 페이지" caption="북마크 메뉴 — 모아보기 + 읽은 진도" />
           <p className="text-sm text-gray-500 leading-relaxed">
             ※ 알림이 실제로 오게 하려면 먼저 <a href="#webhook" className="underline">웹후크 설정</a>이 필요합니다.
           </p>
@@ -106,7 +105,7 @@ export default function GuidePage() {
           <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
             부적절한 글·댓글은 <strong>🚩 신고</strong> 버튼으로 접수할 수 있습니다. 관리자가 검토 후 처리합니다.
           </p>
-          <Shot src="/guide/report.webp" alt="신고 버튼" caption="각 회차·댓글의 🚩 신고" />
+          <Shot src="/guide/report.png" alt="신고 버튼" caption="각 회차·댓글의 🚩 신고" />
         </div>
       </section>
 
@@ -134,7 +133,7 @@ export default function GuidePage() {
           <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
             오른쪽 위 <strong>내 아바타 → 프로필 설정 → ① 알림 받을 Discord 채널</strong> 칸에 복사한 URL을 붙여넣고 <strong>저장</strong>합니다.
           </p>
-          <Shot src="/guide/webhook-profile.webp" alt="프로필 — 웹후크 설정" caption="프로필 설정 — 웹후크 URL 붙여넣기 + 알림 종류" />
+          <Shot src="/guide/webhook-profile.png" alt="프로필 — 웹후크 설정" caption="프로필 설정 — 웹후크 URL 붙여넣기 + 알림 종류" />
         </div>
 
         <div className="space-y-2">
@@ -163,7 +162,7 @@ export default function GuidePage() {
             <Step><strong>🔞 시크릿 플러스 작품</strong> — 체크하면 시크릿 플러스를 켠 이용자에게만 노출됩니다.</Step>
             <Step><strong>비공개</strong> — 나만 볼 수 있게 등록. 나중에 공개로 바꿀 수 있습니다.</Step>
           </ul>
-          <Shot src="/guide/write-novel.webp" alt="새 소설 등록 화면" caption="새 소설 등록" />
+          <Shot src="/guide/write-novel.png" alt="새 소설 등록 화면" caption="새 소설 등록" />
         </div>
 
         {/* 에디터 */}
@@ -183,7 +182,7 @@ export default function GuidePage() {
             <p><strong>Enter</strong>로 줄을 바꿉니다. 한 번이면 다음 줄, 두 번이면 한 줄 띄움. 줄마다 정렬·줄 간격을 따로 줄 수 있어요.</p>
             <p><strong>외부(Discord·워드)</strong>에서 붙여넣으면 서식을 정리해 줄 구조만 살리고, <strong>에디터 안에서 복사·붙여넣기</strong>하면 서식이 그대로 유지됩니다.</p>
           </div>
-          <Shot src="/guide/editor.webp" alt="회차 작성 에디터" caption="에디터 — 서식 · 색 · 정렬 · 줄 간격 · 이미지" />
+          <Shot src="/guide/editor.png" alt="회차 작성 에디터" caption="에디터 — 서식 · 색 · 정렬 · 줄 간격 · 이미지" />
         </div>
 
         {/* 비공개 → 공개 알림 */}
@@ -197,7 +196,7 @@ export default function GuidePage() {
             <Step><strong>임시저장</strong> — 이 브라우저에만 임시로 저장됩니다. (서버 저장 아님)</Step>
             <Step>본문 미리보기 포함 여부는 알림을 <strong>받는 사람</strong>이 각자 프로필에서 정합니다.</Step>
           </ul>
-          <Shot src="/guide/chapter-edit.webp" alt="회차 수정 화면 — 공개 + 알림" caption="회차 수정 — 비공개 저장 후 '공개 + 알림 받기'" />
+          <Shot src="/guide/chapter-edit.png" alt="회차 수정 화면 — 공개 + 알림" caption="회차 수정 — 비공개 저장 후 '공개 + 알림 받기'" />
         </div>
 
         {/* 관리 */}

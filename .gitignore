@@ -43,6 +43,3 @@ next-env.d.ts
 
 webnovel.txt
 *.txt
-
-# guide screenshot originals (compressed via npm run guide:img)
-public/guide/_raw/
