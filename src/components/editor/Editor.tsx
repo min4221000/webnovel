@@ -456,10 +456,10 @@ export default function Editor({ content = "", onChange }: Props) {
               {/* 외부 클릭 시 닫기 */}
               <span className="fixed inset-0 z-40" onClick={() => setShowColor(false)} />
               <ColorPanel
-                onSelectText={(c) => { editor.chain().focus().setColor(c).run(); setShowColor(false); }}
-                onResetText={() => { editor.chain().focus().unsetColor().run(); setShowColor(false); }}
-                onSelectBg={(c) => { setHlColor(c); editor.chain().focus().setHighlight({ color: c }).run(); setShowColor(false); }}
-                onResetBg={() => { editor.chain().focus().unsetHighlight().run(); setShowColor(false); }}
+                onSelectText={(c) => { editor.chain().focus().setColor(c).run(); }}
+                onResetText={() => { editor.chain().focus().unsetColor().run(); }}
+                onSelectBg={(c) => { setHlColor(c); editor.chain().focus().setHighlight({ color: c }).run(); }}
+                onResetBg={() => { editor.chain().focus().unsetHighlight().run(); }}
               />
             </>
           )}

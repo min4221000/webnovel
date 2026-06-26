@@ -35,7 +35,7 @@ export default function ChapterForm({
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
   const [editorKey, setEditorKey] = useState(0);
-  const [customNum, setCustomNum] = useState("");
+  const [customNum, setCustomNum] = useState(editing && redirectNum != null ? String(redirectNum) : "");
   const [hidden, setHidden] = useState(initialHidden);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -152,11 +152,11 @@ export default function ChapterForm({
       });
       isDirtyRef.current = false;
       localStorage.removeItem(draftKey);
+      const { chapterNum } = await res.json().catch(() => ({}));
       if (editing) {
-        router.push(`/novel/${novelId}/chapter/${redirectNum}`);
+        router.push(`/novel/${novelId}/chapter/${chapterNum ?? redirectNum}`);
         router.refresh();
       } else {
-        const { chapterNum } = await res.json();
         router.push(`/novel/${novelId}/chapter/${chapterNum}`);
       }
     } catch (e) {
@@ -172,14 +172,15 @@ export default function ChapterForm({
     if (!confirm("이 회차를 공개하고, 북마크한 사람에게 디코 알림을 보냅니다. 진행할까요?")) return;
     setBusy(true);
     try {
-      await apiFetch(`/api/chapters/${chapterId}`, {
+      const res = await apiFetch(`/api/chapters/${chapterId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ publish: true, title, content }),
+        body: JSON.stringify({ publish: true, title, content, ...(customNum ? { chapterNum: Number(customNum) } : {}) }),
       });
       isDirtyRef.current = false;
       localStorage.removeItem(draftKey);
-      router.push(`/novel/${novelId}/chapter/${redirectNum}`);
+      const { chapterNum } = await res.json().catch(() => ({}));
+      router.push(`/novel/${novelId}/chapter/${chapterNum ?? redirectNum}`);
       router.refresh();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "발행 실패");
@@ -210,19 +211,22 @@ export default function ChapterForm({
         </div>
       )}
 
-      {!editing && (
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            min={1}
-            value={customNum}
-            onChange={(e) => setCustomNum(e.target.value.replace(/\D/g, ""))}
-            className="w-24 border rounded-md px-3 py-2 bg-transparent text-sm"
-            placeholder="회차 (자동)"
-          />
-          <span className="text-xs text-gray-400">비워두면 자동 번호 부여</span>
-        </div>
-      )}
+      <div className="flex items-center gap-2">
+        <label className="text-sm text-gray-500 shrink-0">회차 번호</label>
+        <input
+          type="number"
+          min={1}
+          value={customNum}
+          onChange={(e) => setCustomNum(e.target.value.replace(/\D/g, ""))}
+          className="w-24 border rounded-md px-3 py-2 bg-transparent text-sm"
+          placeholder={editing ? String(redirectNum ?? "") : "회차 (자동)"}
+        />
+        <span className="text-xs text-gray-400">
+          {editing
+            ? "번호를 바꾸면 그 번호로 이동합니다. (이미 있는 번호면 거부)"
+            : "비워두면 자동 번호 부여"}
+        </span>
+      </div>
 
       <input
         value={title}
