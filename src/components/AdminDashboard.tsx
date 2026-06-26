@@ -207,6 +207,16 @@ export default function AdminDashboard() {
     if (res.ok) setConfigMsg("저장됨");
     else setConfigMsg(await res.text());
   };
+  const testConfig = async () => {
+    setConfigMsg("전송 중…");
+    const res = await fetch("/api/admin/config", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ globalWebhookUrl: globalWebhook, test: true }),
+    });
+    if (res.ok) setConfigMsg("✅ 테스트 전송 성공 — 디스코드를 확인하세요.");
+    else setConfigMsg(await res.text());
+  };
   useEffect(() => {
     if (tab === "config") loadConfig();
   }, [tab]);
@@ -548,15 +558,25 @@ export default function AdminDashboard() {
                   <br />비워두면 전체 알림을 보내지 않습니다.
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={saveConfig}
                   className="px-4 py-2 rounded-md bg-indigo-600 text-white text-sm"
                 >
                   저장
                 </button>
-                {configMsg && <span className="text-sm text-green-600">{configMsg}</span>}
+                <button
+                  onClick={testConfig}
+                  className="px-4 py-2 rounded-md border text-sm"
+                >
+                  테스트 전송
+                </button>
               </div>
+              {configMsg && (
+                <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap border rounded-md px-3 py-2 bg-black/[0.02] dark:bg-white/[0.03]">
+                  {configMsg}
+                </p>
+              )}
             </div>
           )}
         </div>
