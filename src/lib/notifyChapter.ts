@@ -36,8 +36,6 @@ export async function notifyChapterToSubscribers(opts: {
     if (!u.webhookUrl) continue;
     (u.previewBookmarkBody ? withBody : linkOnly).push(u.webhookUrl);
   }
-  if (withBody.length === 0 && linkOnly.length === 0) return;
-
   const common = {
     novelTitle: opts.novelTitle,
     novelId: opts.novelId,
@@ -50,6 +48,8 @@ export async function notifyChapterToSubscribers(opts: {
   // 전체 알림 웹후크 (관리자가 설정한 공식 디코 채널/토론)
   const config = await prisma.siteConfig.findUnique({ where: { id: "main" }, select: { globalWebhookUrl: true } });
   const globalUrl = config?.globalWebhookUrl;
+
+  if (withBody.length === 0 && linkOnly.length === 0 && !globalUrl) return;
 
   await Promise.all([
     withBody.length
