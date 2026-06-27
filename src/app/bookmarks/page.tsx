@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { displayName } from "@/lib/displayName";
+import { coverGradientFor } from "@/lib/coverGradient";
 
 export const dynamic = "force-dynamic";
 
@@ -49,24 +50,26 @@ export default async function BookmarksPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">북마크</h1>
+      <h1 className="text-2xl font-extrabold tracking-tight">북마크</h1>
 
       {/* 팔로잉 작가 */}
       {follows.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="text-sm font-bold text-gray-500">팔로잉 작가 ({follows.length})</h2>
+        <section>
+          <h2 className="text-sm font-semibold text-slate-500 mb-3">팔로잉 작가 ({follows.length})</h2>
           <div className="flex flex-wrap gap-2">
             {follows.map(({ author: a }) => (
               <Link
                 key={a.id}
                 href={`/author/${a.id}`}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-indigo-200 dark:border-indigo-800 hover:border-indigo-400 transition-colors text-sm"
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:border-indigo-300 hover:text-indigo-600 shadow-card transition-all"
               >
                 {a.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={a.avatarUrl} alt="" className="w-5 h-5 rounded-full" />
+                  <img src={a.avatarUrl} alt="" className="w-6 h-6 rounded-full" />
                 ) : (
-                  <span className="w-5 h-5 rounded-full bg-indigo-200 dark:bg-indigo-800 shrink-0" />
+                  <span className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 grid place-items-center text-white text-[10px] font-bold">
+                    {displayName(a).charAt(0)}
+                  </span>
                 )}
                 <span className="truncate max-w-[120px]">{displayName(a)}</span>
               </Link>
@@ -76,9 +79,9 @@ export default async function BookmarksPage() {
       )}
 
       {active.length === 0 ? (
-        <p className="text-sm text-gray-400 border border-dashed rounded-lg p-8 text-center">
-          북마크한 작품이 없습니다. 소설 페이지에서 ☆ 북마크 버튼을 눌러 추가하세요.
-        </p>
+        <div className="rounded-xl border-2 border-dashed border-slate-200 p-12 text-center text-slate-400 text-sm">
+          북마크한 작품이 없습니다. 소설 페이지에서 ★ 버튼을 눌러 추가하세요.
+        </div>
       ) : (
         <ul className="space-y-3">
           {active.map(({ novel: n, lastReadChapter }) => {
@@ -87,29 +90,29 @@ export default async function BookmarksPage() {
             const pct = total > 0 ? Math.round((read / total) * 100) : 0;
 
             return (
-              <li key={n.id} className="border rounded-lg p-4 space-y-2 hover:border-indigo-400 transition-colors">
-                <Link href={`/novel/${n.id}`} className="flex gap-3">
+              <li key={n.id} className="rounded-xl border border-slate-200 bg-white shadow-card p-4 hover:border-indigo-300 hover:shadow-cardHover transition-all">
+                <Link href={`/novel/${n.id}`} className="flex gap-3.5 group">
                   {n.coverImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={n.coverImage} alt="" className="w-14 h-[72px] object-cover rounded shrink-0" />
+                    <img src={n.coverImage} alt="" className="w-14 h-[72px] object-cover rounded-lg shrink-0 shadow-sm" />
                   ) : (
-                    <div className="w-14 h-[72px] rounded bg-black/5 dark:bg-white/10 shrink-0" />
+                    <div className={`${coverGradientFor(n.title)} relative w-14 h-[72px] shrink-0 rounded-lg overflow-hidden grid place-items-center shadow-sm`}>
+                      <span className="text-white text-lg font-black drop-shadow">{n.title.charAt(0)}</span>
+                    </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <h2 className="font-semibold truncate">
-                      {n.isAdult && <span className="text-red-500 mr-1">[🔞]</span>}
+                    <h2 className="font-bold text-[15px] text-slate-900 group-hover:text-indigo-700 truncate transition-colors">
+                      {n.isAdult && <span className="text-rose-500 mr-1">[SP]</span>}
                       {n.title}
                     </h2>
-                    <p className="text-xs text-gray-500">{displayName(n.author)} · 전체 {total}화</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{displayName(n.author)} · 전체 {total}화</p>
 
                     <div className="mt-2 space-y-1">
-                      <div className="flex justify-between text-xs text-gray-400">
-                        <span>
-                          {read > 0 ? `${read}화까지 읽음` : "아직 안 읽음"}
-                        </span>
+                      <div className="flex justify-between text-xs text-slate-400">
+                        <span>{read > 0 ? `${read}화까지 읽음` : "아직 안 읽음"}</span>
                         <span>{pct}%</span>
                       </div>
-                      <div className="h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                      <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
                         <div
                           className="h-full rounded-full bg-indigo-500 transition-all"
                           style={{ width: `${pct}%` }}
@@ -122,7 +125,7 @@ export default async function BookmarksPage() {
                 {read > 0 && read < total && (
                   <Link
                     href={`/novel/${n.id}/chapter/${read + 1}`}
-                    className="block text-center text-xs py-1.5 rounded border hover:border-indigo-400 hover:text-indigo-500"
+                    className="mt-3 flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 py-2 text-[13px] font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/40 transition-colors"
                   >
                     이어 읽기 → {read + 1}화
                   </Link>
@@ -130,13 +133,13 @@ export default async function BookmarksPage() {
                 {read === 0 && total > 0 && (
                   <Link
                     href={`/novel/${n.id}/chapter/1`}
-                    className="block text-center text-xs py-1.5 rounded border hover:border-indigo-400 hover:text-indigo-500"
+                    className="mt-3 flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 py-2 text-[13px] font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/40 transition-colors"
                   >
-                    1화부터 읽기 →
+                    처음부터 읽기 →
                   </Link>
                 )}
                 {read >= total && total > 0 && (
-                  <p className="text-center text-xs text-gray-400 py-1">✓ 완독</p>
+                  <p className="mt-3 text-center text-xs text-slate-400 py-1">✓ 완독</p>
                 )}
               </li>
             );

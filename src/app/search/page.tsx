@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { displayName } from "@/lib/displayName";
+import { coverGradientFor } from "@/lib/coverGradient";
 
 type Tab = "unified" | "title" | "author";
 
@@ -55,11 +56,11 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">검색</h1>
+    <div className="max-w-2xl mx-auto space-y-5">
+      <h1 className="text-2xl font-extrabold tracking-tight">검색</h1>
 
       {/* 탭 */}
-      <div className="flex gap-1 border-b border-black/10 dark:border-white/10">
+      <div className="flex gap-1 border-b border-slate-200">
         {TABS.map((t) => (
           <button
             key={t.key}
@@ -67,10 +68,10 @@ export default function SearchPage() {
               setTab(t.key);
               if (q.trim()) run(t.key);
             }}
-            className={`px-3 py-2 text-sm -mb-px border-b-2 ${
+            className={`px-3 py-2 text-sm -mb-px border-b-2 transition-colors ${
               tab === t.key
-                ? "border-indigo-600 font-semibold"
-                : "border-transparent text-gray-500"
+                ? "border-indigo-600 font-semibold text-indigo-600"
+                : "border-transparent text-slate-500 hover:text-slate-700"
             }`}
           >
             {t.label}
@@ -78,20 +79,25 @@ export default function SearchPage() {
         ))}
       </div>
 
-      {/* 입력 */}
+      {/* 검색 입력 */}
       <div className="flex gap-2">
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && run()}
-          placeholder={
-            tab === "author" ? "글쓴이 닉네임" : tab === "title" ? "작품 제목" : "제목·내용·태그·작가"
-          }
-          className="flex-1 border rounded-md px-3 py-2 bg-transparent"
-        />
+        <div className="relative flex-1">
+          <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="7" /><path strokeLinecap="round" d="M21 21l-4-4" />
+          </svg>
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && run()}
+            placeholder={
+              tab === "author" ? "글쓴이 닉네임" : tab === "title" ? "작품 제목" : "제목·내용·태그·작가"
+            }
+            className="w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3.5 py-2.5 text-sm placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition"
+          />
+        </div>
         <button
           onClick={() => run()}
-          className="px-4 py-2 rounded-md bg-indigo-600 text-white"
+          className="shrink-0 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-indigo-600/20 hover:bg-indigo-700 active:scale-95 transition"
         >
           검색
         </button>
@@ -99,34 +105,38 @@ export default function SearchPage() {
 
       {/* 결과 */}
       {loading ? (
-        <p className="text-sm text-gray-400">검색 중…</p>
+        <p className="text-sm text-slate-400">검색 중…</p>
       ) : !searched ? (
-        <p className="text-sm text-gray-400">검색어를 입력하세요.</p>
+        <p className="text-sm text-slate-400">검색어를 입력하세요.</p>
       ) : tab === "author" ? (
         authors.length === 0 ? (
-          <p className="text-sm text-gray-400">일치하는 글쓴이가 없습니다.</p>
+          <p className="text-sm text-slate-400">일치하는 글쓴이가 없습니다.</p>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {authors.map((a) => (
-              <div key={a.id} className="border rounded-lg p-3">
-                <Link href={`/author/${a.id}`} className="flex items-center gap-2 font-semibold">
-                  {a.avatarUrl && (
+              <div key={a.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-card">
+                <Link href={`/author/${a.id}`} className="flex items-center gap-2.5 font-semibold text-slate-900 hover:text-indigo-600 transition-colors">
+                  {a.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={a.avatarUrl} alt="" className="w-6 h-6 rounded-full" />
+                    <img src={a.avatarUrl} alt="" className="w-7 h-7 rounded-full" />
+                  ) : (
+                    <span className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 grid place-items-center text-white text-xs font-bold">
+                      {displayName(a).charAt(0)}
+                    </span>
                   )}
                   {displayName(a)}
                 </Link>
-                <ul className="mt-2 pl-2 text-sm space-y-1">
+                <ul className="mt-2.5 space-y-1">
                   {a.novels.map((n) => (
                     <li key={n.id}>
-                      <Link href={`/novel/${n.id}`} className="hover:underline">
+                      <Link href={`/novel/${n.id}`} className="text-sm text-slate-600 hover:text-indigo-600 transition-colors">
                         {n.title}{" "}
-                        <span className="text-gray-400 text-xs">({n._count.chapters}화)</span>
+                        <span className="text-slate-400 text-xs">({n._count.chapters}화)</span>
                       </Link>
                     </li>
                   ))}
                   {a.novels.length === 0 && (
-                    <li className="text-gray-400 text-xs">등록된 작품 없음</li>
+                    <li className="text-slate-400 text-xs">등록된 작품 없음</li>
                   )}
                 </ul>
               </div>
@@ -134,35 +144,49 @@ export default function SearchPage() {
           </div>
         )
       ) : novels.length === 0 ? (
-        <p className="text-sm text-gray-400">검색 결과가 없습니다.</p>
+        <p className="text-sm text-slate-400">검색 결과가 없습니다.</p>
       ) : (
-        <ul className="space-y-3">
-          {novels.map((n) => (
-            <li key={n.novelId} className="border rounded-lg p-3 hover:border-indigo-400">
-              <Link href={`/novel/${n.novelId}`} className="flex gap-3">
-                {n.coverImage ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={n.coverImage} alt="" className="w-14 h-18 object-cover rounded shrink-0" />
-                ) : (
-                  <div className="w-14 h-[72px] rounded bg-black/5 dark:bg-white/10 shrink-0" />
-                )}
-                <div className="min-w-0">
-                  <h2 className="font-semibold truncate">{n.title}</h2>
-                  <p className="text-xs text-gray-500">
-                    {displayName(n.author)} · {n.chapterCount}화
-                    {n.matchedChapter && ` · ${n.matchedChapter.num}화 "${n.matchedChapter.title}"`}
-                  </p>
-                  {n.snippetHtml && (
-                    <p
-                      className="text-xs text-gray-500 mt-1 line-clamp-2"
-                      dangerouslySetInnerHTML={{ __html: n.snippetHtml }}
-                    />
+        <>
+          <p className="text-xs text-slate-400">
+            검색 결과 <strong className="font-semibold text-slate-600">{novels.length}건</strong>
+          </p>
+          <ul className="space-y-3">
+            {novels.map((n) => (
+              <li key={n.novelId}>
+                <Link
+                  href={`/novel/${n.novelId}`}
+                  className="group flex gap-3.5 rounded-xl border border-slate-200 bg-white p-4 shadow-card hover:shadow-cardHover hover:border-indigo-300 transition-all"
+                >
+                  {n.coverImage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={n.coverImage} alt="" className="w-14 h-[72px] object-cover rounded-lg shrink-0 shadow-sm" />
+                  ) : (
+                    <div className={`${coverGradientFor(n.title)} relative w-14 h-[72px] shrink-0 rounded-lg overflow-hidden grid place-items-center shadow-sm`}>
+                      <span className="text-white text-lg font-black drop-shadow">{n.title.charAt(0)}</span>
+                    </div>
                   )}
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="font-bold text-[15px] text-slate-900 group-hover:text-indigo-700 truncate transition-colors">
+                      {n.title}
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {displayName(n.author)} · {n.chapterCount}화
+                      {n.matchedChapter && (
+                        <span className="text-slate-400"> · {n.matchedChapter.num}화 &ldquo;{n.matchedChapter.title}&rdquo;</span>
+                      )}
+                    </p>
+                    {n.snippetHtml && (
+                      <p
+                        className="text-[13px] text-slate-500 mt-1.5 line-clamp-2 leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: n.snippetHtml }}
+                      />
+                    )}
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </div>
   );
