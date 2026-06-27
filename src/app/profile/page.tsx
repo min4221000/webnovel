@@ -6,32 +6,32 @@ import { useRouter } from "next/navigation";
 import AdultToggle from "@/components/AdultToggle";
 import { apiFetch } from "@/lib/apiFetch";
 
-// 알림 토글 한 줄 (카드형)
-function ToggleRow({
+function Toggle({
   checked,
   onChange,
-  icon,
   title,
   desc,
 }: {
   checked: boolean;
   onChange: (v: boolean) => void;
-  icon: string;
   title: string;
   desc: ReactNode;
 }) {
   return (
-    <label className="flex items-start gap-3 cursor-pointer rounded-lg border border-black/10 dark:border-white/10 p-3 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="w-4 h-4 mt-0.5 shrink-0"
-      />
-      <span className="min-w-0">
-        <span className="block text-sm font-medium">{icon} {title}</span>
-        <span className="block text-xs text-gray-400 leading-relaxed mt-0.5">{desc}</span>
+    <label className="flex items-center justify-between gap-3 cursor-pointer">
+      <span className="text-sm text-slate-700">
+        {title}
+        <span className="block text-xs text-slate-400 font-normal mt-0.5">{desc}</span>
       </span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={`relative inline-block w-11 h-6 shrink-0 rounded-full transition-colors ${checked ? "bg-indigo-600" : "bg-slate-300"}`}
+      >
+        <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${checked ? "right-0.5" : "left-0.5"}`} />
+      </button>
     </label>
   );
 }
@@ -83,118 +83,140 @@ export default function ProfilePage() {
     }
   };
 
-  if (status === "loading") return <p className="text-sm text-gray-500">로딩 중…</p>;
+  if (status === "loading") return <p className="text-sm text-slate-400">로딩 중…</p>;
 
   return (
-    <div className="max-w-md mx-auto py-10 space-y-6">
-      <h1 className="text-xl font-bold">프로필 설정</h1>
+    <div className="max-w-2xl mx-auto space-y-5">
+      <h1 className="text-2xl font-extrabold tracking-tight">내 정보</h1>
 
-      <div className="space-y-1">
-        <p className="text-sm text-gray-500">Discord 이름: <span className="font-medium">{session?.user?.name}</span></p>
-        {process.env.NEXT_PUBLIC_GUILD_NAME && (
-          <p className="text-xs text-indigo-500">서버 닉네임 자동 적용 중 ({process.env.NEXT_PUBLIC_GUILD_NAME})</p>
-        )}
-      </div>
+      {/* 프로필 카드 */}
+      <section className="rounded-2xl border border-slate-200 bg-white shadow-card overflow-hidden">
+        <div className="bg-gradient-to-br from-sky-500 to-indigo-600 h-20" />
+        <div className="px-5 sm:px-6 pb-6 -mt-10">
+          <div className="flex items-end gap-4 pt-5">
+            {session?.user?.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={session.user.image} alt="" className="w-20 h-20 shrink-0 rounded-2xl ring-4 ring-white shadow-md object-cover" />
+            ) : (
+              <span className="w-20 h-20 shrink-0 rounded-2xl bg-gradient-to-br from-indigo-400 to-indigo-600 grid place-items-center text-white text-2xl font-black ring-4 ring-white shadow-md">
+                {session?.user?.name?.charAt(0) ?? "?"}
+              </span>
+            )}
+            <div className="pb-1">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold">{session?.user?.name}</h2>
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#5865F2]/10 px-2 py-0.5 text-[11px] font-semibold text-[#5865F2]">
+                  Discord 연결됨
+                </span>
+              </div>
+              {process.env.NEXT_PUBLIC_GUILD_NAME && (
+                <p className="text-xs text-slate-400 mt-0.5">서버 닉네임 자동 적용 중 ({process.env.NEXT_PUBLIC_GUILD_NAME})</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium block">커스텀 닉네임 (최대 30자)</label>
+      {/* 닉네임 */}
+      <section className="rounded-2xl border border-slate-200 bg-white shadow-card p-5 sm:p-6 space-y-3">
+        <h2 className="font-bold text-slate-900">커스텀 닉네임 (최대 30자)</h2>
         <input
           value={nickname}
           onChange={e => setNickname(e.target.value.slice(0, 30))}
           placeholder="비워두면 Discord 이름 사용"
-          className="w-full border border-black/20 dark:border-white/20 rounded-md px-3 py-2 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full rounded-lg border border-slate-200 px-3.5 py-2.5 bg-white text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition"
         />
         {origin && (
           <button
             type="button"
             onClick={() => setNickname("")}
-            className="text-xs text-gray-400 hover:underline"
+            className="text-xs text-slate-400 hover:text-indigo-600 transition-colors"
           >
             닉네임 초기화 (Discord 이름으로 되돌리기)
           </button>
         )}
-      </div>
+      </section>
 
-      {/* ── 알림 설정 ── */}
-      <div className="border-t border-black/10 dark:border-white/15 pt-5 space-y-4">
-        <div>
-          <h2 className="text-sm font-bold">🔔 알림 설정</h2>
-          <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-            모든 알림은 Discord 웹후크로 받습니다. 먼저 채널을 연결하고, 받고 싶은 알림을 고르세요.
-          </p>
-        </div>
+      {/* 알림 (웹후크) 설정 */}
+      <section className="rounded-2xl border border-slate-200 bg-white shadow-card p-5 sm:p-6">
+        <h2 className="font-bold text-slate-900">알림 (웹후크) 설정</h2>
+        <p className="mt-1.5 text-sm text-slate-500 leading-relaxed">
+          북마크·팔로우한 작품의 새 회차를 <strong className="font-semibold text-slate-700">내 Discord 채널</strong>로 받습니다.
+        </p>
 
-        {/* 1단계: 채널 연결 */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium block">① 알림 받을 Discord 채널</label>
+        <div className="mt-4">
+          <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+            ① 알림 받을 Discord 채널 (웹후크 URL)
+          </label>
           <input
             value={webhookUrl}
             onChange={e => setWebhookUrl(e.target.value)}
             placeholder="https://discord.com/api/webhooks/..."
-            className="w-full border border-black/20 dark:border-white/20 rounded-md px-3 py-2 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm font-mono text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition"
           />
-          <p className="text-xs text-gray-400 leading-relaxed">
-            Discord에서 <strong>채널 설정 → 연동 → 웹후크 → 새 웹후크 → URL 복사</strong> 후 붙여넣기.
-            <br />
-            <span className="text-amber-500">⚠ 이 URL은 비밀입니다. 노출되면 누구나 그 채널에 글을 쓸 수 있어요.</span>
-          </p>
+          {webhookUrl ? (
+            <p className="mt-1.5 flex items-center gap-1.5 text-xs text-emerald-600">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              채널이 연결되어 있습니다.
+            </p>
+          ) : (
+            <p className="mt-1.5 text-xs text-slate-400 leading-relaxed">
+              Discord에서 <strong>채널 설정 → 연동 → 웹후크 → 새 웹후크 → URL 복사</strong> 후 붙여넣기.
+              <br /><span className="text-amber-500">이 URL은 비밀입니다. 노출되면 누구나 그 채널에 글을 쓸 수 있어요.</span>
+            </p>
+          )}
           {webhookUrl && (
             <button
               type="button"
               onClick={() => setWebhookUrl("")}
-              className="text-xs text-gray-400 hover:underline"
+              className="text-xs text-slate-400 hover:text-rose-500 transition-colors mt-1"
             >
               웹후크 제거 (알림 전부 끄기)
             </button>
           )}
         </div>
 
-        {/* 2단계: 받을 알림 종류 */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium block">② 어떤 알림을 받을지</label>
-          <div className="rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 p-3 text-xs text-gray-600 dark:text-gray-300 leading-relaxed space-y-1">
-            <p>☆ <strong>북마크한 작품</strong>의 새 회차는 위 채널만 연결돼 있으면 <strong>항상</strong> 옵니다. (작품 페이지의 ☆ 버튼)</p>
-            <p>＋ <strong>팔로우한 작가</strong>의 새 회차도 항상 옵니다. (작가 페이지의 <strong>팔로우</strong> 버튼 → 그 작가의 모든 작품)</p>
+        <div className="mt-5 pt-5 border-t border-slate-100 space-y-4">
+          <p className="text-sm font-semibold text-slate-700">② 받을 알림 고르기</p>
+          <div className="rounded-lg bg-indigo-50 border border-indigo-200 p-3 text-xs text-slate-600 leading-relaxed space-y-1">
+            <p>★ <strong>북마크한 작품</strong>의 새 회차는 채널만 연결돼 있으면 <strong>항상</strong> 옵니다.</p>
+            <p>+ <strong>팔로우한 작가</strong>의 새 회차도 항상 옵니다.</p>
           </div>
-          <ToggleRow
+          <Toggle
             checked={notifyAllChapters}
             onChange={setNotifyAllChapters}
-            icon="📖"
             title="모든 작품의 새 회차"
             desc="북마크·팔로우와 무관하게, 누군가 새 회차를 올리면 전부 알림이 옵니다."
           />
-        </div>
-
-        {/* 3단계: 상세 */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium block">③ 알림 상세</label>
-          <ToggleRow
+          <Toggle
             checked={previewBookmarkBody}
             onChange={setPreviewBookmarkBody}
-            icon="📝"
-            title="회차 알림에 본문 미리보기 포함"
-            desc={<>켜면 회차 본문·이미지가 함께 옵니다. 끄면 제목+링크만. <span className="text-amber-500">스포일러가 싫으면 꺼두세요.</span> (기본: 꺼짐)</>}
+            title="본문 미리보기 포함"
+            desc={<>알림에 본문·이미지를 함께 표시합니다. <span className="text-amber-500">스포일러가 싫으면 꺼두세요.</span></>}
           />
         </div>
-      </div>
+      </section>
 
+      {/* 시크릿 플러스 */}
       {adult !== null && (
-        <div className="space-y-2 border-t border-black/10 dark:border-white/15 pt-5">
-          <p className="text-sm font-medium">🔞 시크릿 플러스</p>
+        <section className="rounded-2xl border border-slate-200 bg-white shadow-card p-5 sm:p-6">
+          <h2 className="font-bold text-slate-900 mb-3">시크릿 플러스</h2>
           <AdultToggle initial={adult} />
-        </div>
+        </section>
       )}
 
-      <button
-        onClick={save}
-        disabled={saving}
-        className="px-4 py-2 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700 disabled:opacity-50"
-      >
-        {saving ? "저장 중…" : "저장"}
-      </button>
-
-      {msg && <p className="text-sm text-green-600 dark:text-green-400">{msg}</p>}
-      {err && <p className="text-sm text-red-500">{err}</p>}
+      {/* 저장 */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={save}
+          disabled={saving}
+          className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-indigo-600/20 hover:bg-indigo-700 active:scale-95 transition disabled:opacity-50"
+        >
+          {saving ? "저장 중…" : "저장"}
+        </button>
+        {msg && <p className="text-sm text-emerald-600">{msg}</p>}
+        {err && <p className="text-sm text-rose-500">{err}</p>}
+      </div>
     </div>
   );
 }

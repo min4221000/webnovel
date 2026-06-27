@@ -33,6 +33,15 @@ const STATUS_OPTIONS = [
   { value: "hiatus", label: "휴재" },
 ];
 
+const tagBtnClass = (active: boolean, isSecret: boolean) =>
+  `rounded-full px-3 py-1.5 text-[13px] font-medium border transition-colors ${
+    active
+      ? isSecret
+        ? "bg-rose-500 border-rose-500 text-white hover:bg-rose-600"
+        : "bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700"
+      : "bg-white border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600"
+  }`;
+
 export default function NovelForm({ novelId, initial }: Props) {
   const editing = !!novelId;
   const { data: session, status } = useSession();
@@ -81,12 +90,12 @@ export default function NovelForm({ novelId, initial }: Props) {
     }
   };
 
-  if (status === "loading") return <p className="text-sm text-gray-400">불러오는 중…</p>;
+  if (status === "loading") return <p className="text-sm text-slate-400">불러오는 중…</p>;
   if (!session?.user) {
     return (
       <div className="text-center py-16 space-y-4">
-        <p className="text-gray-500">글쓰기는 Discord 로그인이 필요합니다.</p>
-        <button onClick={() => signIn("discord")} className="px-4 py-2 rounded-md bg-[#5865F2] text-white">
+        <p className="text-slate-500">글쓰기는 Discord 로그인이 필요합니다.</p>
+        <button onClick={() => signIn("discord")} className="px-4 py-2 rounded-lg bg-[#5865F2] text-white font-semibold hover:bg-[#4752c4] active:scale-95 transition">
           Discord 로그인
         </button>
       </div>
@@ -133,140 +142,150 @@ export default function NovelForm({ novelId, initial }: Props) {
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
-      <h1 className="text-2xl font-bold">{editing ? "소설 정보 수정" : "새 소설 등록"}</h1>
-
-      <div className="space-y-1">
-        <label className="text-sm font-medium flex justify-between">
-          <span>제목 *</span>
-          <span className="text-xs text-gray-400">{title.length}/30</span>
-        </label>
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value.slice(0, 30))}
-          maxLength={30}
-          className="w-full border rounded-md px-3 py-2 bg-transparent"
-          placeholder="작품 제목"
-        />
+      <div>
+        <h1 className="text-2xl font-extrabold tracking-tight">{editing ? "소설 정보 수정" : "새 소설 등록"}</h1>
+        {!editing && <p className="mt-1 text-sm text-slate-500">작품 정보를 입력하고 첫 회차를 작성하세요.</p>}
       </div>
 
-      <div className="space-y-1">
-        <label className="text-sm font-medium flex justify-between">
-          <span>설명</span>
-          <span className="text-xs text-gray-400">{description.length}/200</span>
-        </label>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value.slice(0, 200))}
-          maxLength={200}
-          rows={3}
-          className="w-full border rounded-md px-3 py-2 bg-transparent resize-none"
-          placeholder="작품 소개 (200자 이내)"
-        />
-      </div>
+      <section className="rounded-2xl border border-slate-200 bg-white shadow-card p-5 sm:p-6">
+        <div className="flex flex-col sm:flex-row gap-5">
+          {/* 커버 */}
+          <div className="shrink-0">
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">커버</label>
+            {coverImage ? (
+              <div className="relative w-28 h-40">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={coverImage} alt="" className="w-28 h-40 object-cover rounded-xl shadow-sm" />
+                <button
+                  onClick={() => setCoverImage(null)}
+                  className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-slate-800 text-white text-xs grid place-items-center hover:bg-rose-600 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <label className="w-28 h-40 rounded-xl border-2 border-dashed border-slate-200 grid place-items-center text-center cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/40 transition-colors">
+                <div className="text-slate-400">
+                  <div className="text-2xl">+</div>
+                  <p className="text-[11px] mt-1">300x400px<br />권장</p>
+                </div>
+                <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={onCover} />
+              </label>
+            )}
+            <p className="text-[10px] text-slate-400 mt-1.5 w-28 leading-tight">최대 15MB · JPG/PNG/WebP · 자동 압축</p>
+          </div>
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium">태그</label>
-        <div className="space-y-2">
-          {TAG_GROUPS.map((group, gi) => (
-            <div key={gi} className="flex flex-wrap gap-2">
-              {group.map((tag) => {
-                const active = selectedTags.includes(tag);
-                const isSecret = tag === "시크릿 플러스";
-                return (
+          <div className="flex-1 space-y-4">
+            {/* 제목 */}
+            <div>
+              <label className="text-sm font-semibold text-slate-700 flex justify-between mb-1.5">
+                <span>제목 *</span>
+                <span className="text-xs text-slate-400 font-normal">{title.length}/30</span>
+              </label>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value.slice(0, 30))}
+                maxLength={30}
+                className="w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition"
+                placeholder="작품 제목"
+              />
+            </div>
+
+            {/* 설명 */}
+            <div>
+              <label className="text-sm font-semibold text-slate-700 flex justify-between mb-1.5">
+                <span>설명</span>
+                <span className="text-xs text-slate-400 font-normal">{description.length}/200</span>
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value.slice(0, 200))}
+                maxLength={200}
+                rows={2}
+                className="w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm resize-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition"
+                placeholder="짧은 소개글"
+              />
+            </div>
+
+            {/* 태그 */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">태그</label>
+              <div className="space-y-1.5">
+                {TAG_GROUPS.map((group, gi) => (
+                  <div key={gi} className="flex flex-wrap gap-1.5">
+                    {group.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => toggleTag(tag)}
+                        className={tagBtnClass(selectedTags.includes(tag), tag === "시크릿 플러스")}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 연재 상태 */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">연재 상태</label>
+              <div className="flex flex-wrap gap-1.5">
+                {STATUS_OPTIONS.map((s) => (
                   <button
-                    key={tag}
+                    key={s.value}
                     type="button"
-                    onClick={() => toggleTag(tag)}
-                    className={`px-3 py-1 rounded-full text-sm border transition-colors ${
-                      active
-                        ? isSecret
-                          ? "bg-red-600 text-white border-red-600"
-                          : "bg-indigo-600 text-white border-indigo-600"
-                        : "bg-transparent border-black/20 dark:border-white/20 hover:border-indigo-400"
+                    onClick={() => setStatusVal(s.value)}
+                    className={`rounded-full px-4 py-1.5 text-[13px] font-medium border transition-colors ${
+                      statusVal === s.value
+                        ? "bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700"
+                        : "bg-white border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600"
                     }`}
                   >
-                    {isSecret ? "🔞 " : ""}{tag}
+                    {s.label}
                   </button>
-                );
-              })}
+                ))}
+              </div>
             </div>
-          ))}
+
+            {/* 옵션 토글 */}
+            <div className="space-y-3 pt-2">
+              <label className="flex items-center justify-between gap-3 cursor-pointer">
+                <span className="text-sm text-slate-700">시크릿 플러스 (19+) — 켠 이용자에게만 노출</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isAdult}
+                  onClick={() => setAdult(!isAdult)}
+                  className={`relative inline-block w-11 h-6 shrink-0 rounded-full transition-colors ${isAdult ? "bg-rose-500" : "bg-slate-300"}`}
+                >
+                  <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${isAdult ? "right-0.5" : "left-0.5"}`} />
+                </button>
+              </label>
+              <label className="flex items-center justify-between gap-3 cursor-pointer">
+                <span className="text-sm text-slate-700">비공개로 저장 — 나만 볼 수 있음</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={hidden}
+                  onClick={() => setHidden(!hidden)}
+                  className={`relative inline-block w-11 h-6 shrink-0 rounded-full transition-colors ${hidden ? "bg-indigo-600" : "bg-slate-300"}`}
+                >
+                  <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${hidden ? "right-0.5" : "left-0.5"}`} />
+                </button>
+              </label>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium">연재 상태</label>
-        <div className="flex flex-wrap gap-2">
-          {STATUS_OPTIONS.map((s) => (
-            <button
-              key={s.value}
-              type="button"
-              onClick={() => setStatusVal(s.value)}
-              className={`px-3 py-1 rounded-full text-sm border transition-colors ${
-                statusVal === s.value
-                  ? "bg-indigo-600 text-white border-indigo-600"
-                  : "bg-transparent border-black/20 dark:border-white/20 hover:border-indigo-400"
-              }`}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-1">
-        <label className="text-sm font-medium">커버 이미지</label>
-        <p className="text-xs text-gray-400">
-          권장 크기: <strong>300 × 400px</strong> (세로형 3:4 비율) · 최대 <strong>15MB</strong> · JPG/PNG/WebP
-          <br />업로드 시 자동으로 1920px 이하 / WebP 변환됩니다.
-        </p>
-        <div className="flex items-center gap-3">
-          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onCover} className="text-sm" />
-          {coverImage && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={coverImage} alt="" className="h-20 rounded border" />
-          )}
-          {coverImage && (
-            <button onClick={() => setCoverImage(null)} className="text-xs text-gray-400 hover:text-red-500">
-              제거
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="space-y-2 border-t pt-4">
-        <label className="flex items-center gap-2 text-sm cursor-pointer">
-          <input
-            type="checkbox"
-            checked={isAdult}
-            onChange={(e) => setAdult(e.target.checked)}
-            className="w-4 h-4"
-          />
-          <span>
-            <strong className="text-red-500">🔞시크릿 플러스 작품</strong> — 시크릿 플러스를 켠
-            이용자에게만 노출됩니다.
-          </span>
-        </label>
-
-        <label className="flex items-center gap-2 text-sm cursor-pointer">
-          <input
-            type="checkbox"
-            checked={hidden}
-            onChange={(e) => setHidden(e.target.checked)}
-            className="w-4 h-4"
-          />
-          <span>
-            <strong>비공개</strong> — 나만 볼 수 있습니다. 나중에 수정에서 공개로 바꿀 수 있습니다.
-          </span>
-        </label>
-      </div>
-
-      {err && <p className="text-sm text-red-500">{err}</p>}
+      {err && <p className="text-sm text-rose-500">{err}</p>}
 
       <button
         onClick={submit}
         disabled={busy}
-        className="px-4 py-2 rounded-md bg-indigo-600 text-white disabled:opacity-50"
+        className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-indigo-600/20 hover:bg-indigo-700 active:scale-95 transition disabled:opacity-50"
       >
         {busy ? "처리 중…" : editing ? "저장" : "등록하고 1화 쓰기 →"}
       </button>
