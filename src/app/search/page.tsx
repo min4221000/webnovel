@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { displayName } from "@/lib/displayName";
@@ -33,6 +33,14 @@ const TABS: { key: Tab; label: string }[] = [
 ];
 
 export default function SearchPage() {
+  return (
+    <Suspense fallback={<p className="text-sm text-slate-400">로딩 중…</p>}>
+      <SearchContent />
+    </Suspense>
+  );
+}
+
+function SearchContent() {
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<Tab>((searchParams.get("type") as Tab) || "unified");
   const [q, setQ] = useState(searchParams.get("q") ?? "");
