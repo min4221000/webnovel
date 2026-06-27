@@ -70,27 +70,6 @@ export default function RulesPage() {
           <p>웹사이트의 버그·허점을 악용하거나, 신고 도배 등 시스템을 남용하는 행위는 즉시 제재됩니다. 다계정 운영이 확인되면 전 계정 제재합니다.</p>
         </Section>
 
-        <Section num={7} title="제재 기준">
-          <div className="overflow-x-auto rounded-xl border border-slate-200">
-            <table className="w-full text-sm text-left">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="px-4 py-3 font-semibold text-slate-700 whitespace-nowrap">위반 유형</th>
-                  <th className="px-4 py-3 font-semibold text-slate-700 whitespace-nowrap">조치</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-600">
-                <tr><td className="px-4 py-3">욕설·혐오 표현</td><td className="px-4 py-3">즉시 삭제 + 경고</td></tr>
-                <tr><td className="px-4 py-3">무단 광고·홍보</td><td className="px-4 py-3">즉시 삭제 + 경고</td></tr>
-                <tr><td className="px-4 py-3">표절·무단 복사</td><td className="px-4 py-3">즉시 삭제 + 영구 제재</td></tr>
-                <tr><td className="px-4 py-3">다계정 운영</td><td className="px-4 py-3">전 계정 영구 제재</td></tr>
-                <tr><td className="px-4 py-3">분쟁 유발·선동</td><td className="px-4 py-3">관리자 판단에 따라 삭제·제재</td></tr>
-                <tr><td className="px-4 py-3">규정 반복 위반</td><td className="px-4 py-3">영구 제재</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </Section>
-
         {/* 안내사항 */}
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
           <p className="text-sm text-amber-800 font-semibold">안내사항</p>
