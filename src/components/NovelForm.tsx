@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
 import { compressAndUpload } from "@/lib/uploadImage";
@@ -56,12 +56,17 @@ export default function NovelForm({ novelId, initial }: Props) {
   const [isAdult, setIsAdult] = useState<boolean>(initial?.isAdult ?? false);
   const [hidden, setHidden] = useState<boolean>(initial?.hidden ?? false);
   const [statusVal, setStatusVal] = useState<string>(initial?.status ?? "ongoing");
+  const [viewerAdult, setViewerAdult] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   const toggleTag = (tag: string) => {
     if (tag === "시크릿 플러스") {
       const next = !selectedTags.includes(tag);
+      if (next && !viewerAdult) {
+        alert("시크릿 플러스를 먼저 켜야 합니다. 프로필 → 시크릿 플러스에서 설정하세요.");
+        return;
+      }
       setIsAdult(next);
       setSelectedTags((prev) =>
         next ? [...prev.filter((t) => t !== tag), tag] : prev.filter((t) => t !== tag)
@@ -82,6 +87,10 @@ export default function NovelForm({ novelId, initial }: Props) {
   };
 
   const setAdult = (next: boolean) => {
+    if (next && !viewerAdult) {
+      alert("시크릿 플러스를 먼저 켜야 합니다. 프로필 → 시크릿 플러스에서 설정하세요.");
+      return;
+    }
     setIsAdult(next);
     if (next && !selectedTags.includes("시크릿 플러스")) {
       setSelectedTags((prev) => [...prev, "시크릿 플러스"]);
@@ -89,6 +98,12 @@ export default function NovelForm({ novelId, initial }: Props) {
       setSelectedTags((prev) => prev.filter((t) => t !== "시크릿 플러스"));
     }
   };
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      fetch("/api/me").then(r => r.json()).then(d => setViewerAdult(d.adult ?? false)).catch(() => {});
+    }
+  }, [status]);
 
   if (status === "loading") return <p className="text-sm text-slate-400">불러오는 중…</p>;
   if (!session?.user) {

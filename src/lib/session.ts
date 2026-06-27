@@ -36,11 +36,10 @@ export async function requireUser() {
   if (!user) throw new Error("UNAUTHORIZED");
   const db = await prisma.user.findUnique({
     where: { id: user.id },
-    select: { banned: true, role: true },
+    select: { banned: true, role: true, adult: true },
   });
   if (!db || db.banned) throw new Error("BANNED");
-  // DB의 최신 role 반영
-  return { ...user, role: db.role };
+  return { ...user, role: db.role, adult: db.adult };
 }
 
 /** 관리자 전용 가드 */

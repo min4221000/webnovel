@@ -44,6 +44,8 @@ export async function PATCH(
     return new NextResponse("제목은 30자 이하여야 합니다.", { status: 400 });
   if (description && description.length > 200)
     return new NextResponse("설명은 200자 이하여야 합니다.", { status: 400 });
+  if (isAdult && !user.adult)
+    return new NextResponse("시크릿 플러스를 먼저 켜야 시크릿 플러스 작품을 등록할 수 있습니다. (프로필 → 시크릿 플러스)", { status: 403 });
 
   await prisma.novel.update({
     where: { id: params.id },
