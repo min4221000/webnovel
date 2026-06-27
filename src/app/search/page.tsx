@@ -59,28 +59,17 @@ export default function SearchPage() {
     <div className="max-w-2xl mx-auto space-y-5">
       <h1 className="text-2xl font-extrabold tracking-tight">검색</h1>
 
-      {/* 탭 */}
-      <div className="flex gap-1 border-b border-slate-200">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => {
-              setTab(t.key);
-              if (q.trim()) run(t.key);
-            }}
-            className={`px-3 py-2 text-sm -mb-px border-b-2 transition-colors ${
-              tab === t.key
-                ? "border-indigo-600 font-semibold text-indigo-600"
-                : "border-transparent text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* 검색 입력 */}
+      {/* 검색 바: 드롭다운 + 입력 + 버튼 */}
       <div className="flex gap-2">
+        <select
+          value={tab}
+          onChange={(e) => setTab(e.target.value as Tab)}
+          className="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition"
+        >
+          {TABS.map((t) => (
+            <option key={t.key} value={t.key}>{t.label}</option>
+          ))}
+        </select>
         <div className="relative flex-1">
           <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="7" /><path strokeLinecap="round" d="M21 21l-4-4" />
