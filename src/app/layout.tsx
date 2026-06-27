@@ -16,15 +16,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body className="antialiased min-h-screen flex flex-col">
+      <body className="antialiased min-h-screen flex flex-col bg-white text-slate-900">
         <Providers>
           <Navbar />
-          <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-6">
+          <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-7">
             {children}
           </main>
-          <footer className="border-t border-black/10 dark:border-white/10 py-6 text-center text-xs text-gray-500">
+          <footer className="border-t border-slate-200 py-8 text-center text-xs text-slate-400">
             사니양 연구 보고서 열람실 ·{" "}
-            <a href="/rules" className="underline">
+            <a href="/rules" className="underline hover:text-indigo-600 transition-colors">
               이용규정
             </a>
           </footer>
