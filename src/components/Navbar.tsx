@@ -3,20 +3,30 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const NAV_LINK = "px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
   const user = session?.user;
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [sq, setSq] = useState("");
   const close = () => setOpen(false);
+
+  const doSearch = () => {
+    if (!sq.trim()) return;
+    router.push(`/search?q=${encodeURIComponent(sq.trim())}`);
+    setSq("");
+    close();
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/85 backdrop-blur-md">
-      <nav className="max-w-5xl mx-auto px-4 h-16 flex items-center gap-4">
+      <nav className="max-w-5xl mx-auto px-4 h-16 flex items-center gap-3">
         {/* 로고 */}
-        <Link href="/" className="flex items-center gap-2.5 shrink-0 mr-1" onClick={close}>
+        <Link href="/" className="flex items-center gap-2.5 shrink-0" onClick={close}>
           <span className="font-bold tracking-tight text-[15px] sm:text-base">
             <span className="hidden sm:inline">사니양 연구 보고서 열람실</span>
             <span className="sm:hidden">사니양 열람실</span>
@@ -28,15 +38,30 @@ export default function Navbar() {
           <Link href="/guide" className={NAV_LINK}>가이드</Link>
           {status !== "loading" && user && (
             <>
-              <Link href="/search" className={NAV_LINK}>검색</Link>
               <Link href="/drafts" className={NAV_LINK}>비밀글</Link>
               <Link href="/bookmarks" className={NAV_LINK}>북마크</Link>
             </>
           )}
         </div>
 
+        {/* 데스크톱 검색 입력 — 가운데 */}
+        <div className="hidden md:flex flex-1 max-w-xs mx-auto">
+          <div className="relative w-full">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="7" /><path strokeLinecap="round" d="M21 21l-4-4" />
+            </svg>
+            <input
+              value={sq}
+              onChange={(e) => setSq(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && doSearch()}
+              placeholder="검색"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 py-1.5 text-sm placeholder:text-slate-400 focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition"
+            />
+          </div>
+        </div>
+
         {/* 우측 액션 */}
-        <div className="ml-auto flex items-center gap-2 sm:gap-3">
+        <div className="ml-auto md:ml-0 flex items-center gap-2 sm:gap-3">
           {status === "loading" ? null : user ? (
             <>
               <Link
@@ -98,8 +123,25 @@ export default function Navbar() {
       {/* 모바일 드롭다운 메뉴 */}
       {open && (
         <div className="md:hidden border-t border-slate-200 bg-white px-4 py-3 space-y-1">
+          {/* 모바일 검색 */}
+          <div className="flex gap-2 mb-2">
+            <div className="relative flex-1">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="7" /><path strokeLinecap="round" d="M21 21l-4-4" />
+              </svg>
+              <input
+                value={sq}
+                onChange={(e) => setSq(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && doSearch()}
+                placeholder="검색"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 py-2 text-sm placeholder:text-slate-400 focus:bg-white focus:border-indigo-400 outline-none transition"
+              />
+            </div>
+            <button onClick={doSearch} className="shrink-0 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white">
+              검색
+            </button>
+          </div>
           <Link href="/guide" className="block text-sm text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg px-3 py-2" onClick={close}>가이드</Link>
-          <Link href="/search" className="block text-sm text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg px-3 py-2" onClick={close}>검색</Link>
           {user && (
             <>
               <Link href="/drafts" className="block text-sm text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg px-3 py-2" onClick={close}>비밀글</Link>

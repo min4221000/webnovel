@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { displayName } from "@/lib/displayName";
 import { coverGradientFor } from "@/lib/coverGradient";
@@ -32,18 +33,19 @@ const TABS: { key: Tab; label: string }[] = [
 ];
 
 export default function SearchPage() {
-  const [tab, setTab] = useState<Tab>("unified");
-  const [q, setQ] = useState("");
+  const searchParams = useSearchParams();
+  const [tab, setTab] = useState<Tab>((searchParams.get("type") as Tab) || "unified");
+  const [q, setQ] = useState(searchParams.get("q") ?? "");
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [novels, setNovels] = useState<NovelResult[]>([]);
   const [authors, setAuthors] = useState<AuthorResult[]>([]);
 
-  const run = async (t: Tab = tab) => {
-    if (!q.trim()) return;
+  const run = useCallback(async (t: Tab = tab, query: string = q) => {
+    if (!query.trim()) return;
     setLoading(true);
     setSearched(true);
-    const res = await fetch(`/api/search?type=${t}&q=${encodeURIComponent(q.trim())}`);
+    const res = await fetch(`/api/search?type=${t}&q=${encodeURIComponent(query.trim())}`);
     const data = await res.json();
     if (t === "author") {
       setAuthors(data.authors ?? []);
@@ -53,7 +55,20 @@ export default function SearchPage() {
       setAuthors([]);
     }
     setLoading(false);
-  };
+  }, [tab, q]);
+
+  // URL 쿼리 파라미터로 들어왔으면 자동 검색
+  useEffect(() => {
+    const urlQ = searchParams.get("q");
+    const urlType = searchParams.get("type") as Tab | null;
+    if (urlQ) {
+      const t = urlType || "unified";
+      setTab(t);
+      setQ(urlQ);
+      run(t, urlQ);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">

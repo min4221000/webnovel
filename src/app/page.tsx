@@ -172,6 +172,31 @@ export default async function Home({
           </nav>
         )}
       </section>
+
+      {/* 하단 검색 — 콘텐츠 바로 아래에 flow */}
+      <form action="/search" className="flex gap-2 pt-2">
+        <select name="type" defaultValue="unified" className="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700">
+          <option value="unified">통합</option>
+          <option value="title">제목</option>
+          <option value="author">글쓴이</option>
+        </select>
+        <div className="relative flex-1">
+          <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="7" /><path strokeLinecap="round" d="M21 21l-4-4" />
+          </svg>
+          <input
+            name="q"
+            placeholder="제목·내용·태그·작가"
+            className="w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3.5 py-2.5 text-sm placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition"
+          />
+        </div>
+        <button
+          type="submit"
+          className="shrink-0 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-indigo-600/20 hover:bg-indigo-700 active:scale-95 transition"
+        >
+          검색
+        </button>
+      </form>
     </div>
   );
 }
