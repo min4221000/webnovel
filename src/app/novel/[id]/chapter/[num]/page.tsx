@@ -25,25 +25,23 @@ export default async function ChapterPage({
   if (!novel) notFound();
 
   const isAuthor = !!user && user.id === novel.authorId;
-  const canModerate = !!user && user.role === "ADMIN"; // 삭제만 가능, 수정 불가
-  const isOwner = isAuthor || canModerate; // 숨김 글 열람 등 표시 권한
+  const canModerate = !!user && user.role === "ADMIN";
+  const isOwner = isAuthor || canModerate;
 
-  // 비공개 소설은 작가/어드민만
   if (novel.hidden && !isOwner) notFound();
 
-  // 18+ 작품은 성인 열람 ON 인 본인/관리자만
   if (novel.isAdult && !isOwner) {
     const adult = await getViewerAdult();
     if (!adult) {
       return (
         <div className="max-w-xl mx-auto text-center py-16 space-y-4">
           <p className="text-5xl">🔞</p>
-          <h1 className="text-xl font-bold">🔞시크릿 플러스 작품입니다</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-xl font-bold">시크릿 플러스 작품입니다</h1>
+          <p className="text-sm text-slate-500">
             이 작품을 보려면 만 19세 이상 시크릿 플러스 설정이 필요합니다.
           </p>
-          <Link href="/adult" className="inline-block px-4 py-2 rounded-md bg-red-600 text-white text-sm">
-            🔞시크릿 플러스 설정하러 가기
+          <Link href="/adult" className="inline-block px-4 py-2 rounded-lg bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 transition">
+            시크릿 플러스 설정하러 가기
           </Link>
         </div>
       );
@@ -56,10 +54,8 @@ export default async function ChapterPage({
   });
   if (!chapter) notFound();
 
-  // 비공개 회차는 작가/어드민만
   if (chapter.hidden && !isOwner) notFound();
 
-  // 북마크 진행도 업데이트 (실재하는 회차 확인 후, 최대값 갱신)
   if (user) {
     await prisma.bookmark.updateMany({
       where: {
@@ -85,63 +81,96 @@ export default async function ChapterPage({
     }),
   ]);
 
+  const hasPrev = !!prev;
+  const hasNext = !!next;
+
   return (
-    <article className="space-y-5">
-      <div>
-        <Link href={`/novel/${novel.id}`} className="text-sm text-gray-400 hover:underline">
-          ← {novel.title}
+    <article className="max-w-2xl mx-auto space-y-6">
+      {/* 상단 네비 */}
+      <div className="flex items-center justify-between">
+        <Link
+          href={`/novel/${novel.id}`}
+          className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-indigo-600 transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          목록으로
         </Link>
-        <h1 className="text-2xl font-bold mt-1">
-          <span className="text-gray-400 mr-2">{chapter.chapterNum}화</span>
-          {chapter.title}
-        </h1>
-        <div className="flex items-center gap-3 mt-1">
-          <p className="text-xs text-gray-400">
-            {new Date(chapter.createdAt).toLocaleString()}
-          </p>
+        <div className="flex items-center gap-2 text-sm text-slate-400">
+          {hasPrev && (
+            <Link href={`/novel/${novel.id}/chapter/${prev!.chapterNum}`} className="hover:text-indigo-600 transition-colors">
+              ← 이전화
+            </Link>
+          )}
+          {hasPrev && hasNext && <span className="text-slate-200">|</span>}
+          {hasNext && (
+            <Link href={`/novel/${novel.id}/chapter/${next!.chapterNum}`} className="hover:text-indigo-600 transition-colors">
+              다음화 →
+            </Link>
+          )}
+        </div>
+      </div>
+
+      {/* 회차 제목 */}
+      <div>
+        <p className="text-xs text-slate-400 mb-1">{novel.title} · {chapter.chapterNum}화</p>
+        <h1 className="text-xl font-bold tracking-tight text-slate-900">{chapter.title}</h1>
+        <div className="flex items-center gap-3 mt-2 text-xs text-slate-400">
+          <span>{new Date(chapter.createdAt).toLocaleString()}</span>
           <ReportButton targetType="chapter" targetId={chapter.id} />
           {isAuthor && (
             <Link
               href={`/write/${novel.id}/chapter/${chapter.id}/edit`}
-              className="text-xs text-gray-400 hover:text-indigo-500"
+              className="hover:text-indigo-500 transition-colors"
             >
-              ✎ 수정
+              수정
             </Link>
           )}
           {(isAuthor || canModerate) && (
             <DeleteButton
               url={`/api/chapters/${chapter.id}`}
               redirectTo={`/novel/${novel.id}`}
-              label={isAuthor ? "삭제" : "🛡 관리자 삭제"}
+              label={isAuthor ? "삭제" : "관리자 삭제"}
               confirmMsg="이 회차를 삭제할까요?"
             />
           )}
         </div>
       </div>
 
-      {/* 본문 (저장 시 새니타이즈 완료) + Ctrl+F 커스텀 검색 */}
+      {/* ⚠️ 본문 — 컨테이너 CSS 추가 금지. 에디터 인라인 스타일만 렌더링. */}
       <ChapterReader html={chapter.content} />
 
-      <nav className="flex justify-between border-t border-black/10 dark:border-white/10 pt-4 text-sm">
-        {prev ? (
-          <Link href={`/novel/${novel.id}/chapter/${prev.chapterNum}`} className="hover:underline">
+      {/* 하단 네비 */}
+      <div className="flex items-center justify-between border-t border-slate-100 pt-5">
+        {hasPrev ? (
+          <Link
+            href={`/novel/${novel.id}/chapter/${prev!.chapterNum}`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors"
+          >
             ← 이전화
           </Link>
         ) : (
           <span />
         )}
-        {next ? (
-          <Link href={`/novel/${novel.id}/chapter/${next.chapterNum}`} className="hover:underline">
+        <Link href={`/novel/${novel.id}`} className="text-sm text-slate-400 hover:text-slate-600 transition-colors">
+          목록
+        </Link>
+        {hasNext ? (
+          <Link
+            href={`/novel/${novel.id}/chapter/${next!.chapterNum}`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors"
+          >
             다음화 →
           </Link>
         ) : (
           <span />
         )}
-      </nav>
+      </div>
 
       {/* 댓글 */}
-      <section className="border-t border-black/10 dark:border-white/10 pt-4">
-        <h2 className="font-semibold mb-3 text-sm text-gray-500">댓글</h2>
+      <section className="border-t border-slate-100 pt-5">
+        <h2 className="font-bold text-sm text-slate-500 mb-3">댓글</h2>
         <Comments chapterId={chapter.id} />
       </section>
     </article>
