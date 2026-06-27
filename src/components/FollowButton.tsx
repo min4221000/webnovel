@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { apiFetch } from "@/lib/apiFetch";
 
-/** 작가 팔로우 토글 — 팔로우하면 그 작가의 새 회차가 내 웹후크로 알림 (작가 페이지용) */
 export default function FollowButton({
   authorId,
   initialFollowing,
@@ -37,21 +36,25 @@ export default function FollowButton({
   };
 
   return (
-    <div className="flex flex-col items-end gap-0.5">
+    <div className="relative">
       <button
         onClick={toggle}
         disabled={busy}
         aria-pressed={following}
         title="이 작가를 팔로우하면 새 회차가 올라올 때 내 Discord 웹후크로 알림이 옵니다"
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-colors disabled:opacity-50 ${
+        className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold transition-all active:scale-95 disabled:opacity-50 ${
           following
-            ? "bg-indigo-600 text-white border-indigo-600"
-            : "bg-transparent border-black/20 dark:border-white/20 hover:border-indigo-400"
+            ? "bg-slate-100 text-slate-600 border border-slate-200 hover:border-rose-300 hover:text-rose-500"
+            : "bg-indigo-600 text-white shadow-sm shadow-indigo-600/20 hover:bg-indigo-700"
         }`}
       >
         {following ? "✓ 팔로잉" : "+ 팔로우"}
       </button>
-      {msg && <span className="text-xs text-gray-400">{msg}</span>}
+      {msg && (
+        <span className="absolute top-full right-0 mt-1 text-xs text-slate-400 whitespace-nowrap">
+          {msg}
+        </span>
+      )}
     </div>
   );
 }

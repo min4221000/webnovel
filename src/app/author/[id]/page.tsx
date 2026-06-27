@@ -81,7 +81,7 @@ export default async function AuthorPage({
               <h2 className="text-lg font-bold leading-tight truncate">{name}</h2>
             </div>
             {viewer && !isSelf && (
-              <div className="ml-auto shrink-0 mb-1">
+              <div className="ml-auto shrink-0 self-end pb-1">
                 <FollowButton authorId={params.id} initialFollowing={following} />
               </div>
             )}
