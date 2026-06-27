@@ -34,7 +34,7 @@ export default function BookmarkButton({ novelId, initialBookmarked }: Props) {
   };
 
   return (
-    <div className="fixed top-20 right-4 z-30 flex flex-col items-center gap-1">
+    <div className="fixed top-20 right-4 z-50 flex flex-col items-center gap-1">
       <button
         onClick={toggle}
         disabled={busy}

@@ -175,7 +175,7 @@ export default async function Home({
 
       {/* 하단 검색 — 콘텐츠 바로 아래에 flow */}
       <form action="/search" className="flex gap-2 pt-2">
-        <select name="type" defaultValue="unified" className="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700">
+        <select name="type" defaultValue="unified" className="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition">
           <option value="unified">통합</option>
           <option value="title">제목</option>
           <option value="author">글쓴이</option>

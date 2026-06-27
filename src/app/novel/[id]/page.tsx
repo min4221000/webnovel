@@ -223,7 +223,7 @@ export default async function NovelPage({
                 <li
                   key={c.id}
                   className={`group flex items-center gap-3 px-4 py-3.5 transition-colors ${
-                    isCurrentRead ? "bg-indigo-50/40 hover:bg-indigo-50/70" : "hover:bg-indigo-50/50"
+                    isCurrentRead ? "bg-indigo-50/50 hover:bg-indigo-50/70" : "hover:bg-slate-50"
                   }`}
                 >
                   <span className={`shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-lg text-sm font-bold ${
