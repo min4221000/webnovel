@@ -80,15 +80,15 @@ export default async function AuthorPage({
               <p className="text-[11px] text-slate-400">글쓴이</p>
               <h2 className="text-lg font-bold leading-tight truncate">{name}</h2>
             </div>
-            {viewer && !isSelf && (
-              <div className="ml-auto shrink-0 self-end pb-1">
-                <FollowButton authorId={params.id} initialFollowing={following} />
-              </div>
-            )}
           </div>
-          <div className="mt-4 flex items-center gap-5 text-sm text-slate-500">
-            <span><strong className="font-bold text-slate-800">{author.novels.length}</strong> 작품</span>
-            <span><strong className="font-bold text-slate-800">{author._count.followers}</strong> 팔로워</span>
+          <div className="mt-4 flex items-center justify-between">
+            <div className="flex items-center gap-5 text-sm text-slate-500">
+              <span><strong className="font-bold text-slate-800">{author.novels.length}</strong> 작품</span>
+              <span><strong className="font-bold text-slate-800">{author._count.followers}</strong> 팔로워</span>
+            </div>
+            {viewer && !isSelf && (
+              <FollowButton authorId={params.id} initialFollowing={following} />
+            )}
           </div>
         </div>
       </div>
