@@ -141,7 +141,7 @@ export default function Comments({ chapterId }: { chapterId: string }) {
             onChange={(e) => setText(e.target.value)}
             placeholder="댓글을 입력하세요"
             maxLength={2000}
-            className="flex-1 border rounded-md px-3 py-2 text-sm bg-transparent"
+            className="flex-1 border rounded-md px-3 py-2 text-sm bg-white"
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); post(text, null); } }}
           />
           <button
@@ -174,7 +174,7 @@ export default function Comments({ chapterId }: { chapterId: string }) {
                     onChange={(e) => setReplyText(e.target.value)}
                     placeholder="답글 입력…"
                     maxLength={2000}
-                    className="flex-1 border rounded-md px-2 py-1 text-sm bg-transparent"
+                    className="flex-1 border rounded-md px-2 py-1 text-sm bg-white"
                     onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); post(replyText, c.id); } }}
                     autoFocus
                   />

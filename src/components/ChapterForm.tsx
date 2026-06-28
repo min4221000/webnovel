@@ -218,7 +218,7 @@ export default function ChapterForm({
           min={1}
           value={customNum}
           onChange={(e) => setCustomNum(e.target.value.replace(/\D/g, ""))}
-          className="w-24 border rounded-md px-3 py-2 bg-transparent text-sm"
+          className="w-24 border rounded-md px-3 py-2 bg-white text-sm"
           placeholder={editing ? String(redirectNum ?? "") : "회차 (자동)"}
         />
         <span className="text-xs text-gray-400">
@@ -232,7 +232,7 @@ export default function ChapterForm({
         value={title}
         onChange={handleTitleChange}
         maxLength={120}
-        className="w-full border rounded-md px-3 py-2 bg-transparent text-lg font-semibold"
+        className="w-full border rounded-md px-3 py-2 bg-white text-lg font-semibold"
         placeholder="회차 제목"
       />
 

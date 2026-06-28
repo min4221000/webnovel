@@ -550,7 +550,7 @@ export default function AdminDashboard() {
                   value={globalWebhook}
                   onChange={(e) => { setGlobalWebhook(e.target.value); setConfigMsg(""); }}
                   placeholder="https://discord.com/api/webhooks/...?thread_id=..."
-                  className="w-full border rounded-md px-3 py-2 bg-transparent text-sm"
+                  className="w-full border rounded-md px-3 py-2 bg-white text-sm"
                 />
                 <p className="text-xs text-gray-400 leading-relaxed">
                   새 회차가 올라오면 이 웹후크로도 알림이 발송됩니다. (개인 웹후크와 별도)

@@ -9,7 +9,8 @@
   --foreground: #1a1a1a;
 }
 
-/* 화이트모드 고정 — 다크모드 없음 */
+/* 화이트모드 고정 — 시스템 다크모드 무시 */
+:root { color-scheme: light; }
 
 html,
 body {
